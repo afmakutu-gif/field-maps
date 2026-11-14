@@ -11,7 +11,7 @@
 <style>html,body{margin:0}header{padding-top:calc(22px + env(safe-area-inset-top))!important}</style>
 
 <meta name="theme-color" content="#23784d">
-<title>PSC Maps</title>
+<title>PSC Field Maps</title>
 <style>
 :root{color-scheme:light;--bg:#eceff3;--panel:#f7f8fa;--line:#d3dae2;--ink:#1d3a52;--muted:#5d7385;--green:#2f9e66;--greenDark:#23784d;--greenSoft:#dcf0e5;--blue:#2563b8;--blueSoft:#dbe8f8;--field:#ffffff;--danger:#6b8094;--shadow:0 6px 18px rgba(37,99,184,.08)}
 *{box-sizing:border-box}
@@ -122,7 +122,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 
 <header>
 <span class="eyebrow">FORESTRY FIELD KIT</span>
-<h1>PSC Maps</h1>
+<h1>PSC Field Maps</h1>
 <p>Developed by Arnold Makutu · Field mapping and documentation</p>
 </header>
 <nav id="nav" aria-label="Main navigation">
@@ -336,7 +336,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC MAPS · ARNOLD MAKUTU · v2026.11.14-5</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-6</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -2527,7 +2527,7 @@ function geoName(r){
  return r.title||r.farm||("Note "+fmtDate(r.created));
 }
 function buildGpx(recs){
- let o='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="PSC Maps" xmlns="http://www.topografix.com/GPX/1/1">\n';
+ let o='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="PSC Field Maps" xmlns="http://www.topografix.com/GPX/1/1">\n';
  recs.filter(r=>r.kind==="note"&&r.gps).forEach(r=>{
   o+=`<wpt lat="${r.gps.lat}" lon="${r.gps.lon}"><time>${new Date(r.created).toISOString()}</time><name>${xe(geoName(r))}</name><desc>${xe([r.farm&&("Site: "+r.farm),r.text].filter(Boolean).join(" - "))}</desc></wpt>\n`;
  });
@@ -2543,7 +2543,7 @@ function buildGpx(recs){
  return o+"</gpx>\n";
 }
 function buildKml(recs){
- let o='<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>PSC Maps</name>\n<Style id="trk"><LineStyle><color>ff00a5ff</color><width>4</width></LineStyle></Style>\n<Style id="area"><LineStyle><color>ff00a5ff</color><width>3</width></LineStyle><PolyStyle><color>5000a5ff</color></PolyStyle></Style>\n';
+ let o='<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>PSC Field Maps</name>\n<Style id="trk"><LineStyle><color>ff00a5ff</color><width>4</width></LineStyle></Style>\n<Style id="area"><LineStyle><color>ff00a5ff</color><width>3</width></LineStyle><PolyStyle><color>5000a5ff</color></PolyStyle></Style>\n';
  recs.filter(r=>r.kind==="note"&&r.gps).forEach(r=>{
   o+=`<Placemark><name>${xe(geoName(r))}</name><description>${xe([r.farm&&("Site: "+r.farm),r.text].filter(Boolean).join(" - "))}</description><TimeStamp><when>${new Date(r.created).toISOString()}</when></TimeStamp><Point><coordinates>${r.gps.lon},${r.gps.lat},0</coordinates></Point></Placemark>\n`;
  });
@@ -2616,8 +2616,8 @@ try{if(sessionStorage.getItem("pscLiveRender")==="1"){sessionStorage.removeItem(
 (()=>{const b=document.getElementById("shareApp");if(!b)return;
 const URLX="https://afmakutu-gif.github.io/field-maps/";
 b.onclick=async()=>{const m=document.getElementById("shareMsg");
- const text="PSC Maps: measure farm maps, GPS and field notes on your phone. Open in Chrome, then Add to Home screen.";
- try{if(navigator.share){await navigator.share({title:"PSC Maps",text,url:URLX});m.textContent="";return;}}catch(e){if(e&&e.name==="AbortError")return;}
+ const text="PSC Field Maps: measure farm maps, GPS and field notes on your phone. Open in Chrome, then Add to Home screen.";
+ try{if(navigator.share){await navigator.share({title:"PSC Field Maps",text,url:URLX});m.textContent="";return;}}catch(e){if(e&&e.name==="AbortError")return;}
  try{await navigator.clipboard.writeText(text+" "+URLX);m.textContent="Link copied. Paste it into WhatsApp or a message.";}catch(e){m.textContent="Copy this link: "+URLX;}
 };})();
 </script>
@@ -2706,7 +2706,7 @@ async function noteCard(r){
  const c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");
  g.fillStyle="#f7f8fa";g.fillRect(0,0,W,H);
  g.fillStyle="#23784d";g.fillRect(0,0,W,120);
- g.fillStyle="#cfe9da";g.font="bold 22px system-ui,Arial";g.fillText("PSC MAPS · FIELD NOTE",M,44);
+ g.fillStyle="#cfe9da";g.font="bold 22px system-ui,Arial";g.fillText("PSC FIELD MAPS · FIELD NOTE",M,44);
  g.fillStyle="#fff";g.font="bold 40px system-ui,Arial";
  let y=96;const tl=String(r.title||"Untitled");let tt=tl;while(g.measureText(tt).width>W-2*M&&tt.length>4)tt=tt.slice(0,-2);g.fillText(tt+(tt!==tl?"…":""),M,y);
  y=170;g.fillStyle="#1d3a52";g.font="bold 30px system-ui,Arial";g.fillText(niceDate(r.created),M,y);
@@ -2718,7 +2718,7 @@ async function noteCard(r){
   g.drawImage(shot,M,y,W-2*M,shotH);g.strokeStyle="#d3dae2";g.lineWidth=2;g.strokeRect(M,y,W-2*M,shotH);y+=shotH+24;}
  if(imgs.length){y+=10;const ph=Math.round(pw*0.75);imgs.forEach((im,i)=>{const col=i%2,row=Math.floor(i/2),x=M+col*(pw+16),yy=y+row*(ph+16);
   const k=Math.max(pw/im.width,ph/im.height),sw=pw/k,sh=ph/k;g.drawImage(im,(im.width-sw)/2,(im.height-sh)/2,sw,sh,x,yy,pw,ph);});y+=photoH;}
- g.fillStyle="#5d7385";g.font="22px system-ui,Arial";g.fillText("Made with PSC Maps · Arnold Makutu",M,H-28);
+ g.fillStyle="#5d7385";g.font="22px system-ui,Arial";g.fillText("Made with PSC Field Maps · Arnold Makutu",M,H-28);
  return {canvas:c,hadMap:!!shot};
 }
 async function exportNote(id,btn,withMedia){
