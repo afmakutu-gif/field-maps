@@ -50,7 +50,7 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #baseCanvas{position:absolute;left:0;top:0;transform-origin:0 0}
 #overlay{position:absolute;left:0;top:0;pointer-events:none}
 #vpane{position:absolute;left:50%;top:50%;transform-origin:50% 50%}
-#northTag{position:absolute;right:10px;bottom:46px;width:34px;height:40px;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:10px;font:700 11px/1 system-ui,Arial;color:#1d3a52;pointer-events:none;z-index:5}
+#northTag{pointer-events:auto!important;cursor:pointer;position:absolute;right:10px;bottom:46px;width:34px;height:40px;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:10px;font:700 11px/1 system-ui,Arial;color:#1d3a52;z-index:5}
 #northTag svg{transition:transform .2s}
 #viewerBox.full #northTag{bottom:calc(52px + env(safe-area-inset-bottom))}
 .chip{position:absolute;left:8px;bottom:8px;background:rgba(255,255,255,.94);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:650;max-width:68%;pointer-events:none}
@@ -342,7 +342,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-10</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-11</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -813,15 +813,24 @@ function clampView(){
  const z0=vsize(),vw=z0.w/view.zoom,vh=z0.h/view.zoom;
  view.x=clamp(view.x,-0.8*vw,src.w-0.2*vw);view.y=clamp(view.y,-0.8*vh,src.h-0.2*vh);
 }
-let rot=0;try{rot=(parseInt(localStorage.getItem("pscRot"),10)||0)&3;}catch(e){}
-function vsize(){const r=realSize();return rot&1?{w:r.h,h:r.w}:r;}
+let rotA=0;try{rotA=parseFloat(localStorage.getItem("pscRotA"))||0;}catch(e){}
+function vsize(){const r=realSize(),c=Math.abs(Math.cos(rotA)),n=Math.abs(Math.sin(rotA));return {w:Math.round(r.w*c+r.h*n),h:Math.round(r.w*n+r.h*c)};}
 function applyRot(){
  const v=vsize(),pane=$("vpane");if(!pane)return;
- if(pane._w!==v.w||pane._h!==v.h||pane._r!==rot){pane._w=v.w;pane._h=v.h;pane._r=rot;
-  pane.style.width=v.w+"px";pane.style.height=v.h+"px";pane.style.transform=`translate(-50%,-50%) rotate(${rot*90}deg)`;}
- const nt=$("northTag");if(nt){nt.style.display=rot?"flex":"none";nt.firstElementChild.style.transform=`rotate(${rot*90}deg)`;}
+ if(pane._w!==v.w||pane._h!==v.h||pane._r!==rotA){pane._w=v.w;pane._h=v.h;pane._r=rotA;
+  pane.style.width=v.w+"px";pane.style.height=v.h+"px";pane.style.transform=`translate(-50%,-50%) rotate(${rotA}rad)`;}
+ const nt=$("northTag");if(nt){const on=Math.abs(Math.atan2(Math.sin(rotA),Math.cos(rotA)))>0.01;nt.style.display=on?"flex":"none";nt.firstElementChild.style.transform=`rotate(${rotA}rad)`;}
 }
-function vdelta(dx,dy){return rot===0?[dx,dy]:rot===1?[dy,-dx]:rot===2?[-dx,-dy]:[-dy,dx];}
+function vdelta(dx,dy){const c=Math.cos(rotA),n=Math.sin(rotA);return [c*dx+n*dy,-n*dx+c*dy];}
+/* turn the map to a new angle, keeping the centre of the screen on the same spot */
+function setAngle(a,quiet){
+ if(!src){rotA=a;applyRot();return;}
+ const v0=vsize(),cx=view.x+v0.w/2/view.zoom,cy=view.y+v0.h/2/view.zoom;
+ rotA=a;applyRot();const v1=vsize();
+ view.x=cx-v1.w/2/view.zoom;view.y=cy-v1.h/2/view.zoom;
+ try{localStorage.setItem("pscRotA",String(rotA));}catch(e){}
+ if(!quiet){try{clampView();}catch(e){}changed();}
+}
 function realSize(){
  const full=$("viewerBox").classList.contains("full"),r=viewer.getBoundingClientRect();
  const iw=window.innerWidth||document.documentElement.clientWidth||360,ih=window.innerHeight||document.documentElement.clientHeight||640;
@@ -870,7 +879,7 @@ ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
  else if(ptrs.size===2){
   tapCand=null;
   const [a,b]=[...ptrs.values()],m=localXY((a.x+b.x)/2,(a.y+b.y)/2);
-  pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,zoom:view.zoom,wx:view.x+m.x/view.zoom,wy:view.y+m.y/view.zoom};
+  pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,zoom:view.zoom,wx:view.x+m.x/view.zoom,wy:view.y+m.y/view.zoom,a0:Math.atan2(b.y-a.y,b.x-a.x),t0:rotA,rotating:false,sign:0};
  }
 });
 viewer.addEventListener("pointermove",e=>{
@@ -887,11 +896,22 @@ const p=ptrs.get(e.pointerId);if(!p||!src)return;
  }else if(ptrs.size>=2&&pinch){
   const [a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,m=localXY((a.x+b.x)/2,(a.y+b.y)/2);
   const nz=clamp(pinch.zoom*d/pinch.d,minZoom,maxZoom);
-  view.zoom=nz;view.x=pinch.wx-m.x/nz;view.y=pinch.wy-m.y/nz;clampView();changed();
+  let dA=Math.atan2(b.y-a.y,b.x-a.x)-pinch.a0;dA=Math.atan2(Math.sin(dA),Math.cos(dA));
+  const thr=0.14;
+  if(!pinch.rotating&&Math.abs(dA)>thr){pinch.rotating=true;pinch.sign=dA>0?1:-1;}
+  const th=pinch.rotating?pinch.t0+dA-pinch.sign*thr:pinch.t0;
+  rotA=th;applyRot();
+  const vr=viewer.getBoundingClientRect(),mx=(a.x+b.x)/2-vr.left-vr.width/2,my=(a.y+b.y)/2-vr.top-vr.height/2;
+  const c=Math.cos(th),sn=Math.sin(th),wcx=pinch.wx-(c*mx+sn*my)/nz,wcy=pinch.wy-(-sn*mx+c*my)/nz,vs=vsize();
+  view.zoom=nz;view.x=wcx-vs.w/2/nz;view.y=wcy-vs.h/2/nz;clampView();changed();
  }
 });
 function endPointer(e){
  if(!ptrs.has(e.pointerId))return;
+ if(pinch&&pinch.rotating&&ptrs.size===2){
+  let a=((rotA%(2*Math.PI))+2*Math.PI)%(2*Math.PI);const near=Math.min(a,2*Math.PI-a);
+  if(near<0.1)setAngle(0);else{rotA=a;try{localStorage.setItem("pscRotA",String(rotA));}catch(x){}}
+ }
  const wasSingle=ptrs.size===1;
  if(inkCur)endInk();
  ptrs.delete(e.pointerId);
@@ -2781,18 +2801,16 @@ document.querySelectorAll('nav button[data-tab="notes"],[data-go="notes"]').forE
 renderNoteLib();
 </script>
 <script>
-/* rotate the map in quarter turns */
+/* rotate button: next quarter turn. Twist with two fingers for any angle. Tap the N box for north-up. */
 (()=>{
  const b=document.getElementById("rotBtn");if(!b)return;
  b.onclick=()=>{
   if(!src)return;
-  const v0=vsize(),cx=view.x+v0.w/2/view.zoom,cy=view.y+v0.h/2/view.zoom;
-  rot=(rot+1)&3;try{localStorage.setItem("pscRot",String(rot));}catch(e){}
-  applyRot();const v1=vsize();
-  view.x=cx-v1.w/2/view.zoom;view.y=cy-v1.h/2/view.zoom;
-  rendered=null;try{clampView();}catch(e){}changed();
-  $("measureHint").textContent="Map turned. Tap Rotate again for the next quarter turn; the arrow shows where north is.";
+  const q=Math.PI/2,k=Math.floor(rotA/q+0.02)+1;
+  setAngle(((k*q)%(2*Math.PI)+2*Math.PI)%(2*Math.PI));
+  $("measureHint").textContent="Map turned. Twist two fingers for any angle. Tap the N arrow to put north back at the top.";
  };
+ const nt=document.getElementById("northTag");if(nt)nt.onclick=()=>{if(src)setAngle(0);else{rotA=0;applyRot();}};
  applyRot();
 })();
 </script>
