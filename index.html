@@ -51,8 +51,8 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 .gpsTag.on{font-weight:700}
 #spdChip{bottom:46px;left:8px;font-size:12px;padding:4px 10px;font-weight:600;color:var(--muted)}#spdChip b{font-size:20px;color:var(--ink);margin-right:2px}
 #viewerBox.full #spdChip{bottom:calc(46px + env(safe-area-inset-bottom))}
-#ptrBtn{position:absolute;right:8px;bottom:236px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
-#viewerBox.full #ptrBtn{bottom:calc(236px + env(safe-area-inset-bottom))}
+#ptrBtn{position:absolute;right:8px;bottom:200px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
+#viewerBox.full #ptrBtn{bottom:calc(200px + env(safe-area-inset-bottom))}
 #pinBox{display:none;position:absolute;left:8px;right:8px;bottom:8px;max-height:52%;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 12px;z-index:31;box-shadow:0 8px 24px rgba(37,99,184,.18)}
 #viewerBox.full #pinBox{bottom:calc(8px + env(safe-area-inset-bottom))}
 #pinBox .rbTop{display:flex;justify-content:space-between;align-items:center;gap:8px}#pinBox input,#pinBox textarea{width:100%;margin:5px 0;padding:8px 10px;font-size:15px}#pinBox textarea{min-height:48px}#pinBox .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}#pinBox .small,#pinBox .file-label{padding:7px 10px;font-size:12.5px;border-radius:10px;white-space:nowrap}#pinBox textarea{min-height:40px!important;height:46px}#pinBox button.danger{background:var(--danger)}#pinBox p{margin:4px 0}
@@ -74,7 +74,8 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #splash{position:fixed;inset:0;z-index:300;background:linear-gradient(160deg,#1c6140,#23784d 55%,#2563b8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;transition:opacity .5s}
 #splash h2{margin:0;font-size:26px;letter-spacing:-.02em;color:#fff}#splash p{margin:0;opacity:.85;font-size:14px}
 
-#viewerBox.mOff{--mo:0px}
+#viewerBox.mOff{--mo:0px;--rh:0px}
+#rotSlot{display:flex;flex:2.3 1 0;gap:3px;min-width:0}#rotSlot .vbtn{flex:1 1 0}#lockBtn{flex:.8 1 0!important}#rotSlot.locked #rotBtn{opacity:.45}
 #viewer{position:relative;width:100%;height:calc(100svh - 96px);min-height:62vh;overflow:hidden;background:#dde4ec;border:1px solid var(--line);border-radius:10px;touch-action:none;-webkit-user-select:none;user-select:none}
 #baseCanvas{position:absolute;left:0;top:0;transform-origin:0 0}
 #overlay{position:absolute;left:0;top:0;pointer-events:none}
@@ -111,9 +112,9 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #followHud .row{display:flex;gap:6px}
 #followHud button.on{background:var(--greenDark);color:#fff}
 #viewerBox.full #followHud{bottom:calc(54px + env(safe-area-inset-bottom))}
-#gmBtn,#fixPos,#fixClr,#oriBtn{position:absolute;right:8px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
-#gmBtn{bottom:92px}#fixPos{bottom:128px}#oriBtn{bottom:164px}#fixClr{bottom:200px}
-#viewerBox.full #gmBtn{bottom:calc(92px + env(safe-area-inset-bottom))}#viewerBox.full #fixPos{bottom:calc(128px + env(safe-area-inset-bottom))}#viewerBox.full #oriBtn{bottom:calc(164px + env(safe-area-inset-bottom))}#viewerBox.full #fixClr{bottom:calc(200px + env(safe-area-inset-bottom))}
+#fixPos,#fixClr,#oriBtn{position:absolute;right:8px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
+#fixPos{bottom:92px}#oriBtn{bottom:128px}#fixClr{bottom:164px}
+#viewerBox.full #fixPos{bottom:calc(92px + env(safe-area-inset-bottom))}#viewerBox.full #oriBtn{bottom:calc(128px + env(safe-area-inset-bottom))}#viewerBox.full #fixClr{bottom:calc(164px + env(safe-area-inset-bottom))}
 #northTag{pointer-events:auto!important;cursor:pointer;position:absolute;right:10px;bottom:46px;width:34px;height:40px;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:10px;font:700 11px/1 system-ui,Arial;color:#1d3a52;z-index:5}
 #northTag svg{transition:transform .2s}
 #viewerBox.full #northTag{bottom:calc(52px + env(safe-area-inset-bottom))}
@@ -124,7 +125,7 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #vbar{top:calc(6px + var(--rh))}
 #mBar{top:calc(74px + var(--rh));left:6px;right:54px}
 #viewerBox.full #mBar{top:calc(74px + var(--rh) + env(safe-area-inset-top))}
-#vbar2 .vbtn{padding:0 1px!important;font-size:11.5px!important}
+#vbar2 .vbtn,#vbar .vbtn{padding:0 1px!important;font-size:11px!important}
 #mBar .vbtn,#vbar2 .vbtn{flex:1 1 0;min-width:0;padding:0 2px;height:30px;min-height:30px;font-size:12px;white-space:nowrap;border-radius:10px}
 #vbar2{top:calc(40px + var(--rh))}
 .gpsTag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;margin:4px 6px 2px 0;background:var(--blueSoft);color:var(--blue)}
@@ -314,23 +315,24 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <p id="geoStatus" class="status"></p>
   <div id="viewerBox">
    <div id="viewer"><div id="vpane"><canvas id="baseCanvas"></canvas><svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
-   <button id="hereToast" type="button" style="display:none"></button><div id="spdChip" class="chip" style="display:none"></div><button id="gmBtn" class="vbtn" style="display:none">⌖ GPS tools</button><button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button><button id="oriBtn" class="vbtn" style="display:none">⟲ Map flip: Normal</button><button id="ptrBtn" class="vbtn" style="display:none">Pointer</button>
+   <button id="hereToast" type="button" style="display:none"></button><div id="spdChip" class="chip" style="display:none"></div><button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button><button id="oriBtn" class="vbtn" style="display:none">⟲ Map flip: Normal</button><button id="ptrBtn" class="vbtn" style="display:none">Pointer</button>
    <div id="northTag" title="North"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3 7 17l5-3 5 3z" fill="#2563b8" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg><span>N</span></div>
    <div id="liveResult" class="chip" style="display:none">No map loaded</div>
    <div id="readBar"><div class="rdLeft"><span id="rdKind">DISTANCE</span><b id="rdVal">No map loaded</b><small id="rdSub"></small></div><div class="rdRight"><div class="seg2 u" id="rdUnits"></div><button type="button" id="rdSave">Save</button></div></div>
    <div id="renderChip" class="chip" style="display:none">Drawing...</div>
    <div id="zoomBtns"><button class="vbtn" id="zoomIn">+</button><button class="vbtn" id="zoomOut">−</button><button class="vbtn" id="zoomFit">Fit</button></div>
    <div id="vbar">
-    <button class="vbtn on" id="measureBtn">Measure</button>
+    <button class="vbtn" id="locateBtn">◎ Me</button>
     <button class="vbtn" id="findBtn">Find</button>
-    <button class="vbtn" id="drawBtn">Draw</button>
-    <button class="vbtn" id="rotBtn">⟳ Rotate</button>
+    <button class="vbtn" id="measureBtn">Measure</button>
+    <button class="vbtn" id="pinBtn">Pin</button>
+    <button class="vbtn" id="spotBtn">Spots</button>
    </div>
    <div id="vbar2">
     <button class="vbtn" id="routeBtn">Route</button>
-    <button class="vbtn" id="spotBtn">Spots</button>
-    <button class="vbtn" id="pinBtn">Pin</button>
-    <button class="vbtn" id="locateBtn">◎ Me</button>
+    <button class="vbtn" id="drawBtn">Draw</button>
+    <span id="rotSlot"><button class="vbtn" id="rotBtn">⟳ Rotate</button><button class="vbtn" id="lockBtn">Lock</button></span>
+    <button class="vbtn" id="gmBtn">GPS tools</button>
     <button class="vbtn" id="fullBtn">⛶ Full</button>
    </div>
    <div id="mBar">
@@ -507,7 +509,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-23</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-24</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -907,7 +909,7 @@ function updateMeasurement(){
    else{big=fmtArea(m.value);sub=`perimeter ${m.perimeter!=null?fmtDist(m.perimeter):"-"} · ${n} points · also ${altArea(m.value)}`;}
   }else if(src&&n){sub=`${n} point${n===1?"":"s"}`;}
   else if(src)sub="Tap the map to place points.";
-  try{updateReadBar(big,sub);}catch(e){}}
+  try{updateReadBar(big,sub,true);}catch(e){}}
  if(lastTap&&src&&src.geo){const ll=src.geo.toLL(lastTap.x,lastTap.y);$("tapInfo").textContent=`Last point: ${ll.lat.toFixed(6)}, ${ll.lon.toFixed(6)}`;}
  else $("tapInfo").textContent="";
 }
@@ -1001,6 +1003,7 @@ function clampView(){
  const z0=vsize(),vw=z0.w/view.zoom,vh=z0.h/view.zoom;
  view.x=clamp(view.x,-0.8*vw,src.w-0.2*vw);view.y=clamp(view.y,-0.8*vh,src.h-0.2*vh);
 }
+let rotLocked=false;try{rotLocked=localStorage.getItem("pscRotLock")==="1";}catch(e){}
 let rotA=0;try{rotA=parseFloat(localStorage.getItem("pscRotA"))||0;}catch(e){}
 function vsize(){const r=realSize(),c=Math.abs(Math.cos(rotA)),n=Math.abs(Math.sin(rotA));return {w:Math.round(r.w*c+r.h*n),h:Math.round(r.w*n+r.h*c)};}
 function applyRot(){
@@ -1086,7 +1089,7 @@ const p=ptrs.get(e.pointerId);if(!p||!src)return;
   const nz=clamp(pinch.zoom*d/pinch.d,minZoom,maxZoom);
   let dA=Math.atan2(b.y-a.y,b.x-a.x)-pinch.a0;dA=Math.atan2(Math.sin(dA),Math.cos(dA));
   const thr=0.14;
-  if(!pinch.rotating&&Math.abs(dA)>thr){pinch.rotating=true;pinch.sign=dA>0?1:-1;}
+  if(!rotLocked&&!pinch.rotating&&Math.abs(dA)>thr){pinch.rotating=true;pinch.sign=dA>0?1:-1;}
   const th=pinch.rotating?pinch.t0+dA-pinch.sign*thr:pinch.t0;
   rotA=th;applyRot();
   const vr=viewer.getBoundingClientRect(),mx=(a.x+b.x)/2-vr.left-vr.width/2,my=(a.y+b.y)/2-vr.top-vr.height/2;
@@ -1115,7 +1118,7 @@ viewer.addEventListener("wheel",e=>{
  const m=localXY(e.clientX,e.clientY);zoomAbout(Math.exp(-e.deltaY*0.0015),m.x,m.y);
 },{passive:false});
 let measureOn=false;
-function setMeasureOn(on){measureOn=on;$("measureBtn").classList.toggle("on",on);$("mBar").style.display=on?"flex":"none";$("viewerBox").classList.toggle("mOff",!on);}
+function setMeasureOn(on){measureOn=on;$("measureBtn").classList.toggle("on",on);$("mBar").style.display=on?"flex":"none";$("readBar").style.display=on?"flex":"none";$("viewerBox").classList.toggle("mOff",!on);if(on){try{updateMeasurement();}catch(e){}}}
 function handleTap(cx,cy){
  if(!src)return;
  if(fixing&&gpsPos&&src.geo){
@@ -1331,10 +1334,10 @@ function speedUpdate(pt){
 }
 function speedChip(){const c=$("spdChip");if(!c)return;if(gpsPos&&!gpsPos.manual){c.style.display="block";c.innerHTML=`<b>${spdKmh==null?"--":Math.round(spdKmh)}</b> km/h`;}else c.style.display="none";}
 let fixing=false,gmOpen=false,meLock=true;
-$("gmBtn").onclick=()=>{gmOpen=!gmOpen;fixUI();};
+$("gmBtn").onclick=()=>{if(!gpsPos){hereToast("Turn on \u25CE Me first to use GPS tools.",null,3500);return;}gmOpen=!gmOpen;fixUI();};
 const fixKey=()=>"pscFix|"+(src?src.name:"");
 function getFix(){try{return JSON.parse(localStorage.getItem(fixKey())||"null");}catch(e){return null;}}
-function fixUI(){const o=getFix(),on=!!(src&&src.geo&&gpsPos);$("gmBtn").style.display=on?"inline-flex":"none";$("gmBtn").classList.toggle("on",gmOpen);const so=on&&gmOpen;$("ptrBtn").style.display=so?"inline-flex":"none";$("fixPos").style.display=so?"inline-flex":"none";$("fixPos").textContent=fixing?"Tap your real spot…":(o?"⌖ Fix again":"⌖ Fix position");$("fixPos").classList.toggle("on",fixing);$("fixClr").style.display=so&&o?"inline-flex":"none";const ob=$("oriBtn");ob.style.display=so?"inline-flex":"none";if(on)ob.textContent="⟲ Map flip: "+ORI_N[src.geo.orient||0];ob.classList.toggle("on",!!(on&&src.geo.orient));}
+function fixUI(){const o=getFix(),on=!!(src&&src.geo&&gpsPos);$("gmBtn").classList.toggle("on",gmOpen&&on);const so=on&&gmOpen;$("ptrBtn").style.display=so?"inline-flex":"none";$("fixPos").style.display=so?"inline-flex":"none";$("fixPos").textContent=fixing?"Tap your real spot…":(o?"⌖ Fix again":"⌖ Fix position");$("fixPos").classList.toggle("on",fixing);$("fixClr").style.display=so&&o?"inline-flex":"none";const ob=$("oriBtn");ob.style.display=so?"inline-flex":"none";if(on)ob.textContent="⟲ Map flip: "+ORI_N[src.geo.orient||0];ob.classList.toggle("on",!!(on&&src.geo.orient));}
 const ORI_N=["Normal","Rotated 180°","Up/down","Left/right"];
 $("oriBtn").onclick=()=>{if(!src||!src.geo)return;src.geo.setOrient(((src.geo.orient||0)+1)%4);try{localStorage.removeItem(fixKey());}catch(e){}if(gpsPos)gpsPos=gpsPos.raw||gpsPos;fixUI();if(gpsPos)centerOnMe();scheduleDraw();try{updateReadBar("Map orientation: "+ORI_N[src.geo.orient],"Drive a little. If the dot still moves the wrong way, tap again.");}catch(e){}};
 $("fixPos").onclick=()=>{if(!gpsPos)return;fixing=!fixing;fixUI();try{updateReadBar(fixing?"Tap where you really are":"Position fix cancelled",fixing?"Tap your exact spot on the map (a gate, road corner). The blue dot will move there.":"");}catch(e){}};
@@ -3084,8 +3087,13 @@ renderNoteLib();
 /* rotate button: next quarter turn. Twist with two fingers for any angle. Tap the N box for north-up. */
 (()=>{
  const b=document.getElementById("rotBtn");if(!b)return;
+ const lk=document.getElementById("lockBtn");
+ const lockUI2=()=>{lk.textContent=rotLocked?"Locked":"Lock";lk.classList.toggle("on",rotLocked);document.getElementById("rotSlot").classList.toggle("locked",rotLocked);};
+ lk.onclick=()=>{rotLocked=!rotLocked;try{localStorage.setItem("pscRotLock",rotLocked?"1":"0");}catch(e){}lockUI2();hereToast(rotLocked?"Map rotation locked. Two-finger twist and Rotate are off.":"Map rotation unlocked.",null,3000);};
+ lockUI2();
  b.onclick=()=>{
   if(!src)return;
+  if(rotLocked){hereToast("Rotation is locked. Tap Lock to unlock.",null,2500);return;}
   const q=Math.PI/2,k=Math.floor(rotA/q+0.02)+1;
   setAngle(((k*q)%(2*Math.PI)+2*Math.PI)%(2*Math.PI));
   $("measureHint").textContent="Map turned. Twist two fingers for any angle. Tap the N arrow to put north back at the top.";
@@ -3552,8 +3560,9 @@ renderNoteLib();
  };
  document.addEventListener("click",e=>{const t=e.target;if(t.dataset&&t.dataset.uk)setUnits(t.dataset.uk,t.dataset.uv);});
  /* the bar at the top of the map */
- window.updateReadBar=function(val,sub){
+ window.updateReadBar=function(val,sub,quiet){
   const v=$$("rdVal"),s=$$("rdSub");if(!v)return;
+  if(!measureOn){if(!quiet)hereToast(val+(sub?" · "+sub:""),null,5000);return;}
   v.textContent=val;s.textContent=sub||"";renderUnitChips();
  };
  $$("rdSave").onclick=()=>{
