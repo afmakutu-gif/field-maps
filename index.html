@@ -45,9 +45,9 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 .dashboard-actions button{min-height:62px;margin:0;border-radius:15px;font-size:15px}
 #mapWrap{width:100%;overflow:auto;background:#dde4ec;border-radius:10px;max-height:62vh;border:1px solid var(--line)}
 #mapCanvas{display:block;touch-action:pan-x pan-y}
-#viewerBox{position:relative;--rh:70px;--mo:46px}
+#viewerBox{position:relative;--rh:58px;--mo:34px}
 #viewerBox.mOff{--mo:0px}
-#viewer{position:relative;width:100%;height:62vh;overflow:hidden;background:#dde4ec;border:1px solid var(--line);border-radius:10px;touch-action:none;-webkit-user-select:none;user-select:none}
+#viewer{position:relative;width:100%;height:calc(100svh - 96px);min-height:62vh;overflow:hidden;background:#dde4ec;border:1px solid var(--line);border-radius:10px;touch-action:none;-webkit-user-select:none;user-select:none}
 #baseCanvas{position:absolute;left:0;top:0;transform-origin:0 0}
 #overlay{position:absolute;left:0;top:0;pointer-events:none}
 #vpane{position:absolute;left:50%;top:50%;transform-origin:50% 50%}
@@ -88,13 +88,13 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #viewerBox.full #northTag{bottom:calc(52px + env(safe-area-inset-bottom))}
 .chip{position:absolute;left:8px;bottom:8px;background:rgba(255,255,255,.94);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:650;max-width:68%;pointer-events:none}
 #renderChip{bottom:46px;font-weight:500;font-size:12px;padding:3px 8px}
-#zoomBtns{position:absolute;right:8px;top:calc(104px + var(--rh) + var(--mo));display:flex;flex-direction:column;gap:6px}
-#vbar,#vbar2,#mBar{position:absolute;left:6px;right:6px;display:flex;flex-wrap:nowrap;gap:5px;z-index:3}
+#zoomBtns{position:absolute;right:8px;top:calc(80px + var(--rh) + var(--mo));display:flex;flex-direction:column;gap:6px}
+#vbar,#vbar2,#mBar{position:absolute;left:6px;right:6px;display:flex;flex-wrap:nowrap;gap:4px;z-index:3}
 #vbar{top:calc(6px + var(--rh))}
-#mBar{top:calc(98px + var(--rh));left:6px;right:54px}
-#viewerBox.full #mBar{top:calc(98px + var(--rh) + env(safe-area-inset-top))}
-#mBar .vbtn,#vbar2 .vbtn{flex:1 1 0;min-width:0;padding:8px 2px;font-size:12.5px;white-space:nowrap}
-#vbar2{top:calc(52px + var(--rh))}
+#mBar{top:calc(74px + var(--rh));left:6px;right:54px}
+#viewerBox.full #mBar{top:calc(74px + var(--rh) + env(safe-area-inset-top))}
+#mBar .vbtn,#vbar2 .vbtn{flex:1 1 0;min-width:0;padding:0 2px;height:30px;min-height:30px;font-size:12px;white-space:nowrap;border-radius:10px}
+#vbar2{top:calc(40px + var(--rh))}
 .gpsTag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;margin:4px 6px 2px 0;background:var(--blueSoft);color:var(--blue)}
 .gpsTag.on{background:var(--green);color:#fff}
 .gpsTag.out,.gpsTag.off,.gpsTag.none{background:#e4e9ee;color:var(--muted)}
@@ -116,34 +116,34 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #drawBar .r3 button{flex:1}
 #drawBar .r3 button.go{background:var(--green);border-color:var(--green);color:#fff}
 #viewerBox.drawing #zoomBtns{top:calc(178px + var(--rh))}
-#findBox{position:absolute;left:6px;right:54px;top:calc(98px + var(--rh) + var(--mo));background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;display:none;z-index:4;max-height:55%;overflow:auto;box-shadow:0 6px 18px rgba(29,58,82,.18)}
+#findBox{position:absolute;left:6px;right:54px;top:calc(74px + var(--rh) + var(--mo));background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;display:none;z-index:4;max-height:55%;overflow:auto;box-shadow:0 6px 18px rgba(29,58,82,.18)}
 #findBox input{margin:0 0 6px}
 #findRes button{display:block;width:100%;text-align:left;background:var(--panel);color:var(--ink);border:1px solid var(--line);margin:3px 0;padding:10px 12px;font-weight:650}
-#vbar .vbtn{flex:1 1 0;min-width:0;padding:8px 2px;font-size:12.5px;white-space:nowrap}
+#vbar .vbtn{flex:1 1 0;min-width:0;padding:0 2px;height:30px;min-height:30px;font-size:12px;white-space:nowrap;border-radius:10px}
 .vbtn{background:rgba(255,255,255,.95);color:var(--blue);border:1px solid #b9c9dd;border-radius:12px;padding:8px 10px;margin:0;font-size:14px;font-weight:650}
 .vbtn.on{background:var(--green);color:#fff;border-color:var(--green)}
 #viewerBox.full{position:fixed;inset:0;z-index:100;background:#dde4ec}
 #viewerBox.full #viewer{height:100%;border:0;border-radius:0}
 #viewerBox.full #vbar{top:calc(6px + var(--rh) + env(safe-area-inset-top))}
-#viewerBox.full #readBar{top:calc(6px + env(safe-area-inset-top))}
+#viewerBox.full #readBar{top:calc(4px + env(safe-area-inset-top))}
 #viewerBox.full .chip{bottom:calc(8px + env(safe-area-inset-bottom))}
 #viewerBox.full #renderChip{bottom:calc(46px + env(safe-area-inset-bottom))}
-#viewerBox.full #zoomBtns{top:calc(104px + var(--rh) + var(--mo) + env(safe-area-inset-top))}
-#viewerBox.full #vbar2{top:calc(52px + var(--rh) + env(safe-area-inset-top))}
+#viewerBox.full #zoomBtns{top:calc(80px + var(--rh) + var(--mo) + env(safe-area-inset-top))}
+#viewerBox.full #vbar2{top:calc(40px + var(--rh) + env(safe-area-inset-top))}
 #viewerBox.full #drawBar{top:calc(6px + var(--rh) + env(safe-area-inset-top))}
 #viewerBox.full.drawing #zoomBtns{top:calc(178px + var(--rh) + env(safe-area-inset-top))}
-#viewerBox.full #findBox{top:calc(98px + var(--rh) + var(--mo) + env(safe-area-inset-top))}
-#readBar{position:absolute;left:6px;right:6px;top:6px;height:calc(var(--rh) - 8px);display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,.97);border:1px solid var(--line);border-left:5px solid var(--green);border-radius:14px;padding:6px 8px 6px 10px;z-index:6;box-shadow:0 4px 14px rgba(37,99,184,.12)}
-#readBar .rdLeft{display:flex;flex-direction:column;min-width:0;line-height:1.15}
-#readBar #rdKind{font-size:10.5px;letter-spacing:.09em;font-weight:800;color:var(--greenDark)}
-#readBar #rdVal{font-size:21px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#readBar #rdSub{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#readBar .rdRight{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
-#readBar #rdSave{margin:0;padding:5px 14px;min-height:0;font-size:12.5px;border-radius:9px}
+#viewerBox.full #findBox{top:calc(74px + var(--rh) + var(--mo) + env(safe-area-inset-top))}
+#readBar{position:absolute;left:6px;right:6px;top:4px;height:calc(var(--rh) - 10px);display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,.97);border:1px solid var(--line);border-left:5px solid var(--green);border-radius:12px;padding:3px 8px 3px 10px;z-index:6;box-shadow:0 4px 14px rgba(37,99,184,.12)}
+#readBar .rdLeft{display:flex;flex-direction:column;min-width:0;line-height:1.1;gap:1px}
+#readBar #rdKind{font-size:9.5px;line-height:1;letter-spacing:.09em;font-weight:800;color:var(--greenDark)}
+#readBar #rdVal{font-size:17px;line-height:1.1;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#readBar #rdSub{font-size:11px;line-height:1.1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#readBar .rdRight{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+#readBar #rdSave{margin:0;padding:3px 14px;min-height:0;font-size:12.5px;border-radius:9px}
 .seg2{display:flex;background:#e4e9ee;border-radius:10px;padding:3px;gap:3px}
 .seg2 button{flex:1;margin:0;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:13px;padding:7px 12px;border-radius:8px;min-height:0;cursor:pointer}
 .seg2 button.on{background:var(--green);color:#fff}
-.seg2.u button{padding:3px 8px;font-size:11.5px}
+.seg2.u button{padding:2px 8px;font-size:11px}
 #trkMode.lock{opacity:.55;pointer-events:none}
 .unitRow{display:flex;align-items:center;gap:10px;margin:6px 0}
 .recEdit{margin-top:8px;padding-top:6px;border-top:1px solid var(--line)}
@@ -451,7 +451,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-17</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-18</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -508,6 +508,7 @@ function switchTab(id){
  if(id==="home")updateDashboard();
  if(id==="measure")setTimeout(onViewerResize,0);
  window.scrollTo(0,0);
+ if(id==="measure")setTimeout(()=>{try{const r=$("viewerBox").getBoundingClientRect();window.scrollTo(0,Math.max(0,r.top+window.scrollY-6));onViewerResize();}catch(e){}},60);
 }
 $("nav").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b)switchTab(b.dataset.tab);});
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.go)));
@@ -1049,7 +1050,7 @@ viewer.addEventListener("wheel",e=>{
  if(!src)return;e.preventDefault();
  const m=localXY(e.clientX,e.clientY);zoomAbout(Math.exp(-e.deltaY*0.0015),m.x,m.y);
 },{passive:false});
-let measureOn=true;
+let measureOn=false;
 function setMeasureOn(on){measureOn=on;$("measureBtn").classList.toggle("on",on);$("mBar").style.display=on?"flex":"none";$("viewerBox").classList.toggle("mOff",!on);}
 function handleTap(cx,cy){
  if(!src)return;
@@ -1199,6 +1200,7 @@ function setMode(m){
  drawOverlay();updateMeasurement();
 }
 $("measureBtn").onclick=()=>setMeasureOn(!measureOn);
+setMeasureOn(false);
 $("distanceMode").onclick=()=>setMode("distance");
 $("areaMode").onclick=()=>setMode("area");
 $("undoPoint").onclick=()=>{measurePoints.pop();drawOverlay();updateMeasurement();};
