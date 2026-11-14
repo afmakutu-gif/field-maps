@@ -45,7 +45,8 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 .dashboard-actions button{min-height:62px;margin:0;border-radius:15px;font-size:15px}
 #mapWrap{width:100%;overflow:auto;background:#dde4ec;border-radius:10px;max-height:62vh;border:1px solid var(--line)}
 #mapCanvas{display:block;touch-action:pan-x pan-y}
-#viewerBox{position:relative;--rh:70px}
+#viewerBox{position:relative;--rh:70px;--mo:46px}
+#viewerBox.mOff{--mo:0px}
 #viewer{position:relative;width:100%;height:62vh;overflow:hidden;background:#dde4ec;border:1px solid var(--line);border-radius:10px;touch-action:none;-webkit-user-select:none;user-select:none}
 #baseCanvas{position:absolute;left:0;top:0;transform-origin:0 0}
 #overlay{position:absolute;left:0;top:0;pointer-events:none}
@@ -87,10 +88,13 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #viewerBox.full #northTag{bottom:calc(52px + env(safe-area-inset-bottom))}
 .chip{position:absolute;left:8px;bottom:8px;background:rgba(255,255,255,.94);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:650;max-width:68%;pointer-events:none}
 #renderChip{bottom:46px;font-weight:500;font-size:12px;padding:3px 8px}
-#zoomBtns{position:absolute;right:8px;top:calc(104px + var(--rh));display:flex;flex-direction:column;gap:6px}
-#vbar{position:absolute;left:6px;right:6px;top:calc(6px + var(--rh));display:flex;flex-wrap:nowrap;gap:4px}
-#vbar2{position:absolute;left:6px;top:calc(52px + var(--rh));display:flex;gap:4px}
-#vbar2 .vbtn{padding:8px 12px;font-size:12.5px;white-space:nowrap}
+#zoomBtns{position:absolute;right:8px;top:calc(104px + var(--rh) + var(--mo));display:flex;flex-direction:column;gap:6px}
+#vbar,#vbar2,#mBar{position:absolute;left:6px;right:6px;display:flex;flex-wrap:nowrap;gap:5px;z-index:3}
+#vbar{top:calc(6px + var(--rh))}
+#mBar{top:calc(98px + var(--rh));left:6px;right:54px}
+#viewerBox.full #mBar{top:calc(98px + var(--rh) + env(safe-area-inset-top))}
+#mBar .vbtn,#vbar2 .vbtn{flex:1 1 0;min-width:0;padding:8px 2px;font-size:12.5px;white-space:nowrap}
+#vbar2{top:calc(52px + var(--rh))}
 .gpsTag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;margin:4px 6px 2px 0;background:var(--blueSoft);color:var(--blue)}
 .gpsTag.on{background:var(--green);color:#fff}
 .gpsTag.out,.gpsTag.off,.gpsTag.none{background:#e4e9ee;color:var(--muted)}
@@ -112,10 +116,10 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #drawBar .r3 button{flex:1}
 #drawBar .r3 button.go{background:var(--green);border-color:var(--green);color:#fff}
 #viewerBox.drawing #zoomBtns{top:calc(178px + var(--rh))}
-#findBox{position:absolute;left:6px;right:54px;top:calc(98px + var(--rh));background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;display:none;z-index:4;max-height:55%;overflow:auto;box-shadow:0 6px 18px rgba(29,58,82,.18)}
+#findBox{position:absolute;left:6px;right:54px;top:calc(98px + var(--rh) + var(--mo));background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;display:none;z-index:4;max-height:55%;overflow:auto;box-shadow:0 6px 18px rgba(29,58,82,.18)}
 #findBox input{margin:0 0 6px}
 #findRes button{display:block;width:100%;text-align:left;background:var(--panel);color:var(--ink);border:1px solid var(--line);margin:3px 0;padding:10px 12px;font-weight:650}
-#vbar .vbtn{flex:1 1 0;min-width:0;padding:9px 2px;font-size:12.5px;white-space:nowrap}
+#vbar .vbtn{flex:1 1 0;min-width:0;padding:8px 2px;font-size:12.5px;white-space:nowrap}
 .vbtn{background:rgba(255,255,255,.95);color:var(--blue);border:1px solid #b9c9dd;border-radius:12px;padding:8px 10px;margin:0;font-size:14px;font-weight:650}
 .vbtn.on{background:var(--green);color:#fff;border-color:var(--green)}
 #viewerBox.full{position:fixed;inset:0;z-index:100;background:#dde4ec}
@@ -124,11 +128,11 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #viewerBox.full #readBar{top:calc(6px + env(safe-area-inset-top))}
 #viewerBox.full .chip{bottom:calc(8px + env(safe-area-inset-bottom))}
 #viewerBox.full #renderChip{bottom:calc(46px + env(safe-area-inset-bottom))}
-#viewerBox.full #zoomBtns{top:calc(104px + var(--rh) + env(safe-area-inset-top))}
+#viewerBox.full #zoomBtns{top:calc(104px + var(--rh) + var(--mo) + env(safe-area-inset-top))}
 #viewerBox.full #vbar2{top:calc(52px + var(--rh) + env(safe-area-inset-top))}
 #viewerBox.full #drawBar{top:calc(6px + var(--rh) + env(safe-area-inset-top))}
 #viewerBox.full.drawing #zoomBtns{top:calc(178px + var(--rh) + env(safe-area-inset-top))}
-#viewerBox.full #findBox{top:calc(98px + var(--rh) + env(safe-area-inset-top))}
+#viewerBox.full #findBox{top:calc(98px + var(--rh) + var(--mo) + env(safe-area-inset-top))}
 #readBar{position:absolute;left:6px;right:6px;top:6px;height:calc(var(--rh) - 8px);display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,.97);border:1px solid var(--line);border-left:5px solid var(--green);border-radius:14px;padding:6px 8px 6px 10px;z-index:6;box-shadow:0 4px 14px rgba(37,99,184,.12)}
 #readBar .rdLeft{display:flex;flex-direction:column;min-width:0;line-height:1.15}
 #readBar #rdKind{font-size:10.5px;letter-spacing:.09em;font-weight:800;color:var(--greenDark)}
@@ -282,14 +286,23 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
    <div id="renderChip" class="chip" style="display:none">Drawing...</div>
    <div id="zoomBtns"><button class="vbtn" id="zoomIn">+</button><button class="vbtn" id="zoomOut">−</button><button class="vbtn" id="zoomFit">Fit</button></div>
    <div id="vbar">
+    <button class="vbtn on" id="measureBtn">Measure</button>
+    <button class="vbtn" id="findBtn">Find</button>
+    <button class="vbtn" id="drawBtn">Draw</button>
+    <button class="vbtn" id="rotBtn">⟳ Rotate</button>
+   </div>
+   <div id="vbar2">
+    <button class="vbtn" id="routeBtn">Route</button>
+    <button class="vbtn" id="spotBtn">Spots</button>
+    <button class="vbtn" id="locateBtn">◎ Me</button>
+    <button class="vbtn" id="fullBtn">⛶ Full</button>
+   </div>
+   <div id="mBar">
     <button class="vbtn on" id="distanceMode">Length</button>
     <button class="vbtn" id="areaMode">Area</button>
     <button class="vbtn" id="undoPoint">Undo</button>
     <button class="vbtn" id="clearPoints">Clear</button>
-    <button class="vbtn" id="locateBtn">◎ Me</button>
-    <button class="vbtn" id="fullBtn">⛶ Full</button>
    </div>
-   <div id="vbar2"><button class="vbtn" id="findBtn">Find</button><button class="vbtn" id="drawBtn">Draw</button><button class="vbtn" id="rotBtn">⟳ Rotate</button><button class="vbtn" id="routeBtn">Route</button><button class="vbtn" id="spotBtn">Spots</button></div>
    <div id="drawBar">
     <div class="seg"><button class="on" id="dtPen">Pen</button><button id="dtMark">Marker</button><button id="dtErase">Eraser</button><button id="dtHand">Move</button></div>
     <div class="r2"><div id="dtColors" class="cols"></div><div class="sizes" id="dtSizes"><button data-s="0" aria-label="Thin"><i style="width:5px;height:5px"></i></button><button data-s="1" class="on" aria-label="Medium"><i style="width:9px;height:9px"></i></button><button data-s="2" aria-label="Thick"><i style="width:14px;height:14px"></i></button></div></div>
@@ -438,7 +451,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-15</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-16</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -817,7 +830,7 @@ function setResult(t){$("liveResult").textContent=t;$("measureResult").textConte
 function updateMeasurement(){
  const n=measurePoints.length;
  $("pointCount").textContent=`${n} point${n===1?"":"s"} selected`;
- const m=currentMeasure();let t="No measurement";
+ const m=currentMeasure();let t="No points yet";
  if(!src)t="No map loaded";
  else if(m){
   if(m.value==null)t="Calibrate map scale";
@@ -1036,10 +1049,13 @@ viewer.addEventListener("wheel",e=>{
  if(!src)return;e.preventDefault();
  const m=localXY(e.clientX,e.clientY);zoomAbout(Math.exp(-e.deltaY*0.0015),m.x,m.y);
 },{passive:false});
+let measureOn=true;
+function setMeasureOn(on){measureOn=on;$("measureBtn").classList.toggle("on",on);$("mBar").style.display=on?"flex":"none";$("viewerBox").classList.toggle("mOff",!on);}
 function handleTap(cx,cy){
  if(!src)return;
  if(typeof routeTap==="function"&&routeTap(cx,cy))return;
  if(typeof spotTap==="function"&&spotTap(cx,cy))return;
+ if(!measureOn)return;
  const m=localXY(cx,cy);
  lastTap={x:view.x+m.x/view.zoom,y:view.y+m.y/view.zoom};
  measurePoints.push(lastTap);
@@ -1090,7 +1106,7 @@ function inkSvg(sp){
 }
 function setDraw(on){
  drawOn=on;if(!on)cancelInk();
- $("viewerBox").classList.toggle("drawing",on);$("drawBar").style.display=on?"flex":"none";$("vbar").style.display=on?"none":"flex";$("vbar2").style.display=on?"none":"flex";
+ $("viewerBox").classList.toggle("drawing",on);$("drawBar").style.display=on?"flex":"none";$("vbar").style.display=on?"none":"flex";$("mBar").style.display=on||!measureOn?"none":"flex";$("vbar2").style.display=on?"none":"flex";
  if(on)$("findBox").style.display="none";
  viewer.style.touchAction="none";
 }
@@ -1182,6 +1198,7 @@ function setMode(m){
  $("areaMode").classList.toggle("on",m==="area");
  drawOverlay();updateMeasurement();
 }
+$("measureBtn").onclick=()=>setMeasureOn(!measureOn);
 $("distanceMode").onclick=()=>setMode("distance");
 $("areaMode").onclick=()=>setMode("area");
 $("undoPoint").onclick=()=>{measurePoints.pop();drawOverlay();updateMeasurement();};
