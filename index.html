@@ -83,12 +83,9 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #followHud .row{display:flex;gap:6px}
 #followHud button.on{background:var(--greenDark);color:#fff}
 #viewerBox.full #followHud{bottom:calc(54px + env(safe-area-inset-bottom))}
-#fixPos,#fixClr{position:absolute;right:8px;bottom:92px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
-#fixClr{bottom:128px}
-#oriBtn{position:absolute;right:8px;bottom:164px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
-#viewerBox.full #oriBtn{bottom:calc(164px + env(safe-area-inset-bottom))}
-#viewerBox.full #fixPos{bottom:calc(92px + env(safe-area-inset-bottom))}
-#viewerBox.full #fixClr{bottom:calc(128px + env(safe-area-inset-bottom))}
+#gmBtn,#fixPos,#fixClr,#oriBtn{position:absolute;right:8px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
+#gmBtn{bottom:92px}#fixPos{bottom:128px}#oriBtn{bottom:164px}#fixClr{bottom:200px}
+#viewerBox.full #gmBtn{bottom:calc(92px + env(safe-area-inset-bottom))}#viewerBox.full #fixPos{bottom:calc(128px + env(safe-area-inset-bottom))}#viewerBox.full #oriBtn{bottom:calc(164px + env(safe-area-inset-bottom))}#viewerBox.full #fixClr{bottom:calc(200px + env(safe-area-inset-bottom))}
 #northTag{pointer-events:auto!important;cursor:pointer;position:absolute;right:10px;bottom:46px;width:34px;height:40px;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:10px;font:700 11px/1 system-ui,Arial;color:#1d3a52;z-index:5}
 #northTag svg{transition:transform .2s}
 #viewerBox.full #northTag{bottom:calc(52px + env(safe-area-inset-bottom))}
@@ -286,7 +283,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <p id="geoStatus" class="status"></p>
   <div id="viewerBox">
    <div id="viewer"><div id="vpane"><canvas id="baseCanvas"></canvas><svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
-   <button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button><button id="oriBtn" class="vbtn" style="display:none">⟲ Map flip: Normal</button>
+   <button id="gmBtn" class="vbtn" style="display:none">⌖ GPS tools</button><button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button><button id="oriBtn" class="vbtn" style="display:none">⟲ Map flip: Normal</button>
    <div id="northTag" title="North"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3 7 17l5-3 5 3z" fill="#2563b8" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg><span>N</span></div>
    <div id="liveResult" class="chip" style="display:none">No map loaded</div>
    <div id="readBar"><div class="rdLeft"><span id="rdKind">DISTANCE</span><b id="rdVal">No map loaded</b><small id="rdSub"></small></div><div class="rdRight"><div class="seg2 u" id="rdUnits"></div><button type="button" id="rdSave">Save</button></div></div>
@@ -458,7 +455,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-20</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-21</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -1251,10 +1248,11 @@ function centerOnMe(){
  view.x=wp[0]-vsize().w/2/view.zoom;view.y=wp[1]-vsize().h/2/view.zoom;
  clampView();changed();
 }
-let fixing=false;
+let fixing=false,gmOpen=false,meLock=true;
+$("gmBtn").onclick=()=>{gmOpen=!gmOpen;fixUI();};
 const fixKey=()=>"pscFix|"+(src?src.name:"");
 function getFix(){try{return JSON.parse(localStorage.getItem(fixKey())||"null");}catch(e){return null;}}
-function fixUI(){const o=getFix(),on=!!(src&&src.geo&&gpsPos);$("fixPos").style.display=on?"inline-flex":"none";$("fixPos").textContent=fixing?"Tap your real spot…":(o?"⌖ Fix again":"⌖ Fix position");$("fixPos").classList.toggle("on",fixing);$("fixClr").style.display=on&&o?"inline-flex":"none";const ob=$("oriBtn");ob.style.display=on?"inline-flex":"none";if(on)ob.textContent="⟲ Map flip: "+ORI_N[src.geo.orient||0];ob.classList.toggle("on",!!(on&&src.geo.orient));}
+function fixUI(){const o=getFix(),on=!!(src&&src.geo&&gpsPos);$("gmBtn").style.display=on?"inline-flex":"none";$("gmBtn").classList.toggle("on",gmOpen);const so=on&&gmOpen;$("fixPos").style.display=so?"inline-flex":"none";$("fixPos").textContent=fixing?"Tap your real spot…":(o?"⌖ Fix again":"⌖ Fix position");$("fixPos").classList.toggle("on",fixing);$("fixClr").style.display=so&&o?"inline-flex":"none";const ob=$("oriBtn");ob.style.display=so?"inline-flex":"none";if(on)ob.textContent="⟲ Map flip: "+ORI_N[src.geo.orient||0];ob.classList.toggle("on",!!(on&&src.geo.orient));}
 const ORI_N=["Normal","Rotated 180°","Up/down","Left/right"];
 $("oriBtn").onclick=()=>{if(!src||!src.geo)return;src.geo.setOrient(((src.geo.orient||0)+1)%4);try{localStorage.removeItem(fixKey());}catch(e){}if(gpsPos)gpsPos=gpsPos.raw||gpsPos;fixUI();if(gpsPos)centerOnMe();scheduleDraw();try{updateReadBar("Map orientation: "+ORI_N[src.geo.orient],"Drive a little. If the dot still moves the wrong way, tap again.");}catch(e){}};
 $("fixPos").onclick=()=>{if(!gpsPos)return;fixing=!fixing;fixUI();try{updateReadBar(fixing?"Tap where you really are":"Position fix cancelled",fixing?"Tap your exact spot on the map (a gate, road corner). The blue dot will move there.":"");}catch(e){}};
@@ -1267,23 +1265,26 @@ function gpsFix(pt){
   const w=src.geo.toWorld(pt.lat,pt.lon),inside=w[0]>=0&&w[1]>=0&&w[0]<=src.w&&w[1]<=src.h;
   $("geoStatus").textContent=inside?`My position: ${pt.lat.toFixed(6)}, ${pt.lon.toFixed(6)} (±${Math.round(pt.acc)} m)${getFix()?" · fix applied":""}${src.geo.fitError>3?" · map fit ±"+Math.round(src.geo.fitError)+" m":""}${pt.acc>60?" · weak signal, move to open sky":""}`:"You are outside the area of this map.";
   if(followFirst){followFirst=false;if(inside)centerOnMe();}
+  else if(meLock&&inside&&!fixing)centerOnMe();
  }
  scheduleDraw();
  try{if(typeof routeFix==="function")routeFix(pt);}catch(e){}
 }
 function stopLocate(){setTimeout(()=>{try{fixUI();}catch(e){}},0);
  if(locWatch!==null){navigator.geolocation.clearWatch(locWatch);locWatch=null;}
- gpsPos=null;followFirst=false;
- $("locateBtn").classList.remove("on");$("stopLoc").style.display="none";scheduleDraw();
+ gpsPos=null;followFirst=false;meLock=true;
+ $("locateBtn").classList.remove("on");$("locateBtn").textContent="◎ Me";$("stopLoc").style.display="none";scheduleDraw();
 }
+function lockUI(){$("locateBtn").textContent=(locWatch!==null&&!meLock)?"◎ Re-centre":"◎ Me";}
+viewer.addEventListener("pointerdown",()=>{if(locWatch!==null&&meLock){meLock=false;lockUI();}},true);
 $("locateBtn").onclick=()=>{
  if(!navigator.geolocation){$("geoStatus").textContent="GPS is not supported in this browser.";return;}
  if(src&&!src.geo){$("geoStatus").textContent="This map has no georeference, so your position can't be shown on it.";return;}
  if(locWatch===null){
-  followFirst=true;$("locateBtn").classList.add("on");$("stopLoc").style.display="inline-flex";
+  followFirst=true;meLock=true;$("locateBtn").classList.add("on");$("stopLoc").style.display="inline-flex";
   $("geoStatus").textContent="Finding your position...";
   locWatch=navigator.geolocation.watchPosition(p=>gpsFix(toPos(p)),err=>{if(manualPos){$("geoStatus").textContent="Phone location is blocked here. Showing the position you typed.";gpsFix(manualPos);centerOnMe();}else{$("geoStatus").textContent=gpsError(err)+" You can type your position on the GPS tab.";stopLocate();}},{enableHighAccuracy:true,maximumAge:2000,timeout:30000});
- }else centerOnMe();
+ }else{meLock=true;lockUI();centerOnMe();}
 };
 $("stopLoc").onclick=stopLocate;
 
