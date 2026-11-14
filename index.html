@@ -319,7 +319,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
      <label class="muted rbChk">Speed for time estimate <input id="rbSpeed" type="number" min="5" max="120" style="width:64px"> km/h</label>
      <div class="row"><button class="small" id="rbSave">Save route</button><button class="small" id="rbFollow">Follow</button><button class="small secondary" id="rbLib">Library</button></div>
     </div>
-    <div id="rbLibView" hidden><div class="row"><button class="small secondary" id="rbBack">Back to planner</button></div><div id="rbCmp"></div><div id="rbList"></div></div>
+    <div id="rbLibView" hidden><div class="row"><button class="small secondary" id="rbBack">Back to planner</button><button class="small secondary" id="rbExpAll">Export all routes</button><label class="file-label" for="rbImp" style="margin:0">Import routes</label><input id="rbImp" type="file" accept=".json,application/json" style="display:none"></div><div id="rbCmp"></div><div id="rbList"></div></div>
     <p id="rbMsg" class="muted"></p>
    </div>
    <div id="findBox"><input id="findInput" placeholder="Find compartment, e.g. D038A" autocomplete="off" autocapitalize="characters"><div id="findRes"></div></div>
@@ -417,7 +417,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-13</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-14</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -2995,7 +2995,7 @@ renderNoteLib();
   host.innerHTML=plans.map(p=>`<div class="rbItem"><div class="rbHead"><label><input type="checkbox" data-c="${esc(p.id)}" ${cmpSel.has(p.id)?"checked":""}> <b>${p.main?"★ ":""}${esc(p.title)}</b></label></div>
    <small>${km(p.distance||dist(p.points))} · ${mins(p.distance||dist(p.points))} · used ${p.uses||0}×${p.main?" · main route":""}</small>
    <div class="row"><button class="small" data-a="follow" data-id="${esc(p.id)}">Follow</button><button class="small secondary" data-a="edit" data-id="${esc(p.id)}">Edit</button><button class="small secondary" data-a="show" data-id="${esc(p.id)}">${shown.has(p.id)?"Hide":"Show"}</button>
-   <button class="small secondary" data-a="ins" data-id="${esc(p.id)}">Add to plan</button><button class="small secondary" data-a="part" data-id="${esc(p.id)}">Use part</button><button class="small secondary" data-a="star" data-id="${esc(p.id)}">${p.main?"Unmark main":"Mark main"}</button><button class="danger small" data-a="del" data-id="${esc(p.id)}">Delete</button></div></div>`).join("");
+   <button class="small secondary" data-a="ins" data-id="${esc(p.id)}">Add to plan</button><button class="small secondary" data-a="part" data-id="${esc(p.id)}">Use part</button><button class="small secondary" data-a="share" data-id="${esc(p.id)}">Share</button><button class="small secondary" data-a="star" data-id="${esc(p.id)}">${p.main?"Unmark main":"Mark main"}</button><button class="danger small" data-a="del" data-id="${esc(p.id)}">Delete</button></div></div>`).join("");
   renderCmp();
  }
  function renderCmp(){
@@ -3006,6 +3006,36 @@ renderNoteLib();
   const min=Math.min(...rows.map(r=>r.d));
   $$("rbCmp").innerHTML='<table class="rbT"><tr><th>Route</th><th>Distance</th><th>Time</th><th>vs shortest</th></tr>'+rows.map(r=>`<tr><td>${esc(r.t)}</td><td>${km(r.d)}</td><td>${mins(r.d)}</td><td>${r.d===min?"shortest":"+"+km(r.d-min)}</td></tr>`).join("")+"</table>";
  }
+ async function shareRoutes(list){
+  if(!list.length){msg("No saved routes yet.");return;}
+  let by="";try{by=localStorage.getItem("pscName")||"";}catch(e){}
+  const data=JSON.stringify({app:"psc-field-maps-routes",version:1,exported:new Date().toISOString(),by,routes:list});
+  const base=list.length===1?list[0].title.replace(/[^\w\-]+/g,"_").slice(0,30):"routes";
+  const name="psc-route-"+base+"-"+nowLocalInput(new Date()).replace(/[:T]/g,"").slice(0,12)+".json";
+  const file=new File([data],name,{type:"application/json"});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:list.length===1?list[0].title:"PSC routes"});msg("Shared "+list.length+" route(s).");return;}}catch(e){if(e&&e.name==="AbortError")return;}
+  try{const d=window.claude&&claude.use?await claude.use("downloads"):null;if(d){await d.save({filename:name,data:file});msg("Saved "+list.length+" route(s).");return;}}catch(e){}
+  const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();msg("Saved "+list.length+" route(s) to your downloads. Send the file to your colleagues.");
+ }
+ $$("rbExpAll").onclick=async()=>{await loadPlans();shareRoutes(plans);};
+ $$("rbImp").onchange=async e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  try{
+   const d=JSON.parse(await f.text());if(!d||!Array.isArray(d.routes))throw new Error("This is not a routes file.");
+   await loadPlans();const have=new Map(plans.map(p=>[p.id,p]));let added=0,updated=0,same=0;
+   for(const n of d.routes){
+    if(!n||!n.id||!Array.isArray(n.points)||n.points.length<2||!n.points.every(q=>typeof q.lat==="number"&&typeof q.lon==="number"))continue;
+    const clean={id:n.id,kind:"plan",created:n.created||Date.now(),updated:n.updated||n.created||Date.now(),title:String(n.title||"Route").slice(0,80),main:!!n.main,uses:n.uses||0,points:n.points.map(q=>({lat:q.lat,lon:q.lon})),distance:Math.round(dist(n.points)),by:n.by||d.by||""};
+    const o=have.get(clean.id);
+    if(!o){await putRecord(clean);added++;}
+    else if((clean.updated||0)>(o.updated||o.created||0)){clean.uses=Math.max(o.uses||0,clean.uses);await putRecord(clean);updated++;}
+    else same++;
+   }
+   await loadPlans();plans.filter(p=>p.main).forEach(p=>shown.add(p.id));renderLib();scheduleDraw();try{renderRecords();}catch(x){}
+   msg(`Imported: ${added} new, ${updated} updated, ${same} unchanged.`);
+  }catch(err){msg("Import failed: "+err.message);}
+  e.target.value="";
+ };
  $$("rbLib").onclick=()=>setView(true);$$("rbBack").onclick=()=>{part=null;setView(false);stats();};
  $$("rbList").addEventListener("change",e=>{const c=e.target.dataset&&e.target.dataset.c;if(!c)return;if(e.target.checked)cmpSel.add(c);else cmpSel.delete(c);renderCmp();});
  $$("rbList").addEventListener("click",async e=>{
@@ -3017,6 +3047,7 @@ renderNoteLib();
   if(a==="ins"){addPoints(p.points);bump(p);setView(false);stats();focusOn(plan.points);msg("'"+p.title+"' added to the end of your plan.");return;}
   if(a==="part"){part={plan:p,step:0};shown.add(p.id);setView(true);msg("Tap the START of the part you want, on the highlighted route.");focusOn(p.points);scheduleDraw();return;}
   if(a==="follow"){startFollow(p.points,p.title,p);return;}
+  if(a==="share"){shareRoutes([p]);return;}
  });
  function focusOn(pts){
   if(!hasGeo()||!pts||!pts.length)return;
