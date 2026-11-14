@@ -11,7 +11,7 @@
 <style>html,body{margin:0}header{padding-top:calc(22px + env(safe-area-inset-top))!important}</style>
 
 <meta name="theme-color" content="#23784d">
-<title>PSC Field Maps</title>
+<title>PSC Maps</title>
 <style>
 :root{color-scheme:light;--bg:#eceff3;--panel:#f7f8fa;--line:#d3dae2;--ink:#1d3a52;--muted:#5d7385;--green:#2f9e66;--greenDark:#23784d;--greenSoft:#dcf0e5;--blue:#2563b8;--blueSoft:#dbe8f8;--field:#ffffff;--danger:#6b8094;--shadow:0 6px 18px rgba(37,99,184,.08)}
 *{box-sizing:border-box}
@@ -120,7 +120,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 
 <header>
 <span class="eyebrow">FORESTRY FIELD KIT</span>
-<h1>PSC Field Maps</h1>
+<h1>PSC Maps</h1>
 <p>Developed by Arnold Makutu · Field mapping and documentation</p>
 </header>
 <nav id="nav" aria-label="Main navigation">
@@ -2513,7 +2513,7 @@ function geoName(r){
  return r.title||r.farm||("Note "+fmtDate(r.created));
 }
 function buildGpx(recs){
- let o='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="PSC Field Maps" xmlns="http://www.topografix.com/GPX/1/1">\n';
+ let o='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="PSC Maps" xmlns="http://www.topografix.com/GPX/1/1">\n';
  recs.filter(r=>r.kind==="note"&&r.gps).forEach(r=>{
   o+=`<wpt lat="${r.gps.lat}" lon="${r.gps.lon}"><time>${new Date(r.created).toISOString()}</time><name>${xe(geoName(r))}</name><desc>${xe([r.farm&&("Site: "+r.farm),r.text].filter(Boolean).join(" - "))}</desc></wpt>\n`;
  });
@@ -2529,7 +2529,7 @@ function buildGpx(recs){
  return o+"</gpx>\n";
 }
 function buildKml(recs){
- let o='<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>PSC Field Maps</name>\n<Style id="trk"><LineStyle><color>ff00a5ff</color><width>4</width></LineStyle></Style>\n<Style id="area"><LineStyle><color>ff00a5ff</color><width>3</width></LineStyle><PolyStyle><color>5000a5ff</color></PolyStyle></Style>\n';
+ let o='<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>PSC Maps</name>\n<Style id="trk"><LineStyle><color>ff00a5ff</color><width>4</width></LineStyle></Style>\n<Style id="area"><LineStyle><color>ff00a5ff</color><width>3</width></LineStyle><PolyStyle><color>5000a5ff</color></PolyStyle></Style>\n';
  recs.filter(r=>r.kind==="note"&&r.gps).forEach(r=>{
   o+=`<Placemark><name>${xe(geoName(r))}</name><description>${xe([r.farm&&("Site: "+r.farm),r.text].filter(Boolean).join(" - "))}</description><TimeStamp><when>${new Date(r.created).toISOString()}</when></TimeStamp><Point><coordinates>${r.gps.lon},${r.gps.lat},0</coordinates></Point></Placemark>\n`;
  });
