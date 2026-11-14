@@ -308,7 +308,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <div class="r2"><div id="dtColors" class="cols"></div><div class="sizes" id="dtSizes"><button data-s="0" aria-label="Thin"><i style="width:5px;height:5px"></i></button><button data-s="1" class="on" aria-label="Medium"><i style="width:9px;height:9px"></i></button><button data-s="2" aria-label="Thick"><i style="width:14px;height:14px"></i></button></div></div>
     <div class="r3"><button id="dtUndo">Undo</button><button id="dtClear">Clear all</button><button id="dtDone" class="go">Done</button></div>
    </div>
-   <div id="followHud"><div id="fhMain"></div><div id="fhSub"></div><div class="row"><button class="small" id="fhLock" style="display:none">Re-centre</button><button class="small secondary" id="fhHead">Heading up</button><button class="small danger" id="fhStop">Stop</button></div></div>
+   <div id="followHud"><div id="fhMain"></div><div id="fhSub"></div><div class="row"><button class="small" id="fhLock" style="display:none">Re-centre</button><button class="small secondary" id="fhVoice">Voice on</button><button class="small secondary" id="fhHead">Heading up</button><button class="small danger" id="fhStop">Stop</button></div></div>
    <div id="spotBox">
     <div class="rbTop"><b id="spTitleTop">Spots and hazards</b><span><button class="small secondary" id="spMin">Minimise</button> <button class="small secondary" id="spClose">Close</button></span></div>
     <div id="spList">
@@ -451,7 +451,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-16</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-17</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -3137,8 +3137,62 @@ renderNoteLib();
   if(locWatch===null){$("locateBtn").click();}
   if(gpsPos)routeFix(gpsPos);
   focusOn(follow.pts);
+  voiceStart(follow);
  }
- function stopFollow(){follow=null;$$("followHud").style.display="none";scheduleDraw();}
+
+ /* ---- voice guidance (spoken turns, distance, off-route, hazards) ---- */
+ let voiceOn=true;try{voiceOn=localStorage.getItem("pscVoice")!=="0";}catch(e){}
+ const canSpeak=()=>"speechSynthesis" in window;
+ function say(t,urgent){
+  if(!voiceOn||!canSpeak())return;
+  try{const ss=window.speechSynthesis;if(urgent)ss.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-ZA";u.rate=0.95;ss.speak(u);}catch(e){}
+ }
+ const sayDist=m=>m>=1000?(m/1000).toFixed(1).replace(/\.0$/,"")+" kilometres":(Math.round(m/10)*10)+" metres";
+ function setVoiceBtn(){const b=$$("fhVoice");b.textContent=voiceOn?"Voice on":"Voice off";b.classList.toggle("on",voiceOn);if(!canSpeak())b.style.display="none";}
+ $$("fhVoice").onclick=()=>{voiceOn=!voiceOn;try{localStorage.setItem("pscVoice",voiceOn?"1":"0");}catch(e){}if(!voiceOn&&canSpeak())speechSynthesis.cancel();setVoiceBtn();if(voiceOn)say("Voice guidance on",true);};
+ setVoiceBtn();
+ function bearing(a,b){const kx=Math.cos((a.lat+b.lat)/2*Math.PI/180)*111320;return Math.atan2((b.lon-a.lon)*kx,(b.lat-a.lat)*110540);}
+ function findTurns(P,cum){
+  const out=[],W=30;
+  for(let i=1;i<P.length-1;i++){
+   let j=i;while(j>0&&cum[i]-cum[j]<W)j--;
+   let k=i;while(k<P.length-1&&cum[k]-cum[i]<W)k++;
+   if(j===i||k===i)continue;
+   let d=bearing(P[i],P[k])-bearing(P[j],P[i]);d=Math.atan2(Math.sin(d),Math.cos(d));
+   const deg=Math.abs(d)*180/Math.PI;
+   if(deg<35)continue;
+   const t={at:cum[i],dir:d>0?"right":"left",deg,said:{}};
+   const last=out[out.length-1];
+   if(last&&t.at-last.at<45){if(t.deg>last.deg)out[out.length-1]=t;}else out.push(t);
+  }
+  return out;
+ }
+ const turnWord=t=>(t.deg>110?"sharp ":t.deg<60?"slight ":"")+t.dir;
+ window.voiceStart=function(f){
+  f.turns=findTurns(f.pts,f.cum);f.vs={off:false,hz:"",half:false,last:0,start:false};
+  say("Following "+(f.title||"route")+". "+sayDist(f.total)+" to go."+(f.turns.length?" "+f.turns.length+" turn"+(f.turns.length>1?"s":"")+" on this route.":""),true);
+ };
+ window.voiceTick=function(f,along,off,left,hz){
+  if(!voiceOn||!f.vs)return;const v=f.vs;
+  if(left<30){if(!v.arrived){v.arrived=true;say("You have arrived at your destination.",true);}return;}
+  if(off>40){if(!v.off){v.off=true;say("You are off the route. Return to the green line, or edit the route.",true);}return;}
+  if(v.off){v.off=false;say("Back on route.");}
+  const t=f.turns.find(x=>x.at>along-8);
+  if(t){
+   const d=t.at-along;
+   const step=d<=40?"now":d<=120?"near":d<=320?"far":null;
+   if(step&&!t.said[step]){
+    t.said[step]=true;
+    if(step==="now")say("Turn "+turnWord(t)+" now.",true);
+    else say("In "+sayDist(d)+", turn "+turnWord(t)+".",true);
+   }
+  }
+  const hk=hz?hz.replace(/ \d+ m away/,""):"";
+  if(hz&&hk!==v.hz){v.hz=hk;say("Hazard ahead. "+hz+".");}
+  else if(!hz)v.hz="";
+  if(!v.half&&along>f.total/2&&f.total>1500){v.half=true;say("Halfway. "+sayDist(left)+" to go.");}
+ };
+ function stopFollow(){try{if(canSpeak())speechSynthesis.cancel();}catch(e){}follow=null;$$("followHud").style.display="none";scheduleDraw();}
  $$("fhStop").onclick=stopFollow;
  $$("fhLock").onclick=()=>{if(!follow)return;follow.lock=true;$$("fhLock").style.display="none";if(gpsPos)centerOnMe();};
  $$("fhHead").onclick=()=>{if(!follow)return;follow.headingUp=!follow.headingUp;$$("fhHead").classList.toggle("on",follow.headingUp);if(!follow.headingUp)setAngle(0);};
@@ -3157,8 +3211,9 @@ renderNoteLib();
   if(left<30)a="<b>You have arrived</b>";
   else b=(nxt<P.length-1?"Next point in ":"Destination in ")+km(dn);
   if(best>40){a+=' <span style="color:#d64545">· off route '+km(best)+"</span>";b="Edit the route or drive back to the green line.";}
-  try{const hz=window.nearestHazard&&nearestHazard(pt);if(hz)b="Hazard: "+hz+(b?" · "+b:"");}catch(e){}
+  let hzs="";try{const hz=window.nearestHazard&&nearestHazard(pt);if(hz){hzs=hz;b="Hazard: "+hz+(b?" · "+b:"");}}catch(e){}
   hud(a,b);
+  try{voiceTick(follow,along,best,left,hzs);}catch(e){}
   if(follow.headingUp&&pt.hd!=null&&isFinite(pt.hd)&&(pt.sp||0)>1.2){
    const tgt=-pt.hd*Math.PI/180;let d=Math.atan2(Math.sin(tgt-rotA),Math.cos(tgt-rotA));
    if(Math.abs(d)>0.05)setAngle(rotA+d*0.35,true);
