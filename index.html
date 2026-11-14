@@ -337,7 +337,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-8</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-9</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -2018,6 +2018,7 @@ function paintPreparedNow(){
   const t=document.createElement("b");t.textContent=m.title;row.appendChild(t);
   const tag=document.createElement("span");tag.className="gpsTag "+st.k;tag.textContent=st.t;row.appendChild(document.createElement("br"));row.appendChild(tag);
   if(isOpen){const o=document.createElement("span");o.className="gpsTag open";o.textContent="Open now";row.appendChild(o);}
+  {const q=document.createElement("span");q.className="gpsTag "+(m.live?"on":"off");q.textContent=m.live?"Extra-sharp copy saved":"Standard sharpness: prepare again for extra-sharp";row.appendChild(q);}
   row.appendChild(document.createElement("br"));
   const o=document.createElement("button");o.className="small";o.textContent="Open";o.onclick=()=>openPrepared(m,true);
   const d=document.createElement("button");d.className="small secondary";d.textContent="Remove";
