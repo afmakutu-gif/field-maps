@@ -83,6 +83,10 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #followHud .row{display:flex;gap:6px}
 #followHud button.on{background:var(--greenDark);color:#fff}
 #viewerBox.full #followHud{bottom:calc(54px + env(safe-area-inset-bottom))}
+#fixPos,#fixClr{position:absolute;right:8px;bottom:92px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
+#fixClr{bottom:128px}
+#viewerBox.full #fixPos{bottom:calc(92px + env(safe-area-inset-bottom))}
+#viewerBox.full #fixClr{bottom:calc(128px + env(safe-area-inset-bottom))}
 #northTag{pointer-events:auto!important;cursor:pointer;position:absolute;right:10px;bottom:46px;width:34px;height:40px;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:10px;font:700 11px/1 system-ui,Arial;color:#1d3a52;z-index:5}
 #northTag svg{transition:transform .2s}
 #viewerBox.full #northTag{bottom:calc(52px + env(safe-area-inset-bottom))}
@@ -280,6 +284,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <p id="geoStatus" class="status"></p>
   <div id="viewerBox">
    <div id="viewer"><div id="vpane"><canvas id="baseCanvas"></canvas><svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
+   <button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button>
    <div id="northTag" title="North"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3 7 17l5-3 5 3z" fill="#2563b8" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg><span>N</span></div>
    <div id="liveResult" class="chip" style="display:none">No map loaded</div>
    <div id="readBar"><div class="rdLeft"><span id="rdKind">DISTANCE</span><b id="rdVal">No map loaded</b><small id="rdSub"></small></div><div class="rdRight"><div class="seg2 u" id="rdUnits"></div><button type="button" id="rdSave">Save</button></div></div>
@@ -451,7 +456,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-18</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-19</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -1054,6 +1059,14 @@ let measureOn=false;
 function setMeasureOn(on){measureOn=on;$("measureBtn").classList.toggle("on",on);$("mBar").style.display=on?"flex":"none";$("viewerBox").classList.toggle("mOff",!on);}
 function handleTap(cx,cy){
  if(!src)return;
+ if(fixing&&gpsPos&&src.geo){
+  const m=localXY(cx,cy),w={x:view.x+m.x/view.zoom,y:view.y+m.y/view.zoom},tl=src.geo.toLL(w.x,w.y),raw=gpsPos.raw||gpsPos;
+  const dLat=tl.lat-raw.lat,dLon=tl.lon-raw.lon;
+  try{localStorage.setItem(fixKey(),JSON.stringify({dLat,dLon}));}catch(e){}
+  fixing=false;gpsFix(raw);
+  try{updateReadBar("Position fixed","Shifted "+Math.round(haversine(raw,tl))+" m. Applies to this map only. Reset fix to undo.");}catch(e){}
+  return;
+ }
  if(typeof routeTap==="function"&&routeTap(cx,cy))return;
  if(typeof spotTap==="function"&&spotTap(cx,cy))return;
  if(!measureOn)return;
@@ -1230,17 +1243,25 @@ function centerOnMe(){
  view.x=wp[0]-vsize().w/2/view.zoom;view.y=wp[1]-vsize().h/2/view.zoom;
  clampView();changed();
 }
+let fixing=false;
+const fixKey=()=>"pscFix|"+(src?src.name:"");
+function getFix(){try{return JSON.parse(localStorage.getItem(fixKey())||"null");}catch(e){return null;}}
+function fixUI(){const o=getFix(),on=!!(src&&src.geo&&gpsPos);$("fixPos").style.display=on?"inline-flex":"none";$("fixPos").textContent=fixing?"Tap your real spot…":(o?"⌖ Fix again":"⌖ Fix position");$("fixPos").classList.toggle("on",fixing);$("fixClr").style.display=on&&o?"inline-flex":"none";}
+$("fixPos").onclick=()=>{if(!gpsPos)return;fixing=!fixing;fixUI();try{updateReadBar(fixing?"Tap where you really are":"Position fix cancelled",fixing?"Tap your exact spot on the map (a gate, road corner). The blue dot will move there.":"");}catch(e){}};
+$("fixClr").onclick=()=>{try{localStorage.removeItem(fixKey());}catch(e){}if(gpsPos&&gpsPos.raw){gpsPos=Object.assign({},gpsPos.raw);}fixUI();scheduleDraw();try{updateReadBar("Position fix removed","");}catch(e){}};
+function applyFix(pt){const o=getFix();if(!o||pt.manual)return pt;const q=Object.assign({},pt);q.raw=pt;q.lat=pt.lat+o.dLat;q.lon=pt.lon+o.dLon;return q;}
 function gpsFix(pt){
- currentPosition=pt;gpsPos=pt;updateDashboard();paintPrepared();
+ pt=applyFix(pt);
+ currentPosition=pt;gpsPos=pt;updateDashboard();paintPrepared();fixUI();
  if(src&&src.geo){
   const w=src.geo.toWorld(pt.lat,pt.lon),inside=w[0]>=0&&w[1]>=0&&w[0]<=src.w&&w[1]<=src.h;
-  $("geoStatus").textContent=inside?`My position: ${pt.lat.toFixed(6)}, ${pt.lon.toFixed(6)} (±${Math.round(pt.acc)} m)`:"You are outside the area of this map.";
+  $("geoStatus").textContent=inside?`My position: ${pt.lat.toFixed(6)}, ${pt.lon.toFixed(6)} (±${Math.round(pt.acc)} m)${getFix()?" · fix applied":""}${src.geo.fitError>3?" · map fit ±"+Math.round(src.geo.fitError)+" m":""}${pt.acc>60?" · weak signal, move to open sky":""}`:"You are outside the area of this map.";
   if(followFirst){followFirst=false;if(inside)centerOnMe();}
  }
  scheduleDraw();
  try{if(typeof routeFix==="function")routeFix(pt);}catch(e){}
 }
-function stopLocate(){
+function stopLocate(){setTimeout(()=>{try{fixUI();}catch(e){}},0);
  if(locWatch!==null){navigator.geolocation.clearWatch(locWatch);locWatch=null;}
  gpsPos=null;followFirst=false;
  $("locateBtn").classList.remove("on");$("stopLoc").style.display="none";scheduleDraw();
