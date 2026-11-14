@@ -336,7 +336,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC MAPS · ARNOLD MAKUTU · v2026.11.14-4</footer>
+<footer>PSC MAPS · ARNOLD MAKUTU · v2026.11.14-5</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -2721,7 +2721,7 @@ async function noteCard(r){
  g.fillStyle="#5d7385";g.font="22px system-ui,Arial";g.fillText("Made with PSC Maps · Arnold Makutu",M,H-28);
  return {canvas:c,hadMap:!!shot};
 }
-async function exportNote(id,btn){
+async function exportNote(id,btn,withMedia){
  const st=$("libStatus");st.textContent="Preparing the export...";
  try{
   const r=(await allRecords()).find(x=>x.id===id);if(!r){st.textContent="Note not found.";return;}
@@ -2729,18 +2729,33 @@ async function exportNote(id,btn){
   const blob=await new Promise(res=>canvas.toBlob(res,"image/jpeg",0.9));
   const name=("note-"+(r.title||"untitled").replace(/[^\w\-]+/g,"_").slice(0,40)+"-"+nowLocalInput(new Date(r.created)).replace(/[:T]/g,"")+".jpg");
   const file=new File([blob],name,{type:"image/jpeg"});
+  const files=[file];let nMedia=0;
+  if(withMedia){
+   const base=name.replace(/\.jpg$/,"");
+   [...(r.videos||[]),...(r.audios||[])].forEach((m,i)=>{if(!m||!m.blob)return;
+    const ext=(m.name&&m.name.includes("."))?m.name.split(".").pop():((m.type||"").includes("webm")?"webm":(m.type||"").includes("mp4")?"mp4":(m.type||"").includes("ogg")?"ogg":"bin");
+    files.push(new File([m.blob],base+"-"+(i+1)+"."+ext,{type:m.type||m.blob.type||"application/octet-stream"}));nMedia++;});
+  }
   let msg="";
-  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:r.title||"Field note"});msg="Shared.";}catch(e){if(!(e&&e.name==="AbortError"))msg="";else{st.textContent="";return;}}}
+  if(navigator.canShare&&navigator.canShare({files})){try{await navigator.share({files,title:r.title||"Field note"});msg="Shared"+(nMedia?" with "+nMedia+" video/voice file(s).":".");}catch(e){if(e&&e.name==="AbortError"){st.textContent="";return;}}}
+  if(!msg&&nMedia&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:r.title||"Field note"});msg="Shared the picture only: your phone could not share the video/voice files together with it. Use Save below for them.";}catch(e){if(e&&e.name==="AbortError"){st.textContent="";return;}}}
   if(!msg){
-   try{const d=window.claude&&claude.use?await claude.use("downloads"):null;if(d){await d.save({filename:name,data:blob});msg="Saved.";}}catch(e){}
-   if(!msg){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();msg="Saved to your downloads.";}
+   const saveOne=async f=>{try{const d=window.claude&&claude.use?await claude.use("downloads"):null;if(d){await d.save({filename:f.name,data:f});return;}}catch(e){}
+    const a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();a.remove();await new Promise(r=>setTimeout(r,400));};
+   for(const f of files)await saveOne(f);
+   msg="Saved to your downloads"+(nMedia?" (picture plus "+nMedia+" video/voice file(s)).":".");
   }
   st.textContent=msg+(r.gps&&!hadMap?" No map picture: open a prepared map that covers this spot, then export again.":(!r.gps?" No GPS on this note, so no map picture. Attach your GPS position when saving a note.":""));
  }catch(e){st.textContent="Export failed: "+((e&&e.message)||e);}
 }
 $("noteLib").addEventListener("click",async e=>{
  const t=e.target;
- if(t.dataset&&t.dataset.lexp){exportNote(t.dataset.lexp,t);return;}
+ if(t.dataset&&t.dataset.lexp){
+  const r=(await allRecords()).find(x=>x.id===t.dataset.lexp);
+  const nm=r?((r.videos||[]).length+(r.audios||[]).length):0;
+  if(nm){const st=$("libStatus");st.innerHTML=`This note has ${nm} video/voice file(s). Include them in the export?<div class="row" style="margin-top:8px"><button class="small" id="expYes">Picture + video/voice</button><button class="small secondary" id="expNo">Picture only</button></div>`;
+   $("expYes").onclick=()=>exportNote(r.id,null,true);$("expNo").onclick=()=>exportNote(r.id,null,false);st.scrollIntoView({block:"nearest"});return;}
+  exportNote(t.dataset.lexp,t,false);return;}
  if(t.dataset&&t.dataset.ldel){if(typeof armBtn!=="function"||armBtn(t,"Tap again to delete")){await delRecord(t.dataset.ldel);libOpen.delete(t.dataset.ldel);renderNoteLib();renderRecords();updateDashboard();}return;}
  const it=t.closest&&t.closest("[data-lopen]");
  if(it){const id=it.dataset.lopen;if(libOpen.has(id))libOpen.delete(id);else libOpen.add(id);renderNoteLib();}
