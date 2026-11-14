@@ -1,4 +1,4 @@
-const VERSION="2026.11.14-14";
+const VERSION="2026.11.14-15";
 const CACHE="psc-field-maps-"+VERSION;
 const FILES=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>Promise.all(FILES.map(f=>c.add(new Request(f,{cache:"reload"}))))));});
