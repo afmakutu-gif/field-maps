@@ -46,6 +46,9 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #mapWrap{width:100%;overflow:auto;background:#dde4ec;border-radius:10px;max-height:62vh;border:1px solid var(--line)}
 #mapCanvas{display:block;touch-action:pan-x pan-y}
 #viewerBox{position:relative;--rh:58px;--mo:34px}
+#hereToast{position:absolute;left:8px;right:70px;top:calc(76px + var(--rh) + var(--mo));z-index:7;background:#e8f5ee;color:#14502f;border:1px solid #8cc7a6;border-radius:12px;padding:7px 10px;font-size:13px;font-weight:650;text-align:left;min-height:0;display:block;box-shadow:0 4px 14px rgba(37,99,184,.15)}
+#viewerBox.full #hereToast{top:calc(76px + var(--rh) + var(--mo) + env(safe-area-inset-top))}
+.gpsTag.on{font-weight:700}
 #spdChip{bottom:46px;left:8px;font-size:12px;padding:4px 10px;font-weight:600;color:var(--muted)}#spdChip b{font-size:20px;color:var(--ink);margin-right:2px}
 #viewerBox.full #spdChip{bottom:calc(46px + env(safe-area-inset-bottom))}
 #ptrBtn{position:absolute;right:8px;bottom:236px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
@@ -263,6 +266,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  <div class="card" id="prepBox">
   <h2>Prepared maps</h2>
   <p id="prepEmpty" class="muted">None yet. Add a PDF below and prepare it.</p>
+  <label class="muted" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="autoMap" style="width:auto;margin:0"> Open the map I am standing on automatically (needs GPS on)</label>
   <div id="prepList"></div>
  </div>
  <div class="card">
@@ -310,7 +314,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <p id="geoStatus" class="status"></p>
   <div id="viewerBox">
    <div id="viewer"><div id="vpane"><canvas id="baseCanvas"></canvas><svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
-   <div id="spdChip" class="chip" style="display:none"></div><button id="gmBtn" class="vbtn" style="display:none">⌖ GPS tools</button><button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button><button id="oriBtn" class="vbtn" style="display:none">⟲ Map flip: Normal</button><button id="ptrBtn" class="vbtn" style="display:none">Pointer</button>
+   <button id="hereToast" type="button" style="display:none"></button><div id="spdChip" class="chip" style="display:none"></div><button id="gmBtn" class="vbtn" style="display:none">⌖ GPS tools</button><button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button><button id="oriBtn" class="vbtn" style="display:none">⟲ Map flip: Normal</button><button id="ptrBtn" class="vbtn" style="display:none">Pointer</button>
    <div id="northTag" title="North"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3 7 17l5-3 5 3z" fill="#2563b8" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg><span>N</span></div>
    <div id="liveResult" class="chip" style="display:none">No map loaded</div>
    <div id="readBar"><div class="rdLeft"><span id="rdKind">DISTANCE</span><b id="rdVal">No map loaded</b><small id="rdSub"></small></div><div class="rdRight"><div class="seg2 u" id="rdUnits"></div><button type="button" id="rdSave">Save</button></div></div>
@@ -503,7 +507,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-22</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-23</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -1339,7 +1343,7 @@ function applyFix(pt){const o=getFix();if(!o||pt.manual)return pt;const q=Object
 function gpsFix(pt){
  speedUpdate(pt);
  pt=applyFix(pt);
- currentPosition=pt;gpsPos=pt;updateDashboard();paintPrepared();fixUI();speedChip();
+ currentPosition=pt;gpsPos=pt;updateDashboard();paintPrepared();fixUI();speedChip();try{autoSwitch(pt);}catch(e){}
  if(src&&src.geo){
   const w=src.geo.toWorld(pt.lat,pt.lon),inside=w[0]>=0&&w[1]>=0&&w[0]<=src.w&&w[1]<=src.h;
   $("geoStatus").textContent=inside?`My position: ${pt.lat.toFixed(6)}, ${pt.lon.toFixed(6)} (±${Math.round(pt.acc)} m)${getFix()?" · fix applied":""}${src.geo.fitError>3?" · map fit ±"+Math.round(src.geo.fitError)+" m":""}${pt.acc>60?" · weak signal, move to open sky":""}`:"You are outside the area of this map.";
@@ -2282,7 +2286,36 @@ function gpsState(m){
  const g=geoOfMeta(m);if(!g)return {k:"none",t:"No georeference"};
  const pos=gpsPos;if(!pos)return {k:"off",t:"GPS off"};
  const w=g.toWorld(pos.lat,pos.lon);
- return (w[0]>=0&&w[1]>=0&&w[0]<=m.vp.width&&w[1]<=m.vp.height)?{k:"on",t:"GPS active"}:{k:"out",t:"Inactive: you are outside this map"};
+ return (w[0]>=0&&w[1]>=0&&w[0]<=m.vp.width&&w[1]<=m.vp.height)?{k:"on",t:"You are here (GPS active)"}:{k:"out",t:"Inactive: you are outside this map"};
+}
+let autoMap=true;try{autoMap=localStorage.getItem("pscAutoMap")!=="0";}catch(e){}
+$("autoMap").checked=autoMap;$("autoMap").onchange=()=>{autoMap=$("autoMap").checked;try{localStorage.setItem("pscAutoMap",autoMap?"1":"0");}catch(e){}if(gpsPos)autoSwitch(gpsPos,true);};
+let autoAt=0,autoLeft={},toastT=0,toastTarget=null;
+function hereToast(txt,target,ms){const b=$("hereToast");b.textContent=txt;b.style.display="block";toastTarget=target||null;b.style.cursor=target?"pointer":"default";clearTimeout(toastT);if(ms)toastT=setTimeout(()=>{b.style.display="none";},ms);}
+$("hereToast").onclick=()=>{const t=toastTarget;$("hereToast").style.display="none";if(t){autoLeft[tileCtx&&tileCtx.mapKey]=Date.now();openPrepared(t,false);}};
+function mapCovers(m,pos){const g=geoOfMeta(m);if(!g)return false;const w=g.toWorld(pos.lat,pos.lon);return w[0]>=0&&w[1]>=0&&w[0]<=m.vp.width&&w[1]<=m.vp.height;}
+function appBusy(){
+ if(typeof measurePoints!=="undefined"&&measurePoints.length)return true;
+ return ["routeBox","spotBox","pinBox","followHud"].some(id=>{const e=$(id);return e&&getComputedStyle(e).display!=="none";});
+}
+function autoSwitch(pos,force){
+ if(!pos||pos.manual||!preparedList.length)return;
+ const now=Date.now();if(!force&&now-autoAt<4000)return;autoAt=now;
+ const cur=tileCtx&&src?preparedList.find(m=>m.mapKey===tileCtx.mapKey):null;
+ if(!cur&&src&&src.geo){const w=src.geo.toWorld(pos.lat,pos.lon);if(w[0]>=0&&w[1]>=0&&w[0]<=src.w&&w[1]<=src.h)return;}
+ if(cur&&mapCovers(cur,pos)){if($("hereToast").style.display!=="none"&&!toastTarget)$("hereToast").style.display="none";return;}
+ const cand=preparedList.filter(m=>(!cur||m.mapKey!==cur.mapKey)&&mapCovers(m,pos)&&!(autoLeft[m.mapKey]&&now-autoLeft[m.mapKey]<90000));
+ if(!cand.length)return;
+ const area=m=>{const g=geoOfMeta(m);return m.vp.width*m.vp.height*g.mpu*g.mpu;};
+ cand.sort((a,b)=>area(a)-area(b));const t=cand[0];
+ if(autoMap&&!appBusy()){
+  if(cur)autoLeft[cur.mapKey]=now;
+  const tab=document.querySelector(".panel.active"),onMaps=tab&&tab.id==="maps";
+  openPrepared(t,onMaps);
+  hereToast("Switched to \u201C"+t.title+"\u201D because you are on it.",null,6000);
+ }else{
+  hereToast("You are on \u201C"+t.title+"\u201D. Tap to open it.",t,0);
+ }
 }
 let paintQueued=false;
 function paintPrepared(){if(paintQueued)return;paintQueued=true;setTimeout(()=>{paintQueued=false;paintPreparedNow();},300);}
