@@ -224,25 +224,29 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 <main>
 
 <section id="home" class="panel active">
- <div class="card">
+ <div class="card" id="dashCard">
   <h2>Field dashboard</h2>
-  <p class="dashboard-copy">PDF maps, distance and area, GPS tracks, photographs and notes stay on this device.</p>
-  <div class="metric-grid">
-   <div class="metric-card"><span class="metric-label">Map</span><span class="metric-value" id="dashMap">None yet</span></div>
-   <div class="metric-card"><span class="metric-label">Scale</span><span class="metric-value" id="dashScale">Not set</span></div>
-   <div class="metric-card"><span class="metric-label">GPS</span><span class="metric-value" id="dashGps">Not started</span></div>
-   <div class="metric-card"><span class="metric-label">Records</span><span class="metric-value" id="dashRecords">0</span></div>
+  <div class="hero">
+   <div class="heroIc" data-ic="map"></div>
+   <div class="heroTx"><span class="metric-label">Current map</span><span class="heroVal" id="dashMap">None yet</span></div>
   </div>
-  <p class="muted">Storage: local browser storage. Keep a backup of your field records.</p>
-  <p><button class="secondary" id="guideBtn2" type="button">Open the user guide</button></p>
+  <div class="stat3">
+   <div class="stat"><span class="sIc" data-ic="ruler"></span><span class="metric-label">Scale</span><span class="metric-value" id="dashScale">Not set</span></div>
+   <div class="stat"><span class="sIc" data-ic="cross"></span><span class="metric-label">GPS</span><span class="metric-value" id="dashGps">Not started</span></div>
+   <div class="stat"><span class="sIc" data-ic="folder"></span><span class="metric-label">Records</span><span class="metric-value" id="dashRecords">0</span></div>
+  </div>
+  <div class="secLbl">Quick actions</div>
   <div class="dashboard-actions">
-   <button data-go="maps">Open maps</button>
-   <button class="secondary" data-go="measure">Measure</button>
-   <button class="secondary" data-go="gps">GPS</button>
-   <button class="secondary" data-go="notes">New note</button>
-   <button class="secondary" id="shareApp">Share app</button>
+   <button data-go="maps" class="qa green" type="button"><span class="qi" data-ic="map"></span><span class="qt">Open maps</span><span class="qs">Prepared &amp; PDF maps</span></button>
+   <button data-go="measure" class="qa" type="button"><span class="qi" data-ic="ruler"></span><span class="qt">Measure</span><span class="qs">Distance &amp; area</span></button>
+   <button data-go="gps" class="qa" type="button"><span class="qi" data-ic="cross"></span><span class="qt">GPS</span><span class="qs">Position &amp; tracks</span></button>
+   <button data-go="notes" class="qa" type="button"><span class="qi" data-ic="note"></span><span class="qt">New note</span><span class="qs">Photos, voice, video</span></button>
+   <button data-go="records" class="qa" type="button"><span class="qi" data-ic="folder"></span><span class="qt">Records</span><span class="qs">Saved &amp; backups</span></button>
+   <button class="qa" id="shareApp" type="button"><span class="qi" data-ic="share"></span><span class="qt">Share app</span><span class="qs">Send to a colleague</span></button>
   </div>
   <p class="muted" id="shareMsg" role="status"></p>
+  <button class="secondary guideRow" id="guideBtn2" type="button"><span data-ic="help"></span>Open the user guide</button>
+  <div class="privacy"><span data-ic="lock"></span><span>Everything stays on this phone. Back up regularly from Records.</span></div>
  </div>
  <div class="card">
   <details class="fold"><summary>How to measure</summary>
@@ -252,8 +256,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
    <li>Tap points to measure a distance, or trace a boundary to get the area in hectares.</li>
    <li>Save the measurement to keep it with your field records.</li>
   </ol></details>
-  <div class="notice">Records stay on this phone. Back up regularly from Records.</div>
- </div>
+</div>
 <div class="card">
   <details class="fold"><summary>Diagnostics</summary>
    <p class="muted">Checks this phone and the app. Send a screenshot of the result if something fails.</p>
@@ -266,17 +269,15 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 <section id="maps" class="panel">
  <div class="card" id="prepBox">
   <h2>Prepared maps</h2>
-  <p id="prepEmpty" class="muted">None yet. Add a PDF below and prepare it.</p>
-  <label class="muted" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="autoMap" style="width:auto;margin:0"> Open the map I am standing on automatically (needs GPS on)</label>
+  <div id="prepEmpty" class="emptyBox"><span data-ic="map"></span><b>No prepared maps yet</b><span>Add a PDF below, then prepare it once. It then opens fast and works offline.</span></div>
   <div id="prepList"></div>
+  <label class="opt"><span class="oi" data-ic="cross"></span><span class="ot"><b>Auto-open the map I am on</b><small>Switches maps by GPS (needs Me on)</small></span><input type="checkbox" id="autoMap"><i class="sw"></i></label>
  </div>
  <div class="card">
   <h2>Original PDFs</h2>
-  <button type="button" id="choosePdf">ADD PDF MAPS (pick one or several)</button>
+  <button type="button" id="choosePdf" class="addBig">Add PDF maps</button>
+  <p class="muted" style="margin:6px 2px 10px">Pick one or several. GeoPDF maps give automatic GPS, distance and area. Works offline.</p>
   <input id="pdfFile" type="file" multiple accept=".pdf,application/pdf,application/octet-stream">
-  <label class="muted" style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" id="autoDrop" style="width:auto;margin:0"> Remove the PDF from this list after it is prepared</label>
-  <label class="muted" style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" id="liveOn" style="width:auto;margin:0"> Extra-sharp lines and text when zooming (keeps a copy of the PDF in the app; uses more memory)</label>
-  <label class="muted" style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" id="awakeOn" style="width:auto;margin:0"> Keep the screen on while the map is open</label>
   <p id="pdfInfo" class="status" role="status">No PDF selected.</p>
   <p id="pdfDiagnostics" class="muted"></p>
   <div id="tileBox" class="notice" style="display:none">
@@ -298,11 +299,14 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   </div>
   <div id="pdfMsg" class="notice" style="display:none"></div>
   <button id="pdfToMeasure" class="secondary" style="display:none">Measure this page</button>
-  <p class="muted">Works offline. GeoPDF maps give automatic GPS, distance and area.</p>
+  <div class="secLbl">Options</div>
+  <label class="opt"><span class="oi" data-ic="archive"></span><span class="ot"><b>Tidy up after preparing</b><small>Remove the PDF from this list once prepared</small></span><input type="checkbox" id="autoDrop"><i class="sw"></i></label>
+  <label class="opt"><span class="oi" data-ic="star"></span><span class="ot"><b>Extra-sharp when zooming</b><small>Keeps a copy of the PDF; uses more memory</small></span><input type="checkbox" id="liveOn"><i class="sw"></i></label>
+  <label class="opt"><span class="oi" data-ic="sliders"></span><span class="ot"><b>Keep screen on</b><small>While a map is open</small></span><input type="checkbox" id="awakeOn"><i class="sw"></i></label>
  </div>
  <div class="card">
   <h2>Map image</h2>
-  <label class="file-label" for="imageFile">Choose JPG / PNG map</label>
+  <label class="file-label" for="imageFile"><span data-ic="image"></span>Choose JPG / PNG map</label>
   <input id="imageFile" type="file" accept="image/*">
   <p id="imageInfo" class="status">No measurement image loaded.</p>
  </div>
@@ -510,7 +514,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-25</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-26</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -573,7 +577,7 @@ $("nav").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.go)));
 
 async function updateDashboard(){
- $("dashMap").textContent=mapName?(mapName.length>18?mapName.slice(0,16)+"…":mapName):"None yet";
+ $("dashMap").textContent=mapName||"None yet";
  $("dashScale").textContent=src?(src.geo?"Georeferenced":(manualScale?"Calibrated":"Not set")):"Not set";
  $("dashGps").textContent=watchId!==null?`Tracking · ${route.length} pts`:(currentPosition?"Fix acquired":"Not started");
  try{$("dashRecords").textContent=(await allRecords()).length;}catch(e){}
@@ -2327,17 +2331,22 @@ function paintPreparedNow(){
  const el=$("prepList");el.textContent="";$("prepEmpty").hidden=!!preparedList.length;
  const rank=m=>({on:0,out:1,off:2,none:3}[gpsState(m).k]);
  preparedList.slice().sort((a,b)=>rank(a)-rank(b)||(b.created||0)-(a.created||0)).forEach(m=>{
-  const row=document.createElement("div");row.className="record";
+  const row=document.createElement("div");row.className="mapRow "+gpsState(m).k;
   const st=gpsState(m),isOpen=tileCtx&&tileCtx.mapKey===m.mapKey&&src;
-  const t=document.createElement("b");t.textContent=m.title;row.appendChild(t);
-  const tag=document.createElement("span");tag.className="gpsTag "+st.k;tag.textContent=st.t;row.appendChild(document.createElement("br"));row.appendChild(tag);
-  if(isOpen){const o=document.createElement("span");o.className="gpsTag open";o.textContent="Open now";row.appendChild(o);}
-  {const q=document.createElement("span");q.className="gpsTag "+(m.live?"on":"off");q.textContent=m.live?"Extra-sharp copy saved":"Standard sharpness: prepare again for extra-sharp";row.appendChild(q);}
-  row.appendChild(document.createElement("br"));
+  const top=document.createElement("div");top.className="mrTop";
+  const ic=document.createElement("span");ic.className="mrIc";ic.innerHTML=window.ico?window.ico(st.k==="on"?"cross":"map"):"";top.appendChild(ic);
+  const t=document.createElement("b");t.textContent=m.title;top.appendChild(t);row.appendChild(top);
+  const tags=document.createElement("div");tags.className="mrTags";
+  const tag=document.createElement("span");tag.className="gpsTag "+st.k;tag.textContent=st.t;tags.appendChild(tag);
+  if(isOpen){const o=document.createElement("span");o.className="gpsTag open";o.textContent="Open now";tags.appendChild(o);}
+  {const q=document.createElement("span");q.className="gpsTag "+(m.live?"on":"off");q.textContent=m.live?"Extra-sharp":"Standard";q.title=m.live?"Extra-sharp copy saved":"Prepare again for extra-sharp";tags.appendChild(q);}
+  row.appendChild(tags);
+  const acts=document.createElement("div");acts.className="mrActs";
   const o=document.createElement("button");o.className="small";o.textContent="Open";o.onclick=()=>openPrepared(m,true);
   const d=document.createElement("button");d.className="small secondary";d.textContent="Remove";
   d.onclick=async()=>{if(!armBtn(d,"Tap again to remove"))return;try{await idbDelPrefix(m.mapKey);}catch(e){}try{if(localStorage.getItem("pscLastMap")===m.mapKey)localStorage.removeItem("pscLastMap");}catch(e){}renderPrepared();};
-  row.appendChild(o);row.appendChild(d);el.appendChild(row);
+  if(window.ico){o.insertAdjacentHTML("afterbegin",window.ico("map"));d.insertAdjacentHTML("afterbegin",window.ico("x"));}
+  acts.appendChild(o);acts.appendChild(d);row.appendChild(acts);el.appendChild(row);
  });
 }
 async function renderPrepared(){preparedList=await listPrepared();paintPreparedNow();}
@@ -3884,7 +3893,7 @@ nav button.active svg{stroke-width:2.2}
 .gTopics button.on{background:var(--greenDark);color:#fff;border-color:var(--greenDark)}.gTopics button.on .ic{color:#fff}
 #guide summary{display:flex;align-items:center;gap:10px}#guide summary::after{margin-left:auto}
 #guide summary .ct{width:30px;height:30px}
-.cbody label:not(.muted):not(.file-label){display:block;font-size:13px;font-weight:650;color:var(--muted);margin:6px 0 0}
+.cbody label:not(.muted):not(.file-label):not(.opt){display:block;font-size:13px;font-weight:650;color:var(--muted);margin:6px 0 0}
 .cbody input:not([type=checkbox]),.cbody textarea,.cbody select{padding:10px 12px;margin:4px 0 9px}
 .cbody textarea{min-height:84px}
 .cbody .row>button,.cbody .row>.file-label{min-width:0;padding:10px 8px;font-size:13px}
@@ -3894,6 +3903,59 @@ details.fold>summary::after{content:"";margin-left:auto;width:9px;height:9px;bor
 details.fold[open]>summary::after{transform:rotate(-135deg)}
 details.fold[open]>summary{margin-bottom:8px}
 .how-list{margin:6px 0;padding-left:20px}.how-list li{margin:4px 0;font-size:14px}
+
+/* ---- v26 premium dashboard + maps ---- */
+.hero{display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:linear-gradient(135deg,#1f7a4d 0%,#2563b0 100%);color:#fff;margin:6px 0 12px;box-shadow:0 6px 16px rgba(37,99,176,.22)}
+.hero .heroIc{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none}
+.hero .heroIc svg{width:26px;height:26px;stroke:#fff}
+.hero .heroTx{min-width:0;flex:1}.hero .metric-label{color:rgba(255,255,255,.78);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 3px}
+.hero .heroVal{display:block;font-size:19px;font-weight:700;line-height:1.2;overflow-wrap:anywhere}
+.stat3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 6px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;box-shadow:0 1px 2px rgba(20,60,40,.05)}
+.stat .sIc{width:30px;height:30px;border-radius:10px;background:#e7f4ec;color:#1f7a4d;display:grid;place-items:center;margin-bottom:5px}
+.stat:nth-child(2) .sIc{background:#e6effa;color:#2563b0}.stat:nth-child(3) .sIc{background:#eef1f5;color:#4b5b70}
+.stat .sIc svg{width:17px;height:17px}
+.stat .metric-label{font-size:11.5px;margin:0}.stat .metric-value{font-size:14px;font-weight:650;line-height:1.25}
+.secLbl{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 2px 8px}
+.dashboard-actions{margin-top:0;gap:9px}
+.dashboard-actions .qa{display:grid;grid-template-columns:40px 1fr;grid-template-rows:auto auto;column-gap:10px;row-gap:0;align-items:center;text-align:left;min-height:64px;padding:10px 12px;background:#fff;color:#16324f;border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 3px rgba(20,60,40,.07);font-weight:600}
+.dashboard-actions .qa .qi{grid-row:1/3;width:40px;height:40px;border-radius:12px;background:#e6effa;color:#2563b0;display:grid;place-items:center}
+.dashboard-actions .qa .qi svg{width:21px;height:21px}
+.dashboard-actions .qa .qt{font-size:14.5px;line-height:1.2;align-self:end}
+.dashboard-actions .qa .qs{font-size:11.5px;color:var(--muted);font-weight:500;line-height:1.2;align-self:start}
+.dashboard-actions .qa.green{background:linear-gradient(135deg,#2a9561,#1f7a4d);color:#fff;border-color:transparent}
+.dashboard-actions .qa.green .qi{background:rgba(255,255,255,.2);color:#fff}.dashboard-actions .qa.green .qs{color:rgba(255,255,255,.82)}
+.guideRow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:10px 0 0}
+.guideRow svg{width:18px;height:18px}
+.privacy{display:flex;gap:9px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:12px;background:#eef6f1;color:#2b5a43;font-size:12.5px}
+.privacy svg{width:16px;height:16px;flex:none}
+.emptyBox{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:18px 14px;border:1.5px dashed #b9c9d9;border-radius:16px;background:#f7fafc;color:var(--muted);font-size:13px;margin:6px 0 10px}
+.emptyBox[hidden]{display:none}
+.emptyBox svg{width:30px;height:30px;color:#2563b0;margin-bottom:4px}.emptyBox b{color:#16324f;font-size:15px}
+.mapRow{background:#fff;border:1px solid var(--line);border-left:4px solid #b9c9d9;border-radius:16px;padding:12px;margin:8px 0;box-shadow:0 1px 3px rgba(20,60,40,.07)}
+.mapRow.on{border-left-color:#1f9d62;background:linear-gradient(90deg,#eefaf3,#fff 60%)}.mapRow.out{border-left-color:#d9a441}
+.mrTop{display:flex;align-items:center;gap:10px}.mrTop b{font-size:15px;line-height:1.25;overflow-wrap:anywhere;color:#16324f}
+.mrIc{width:36px;height:36px;border-radius:11px;background:#e6effa;color:#2563b0;display:grid;place-items:center;flex:none}
+.mapRow.on .mrIc{background:#d8f1e3;color:#1f7a4d}.mrIc svg{width:19px;height:19px}
+.mrTags{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0 10px}
+.mrActs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mrActs button{margin:0;display:flex;align-items:center;justify-content:center;gap:6px}
+.mrActs svg{width:16px;height:16px}
+.addBig{display:flex;align-items:center;justify-content:center;gap:10px;min-height:58px;font-size:16px;border-radius:16px;background:linear-gradient(135deg,#2a9561,#1f7a4d);box-shadow:0 5px 14px rgba(31,122,77,.25)}
+.addBig svg{width:22px;height:22px}
+.opt{display:flex;align-items:center;gap:12px;padding:11px 12px;margin:7px 0;border:1px solid var(--line);border-radius:14px;background:#fff;position:relative;cursor:pointer}
+.opt .oi{width:34px;height:34px;border-radius:10px;background:#e6effa;color:#2563b0;display:grid;place-items:center;flex:none}.opt .oi svg{width:18px;height:18px}
+.opt .ot{flex:1;min-width:0}.opt .ot b{display:block;font-size:14px;color:#16324f}.opt .ot small{display:block;font-size:12px;color:var(--muted);line-height:1.3;margin-top:1px}
+.opt input{position:absolute;opacity:0;width:100%;height:100%;left:0;top:0;margin:0;cursor:pointer}
+.opt .sw{display:block;width:44px;height:26px;border-radius:13px;background:#c5d0dc;position:relative;flex:none;transition:background .2s}
+.opt .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.opt input:checked~.sw{background:#1f9d62}.opt input:checked~.sw::after{transform:translateX(18px)}
+.file-label{display:flex;align-items:center;justify-content:center;gap:9px}.file-label svg{width:20px;height:20px}
+
+.card label.opt{display:flex;flex-direction:row;align-items:center;gap:12px;margin:7px 0;color:inherit;font-size:inherit}
+.opt input{position:absolute!important;opacity:0!important;width:100%!important;height:100%!important;left:0;top:0;margin:0!important;padding:0!important}
+.addBig{width:100%}
+.stat .metric-value{font-size:13px;overflow-wrap:normal;word-break:normal;hyphens:none}
+.mrActs button.secondary{background:#fff;color:#2563b0;border:1.5px solid #c9d8ea;box-shadow:none}
 </style>
 <script>
 /* ---------- UI layer: icons, collapsible cards, topic navigation ---------- */
@@ -3952,8 +4014,10 @@ details.fold[open]>summary{margin-bottom:8px}
  mk("gmBtn","sliders","GPS tools");mk("fullBtn","max","Full",t=>/exit/i.test(t)?"min":"max");
  [["distanceMode","ruler","Length"],["areaMode","area","Area"],["undoPoint","undo","Undo"],["clearPoints","x","Clear"]].forEach(([i,ic,l])=>{const b=$$(i);if(b){b.innerHTML=ico(ic)+'<span>'+l+'</span>';}});
  /* buttons elsewhere: icon in front of the label */
- [["guideBtn","help"],["guideBtn2","help"],["shareApp","share"],["getPosition","cross"],["choosePdf","file"],["camBtn","camera"],["vidBtn","video"],["galBtn","image"],["saveNote","save"],["saveMeasurement","save"],["saveRoute","save"],["shareGpx","share"],["shareKml","share"],["refreshRecords","refresh"],["backupRecords","download"],["exportGpx","download"],["exportKml","download"],["manualSet","pin"],["diagRun","gear"],["startTrack","play"],["stopTrack","stop"],["attachGps","cross"]].forEach(([i,ic])=>{const b=$$(i);if(b&&!b.querySelector("svg"))b.insertAdjacentHTML("afterbegin",ico(ic));});
- document.querySelectorAll(".dashboard-actions [data-go]").forEach(b=>{const m={maps:"map",measure:"ruler",gps:"cross",notes:"note"}[b.dataset.go];if(m&&!b.querySelector("svg"))b.insertAdjacentHTML("afterbegin",ico(m));});
+ [["guideBtn","help"],["getPosition","cross"],["choosePdf","file"],["camBtn","camera"],["vidBtn","video"],["galBtn","image"],["saveNote","save"],["saveMeasurement","save"],["saveRoute","save"],["shareGpx","share"],["shareKml","share"],["refreshRecords","refresh"],["backupRecords","download"],["exportGpx","download"],["exportKml","download"],["manualSet","pin"],["diagRun","gear"],["startTrack","play"],["stopTrack","stop"],["attachGps","cross"]].forEach(([i,ic])=>{const b=$$(i);if(b&&!b.querySelector("svg"))b.insertAdjacentHTML("afterbegin",ico(ic));});
+
+ document.querySelectorAll("[data-ic]").forEach(e=>{if(!e.firstChild)e.innerHTML=ico(e.dataset.ic);});
+ document.querySelectorAll(".addBig").forEach(b=>{if(!b.querySelector("svg"))b.insertAdjacentHTML("afterbegin",ico("file"));});
  /* window titles on the map */
  [["#routeBox .rbTop b","route"],["#spotBox .rbTop b","alert"],["#pinBox .rbTop b","pin"]].forEach(([q,ic])=>{const b=document.querySelector(q);if(b)b.insertAdjacentHTML("afterbegin",'<span class="ct">'+ico(ic)+'</span>');});
  document.querySelectorAll("h3").forEach(h=>{if(h.querySelector("svg"))return;const t=h.textContent.toLowerCase();const m=t.includes("calibrate")?"ruler":t.includes("photo")?"camera":t.includes("export")?"download":"list";h.insertAdjacentHTML("afterbegin",ico(m));});
@@ -4023,7 +4087,6 @@ details.fold[open]>summary{margin-bottom:8px}
  }
  /* nav tabs and header guide button: make sure icons stay crisp */
  document.querySelectorAll("details.fold>summary").forEach(sm=>{if(sm.querySelector(".ct"))return;const t=sm.textContent.toLowerCase();sm.innerHTML='<span class="ct">'+ico(t.includes("diag")?"gear":"list")+'</span><span>'+sm.textContent+'</span>';});
- try{$$("guideBtn2").parentElement.style.display="none";}catch(e){}
  [["micBtn","mic"],["restoreFile","download"]].forEach(([i,ic])=>{const b=$$(i);if(b&&i==="micBtn"&&!b.querySelector("svg"))b.insertAdjacentHTML("afterbegin",ico(ic));});
  const rl=document.querySelector('label[for="restoreFile"]');if(rl&&!rl.querySelector("svg"))rl.insertAdjacentHTML("afterbegin",ico("refresh"));
  const hb=$$("guideBtn");if(hb&&!hb.querySelector("svg"))hb.insertAdjacentHTML("afterbegin",ico("help"));
