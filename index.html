@@ -85,6 +85,8 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #viewerBox.full #followHud{bottom:calc(54px + env(safe-area-inset-bottom))}
 #fixPos,#fixClr{position:absolute;right:8px;bottom:92px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
 #fixClr{bottom:128px}
+#oriBtn{position:absolute;right:8px;bottom:164px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
+#viewerBox.full #oriBtn{bottom:calc(164px + env(safe-area-inset-bottom))}
 #viewerBox.full #fixPos{bottom:calc(92px + env(safe-area-inset-bottom))}
 #viewerBox.full #fixClr{bottom:calc(128px + env(safe-area-inset-bottom))}
 #northTag{pointer-events:auto!important;cursor:pointer;position:absolute;right:10px;bottom:46px;width:34px;height:40px;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:10px;font:700 11px/1 system-ui,Arial;color:#1d3a52;z-index:5}
@@ -284,7 +286,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <p id="geoStatus" class="status"></p>
   <div id="viewerBox">
    <div id="viewer"><div id="vpane"><canvas id="baseCanvas"></canvas><svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
-   <button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button>
+   <button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button><button id="oriBtn" class="vbtn" style="display:none">⟲ Map flip: Normal</button>
    <div id="northTag" title="North"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3 7 17l5-3 5 3z" fill="#2563b8" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg><span>N</span></div>
    <div id="liveResult" class="chip" style="display:none">No map loaded</div>
    <div id="readBar"><div class="rdLeft"><span id="rdKind">DISTANCE</span><b id="rdVal">No map loaded</b><small id="rdSub"></small></div><div class="rdRight"><div class="seg2 u" id="rdUnits"></div><button type="button" id="rdSave">Save</button></div></div>
@@ -456,7 +458,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-19</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.14-20</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -797,9 +799,15 @@ function buildGeo(g,vp1){
   [(H[1][1]*H[2][2]-H[1][2]*H[2][1])/d,(H[0][2]*H[2][1]-H[0][1]*H[2][2])/d,(H[0][1]*H[1][2]-H[0][2]*H[1][1])/d],
   [(H[1][2]*H[2][0]-H[1][0]*H[2][2])/d,(H[0][0]*H[2][2]-H[0][2]*H[2][0])/d,(H[0][2]*H[1][0]-H[0][0]*H[1][2])/d],
   [(H[1][0]*H[2][1]-H[1][1]*H[2][0])/d,(H[0][1]*H[2][0]-H[0][0]*H[2][1])/d,(H[0][0]*H[1][1]-H[0][1]*H[1][0])/d]];
+ const oriKey="pscOri|"+g.gpts.map(v=>v.toFixed(5)).join(",");
+ let ori=0;try{ori=+localStorage.getItem(oriKey)||0;}catch(e){}
+ const FW=vp1.width,FH=vp1.height;
+ const fl=(x,y)=>ori===1?[FW-x,FH-y]:ori===2?[x,FH-y]:ori===3?[FW-x,y]:[x,y];
  const geo={
-  toWorld(lat,lon){const u=((lon-lon0)*c)/su,v=(lat-lat0)/su,w=H[2][0]*u+H[2][1]*v+1;return [(H[0][0]*u+H[0][1]*v+H[0][2])/w*sx+xm,(H[1][0]*u+H[1][1]*v+H[1][2])/w*sx+ym];},
-  toLL(x,y){const X=(x-xm)/sx,Y=(y-ym)/sx,w=inv[2][0]*X+inv[2][1]*Y+inv[2][2];const u=(inv[0][0]*X+inv[0][1]*Y+inv[0][2])/w*su,v=(inv[1][0]*X+inv[1][1]*Y+inv[1][2])/w*su;return {lat:v+lat0,lon:u/c+lon0};}
+  get orient(){return ori;},
+  setOrient(k){ori=k;try{localStorage.setItem(oriKey,String(k));}catch(e){}},
+  toWorld(lat,lon){const u=((lon-lon0)*c)/su,v=(lat-lat0)/su,w=H[2][0]*u+H[2][1]*v+1;return fl((H[0][0]*u+H[0][1]*v+H[0][2])/w*sx+xm,(H[1][0]*u+H[1][1]*v+H[1][2])/w*sx+ym);},
+  toLL(x0,y0){const q=fl(x0,y0),x=q[0],y=q[1];const X=(x-xm)/sx,Y=(y-ym)/sx,w=inv[2][0]*X+inv[2][1]*Y+inv[2][2];const u=(inv[0][0]*X+inv[0][1]*Y+inv[0][2])/w*su,v=(inv[1][0]*X+inv[1][1]*Y+inv[1][2])/w*su;return {lat:v+lat0,lon:u/c+lon0};}
  };
  let err=0;pts.forEach(p=>{const q=geo.toWorld(p.lat,p.lon);err=Math.max(err,Math.hypot(q[0]-p.wx,q[1]-p.wy));});
  const cx=vp1.width/2,cy=vp1.height/2,a=geo.toLL(cx,cy),b=geo.toLL(cx+100,cy);
@@ -1246,7 +1254,9 @@ function centerOnMe(){
 let fixing=false;
 const fixKey=()=>"pscFix|"+(src?src.name:"");
 function getFix(){try{return JSON.parse(localStorage.getItem(fixKey())||"null");}catch(e){return null;}}
-function fixUI(){const o=getFix(),on=!!(src&&src.geo&&gpsPos);$("fixPos").style.display=on?"inline-flex":"none";$("fixPos").textContent=fixing?"Tap your real spot…":(o?"⌖ Fix again":"⌖ Fix position");$("fixPos").classList.toggle("on",fixing);$("fixClr").style.display=on&&o?"inline-flex":"none";}
+function fixUI(){const o=getFix(),on=!!(src&&src.geo&&gpsPos);$("fixPos").style.display=on?"inline-flex":"none";$("fixPos").textContent=fixing?"Tap your real spot…":(o?"⌖ Fix again":"⌖ Fix position");$("fixPos").classList.toggle("on",fixing);$("fixClr").style.display=on&&o?"inline-flex":"none";const ob=$("oriBtn");ob.style.display=on?"inline-flex":"none";if(on)ob.textContent="⟲ Map flip: "+ORI_N[src.geo.orient||0];ob.classList.toggle("on",!!(on&&src.geo.orient));}
+const ORI_N=["Normal","Rotated 180°","Up/down","Left/right"];
+$("oriBtn").onclick=()=>{if(!src||!src.geo)return;src.geo.setOrient(((src.geo.orient||0)+1)%4);try{localStorage.removeItem(fixKey());}catch(e){}if(gpsPos)gpsPos=gpsPos.raw||gpsPos;fixUI();if(gpsPos)centerOnMe();scheduleDraw();try{updateReadBar("Map orientation: "+ORI_N[src.geo.orient],"Drive a little. If the dot still moves the wrong way, tap again.");}catch(e){}};
 $("fixPos").onclick=()=>{if(!gpsPos)return;fixing=!fixing;fixUI();try{updateReadBar(fixing?"Tap where you really are":"Position fix cancelled",fixing?"Tap your exact spot on the map (a gate, road corner). The blue dot will move there.":"");}catch(e){}};
 $("fixClr").onclick=()=>{try{localStorage.removeItem(fixKey());}catch(e){}if(gpsPos&&gpsPos.raw){gpsPos=Object.assign({},gpsPos.raw);}fixUI();scheduleDraw();try{updateReadBar("Position fix removed","");}catch(e){}};
 function applyFix(pt){const o=getFix();if(!o||pt.manual)return pt;const q=Object.assign({},pt);q.raw=pt;q.lat=pt.lat+o.dLat;q.lon=pt.lon+o.dLon;return q;}
