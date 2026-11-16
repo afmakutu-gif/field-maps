@@ -278,6 +278,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <button type="button" id="choosePdf" class="addBig">Add PDF maps</button>
   <p class="muted" style="margin:6px 2px 10px">Pick one or several. GeoPDF maps give automatic GPS, distance and area. Works offline.</p>
   <input id="pdfFile" type="file" multiple accept=".pdf,application/pdf,application/octet-stream">
+  <div class="secLbl">Current file</div>
   <p id="pdfInfo" class="status" role="status">No PDF selected.</p>
   <p id="pdfDiagnostics" class="muted"></p>
   <div id="tileBox" class="notice" style="display:none">
@@ -290,7 +291,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
    <button class="small secondary" id="tileToggle" style="display:none"></button>
    <button class="small secondary" id="tileDel" style="display:none">Remove tiles</button>
   </div>
-  <button class="small" id="prepAll" hidden>Prepare all maps</button>
+  <div class="libHead"><div class="secLbl" id="libLbl">Your PDF files</div><button class="small" id="prepAll" hidden>Prepare all</button></div>
   <div id="pdfLibrary"></div>
   <div class="pager hidden-pager" id="pdfPager" style="display:none">
    <button class="small secondary" id="pgPrev">‹ Prev</button>
@@ -514,7 +515,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.16-27</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.16-28</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -1426,7 +1427,7 @@ const fmtMB=b=>(b/1048576).toFixed(b>=104857600?0:1)+" MB";
 function renderLibrary(){
  const el=$("pdfLibrary");$("prepAll").hidden=pdfFiles.length<2;
  if(!pdfFiles.length){el.innerHTML="";return;}
- el.innerHTML=pdfFiles.map((p,i)=>`<div class="record"><b>${esc(p.name)}</b> <small>${fmtMB(p.size)}${p.pages?` · ${p.pages} page(s)`:""}${p.geoText?` · ${p.geoText}`:""}</small><br><button class="small ${i===activeDocIdx?"":"secondary"}" data-open="${i}">${i===activeDocIdx?"Open (current)":"Open"}</button><button class="small danger" data-rm="${i}">Remove</button></div>`).join("");
+ el.innerHTML=pdfFiles.map((p,i)=>`<div class="pdfRow${i===activeDocIdx?" cur":""}"><div class="mrTop"><span class="mrIc">${window.ico?window.ico("file"):""}</span><div class="prTx"><b>${esc(p.name)}</b><div class="prMeta"><span class="pchip">${fmtMB(p.size)}</span>${p.pages?`<span class="pchip">${p.pages} page${p.pages>1?"s":""}</span>`:""}${p.geoText?`<span class="pchip geo">${esc(p.geoText)}</span>`:""}${i===activeDocIdx?`<span class="pchip cur">Open now</span>`:""}</div></div></div><div class="mrActs"><button class="small ${i===activeDocIdx?"secondary":""}" data-open="${i}">${i===activeDocIdx?"Reload":"Open"}</button><button class="small secondary" data-rm="${i}">Remove</button></div></div>`).join("");
 }
 /* ===== streaming image decoders (row strips, never the whole picture in memory) ===== */
 class ByteFeed{
@@ -2474,7 +2475,7 @@ $("pdfFile").addEventListener("change",async e=>{
  if(firstNew>=0)await openPdfDoc(firstNew);
 });
 $("pdfLibrary").addEventListener("click",async e=>{
- const d=e.target.dataset||{};
+ const bt=e.target.closest&&e.target.closest("[data-open],[data-rm]");const d=(bt&&bt.dataset)||{};
  if(d.open!==undefined){await openPdfDoc(+d.open);return;}
  if(d.rm!==undefined){
   const i=+d.rm;
@@ -3977,6 +3978,32 @@ details.fold[open]>summary{margin-bottom:8px}
 .gVidBox button{position:absolute;inset:0;margin:0;width:100%;height:100%;background:rgba(18,48,31,.28);border:0;border-radius:0;box-shadow:none;display:grid;place-items:center;padding:0}
 .gVidBox button span{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.95);display:block;position:relative;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .gVidBox button span::after{content:"";position:absolute;left:25px;top:19px;border-left:22px solid #1f7a4d;border-top:13px solid transparent;border-bottom:13px solid transparent}
+
+/* ---- v28 original PDFs tidy ---- */
+#pdfInfo{display:flex;align-items:center;gap:10px;margin:0 0 8px;padding:11px 13px;border-radius:14px;background:#eef6f1;border:1px solid #d3e8dc;color:#24533c;font-size:13.5px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+#pdfDiagnostics{margin:0 2px 8px;font-size:12.5px}#pdfDiagnostics:empty{display:none}
+#tileBox.notice{background:#fff;border:1px solid var(--line);border-left:4px solid #1f9d62;border-radius:16px;padding:14px;margin:8px 0 4px;box-shadow:0 1px 3px rgba(20,60,40,.07);display:block}
+#tileBox #tileTitle{display:block;font-size:15px;color:#16324f}
+#tileBox #tileInfo{font-size:13px;color:var(--muted);margin:3px 0 10px!important;line-height:1.4}
+#tileBox button.small{margin:4px 8px 0 0;background:#fff;color:#2563b0;border:1.5px solid #c9d8ea;box-shadow:none}
+#tileBox #tileMake{background:linear-gradient(135deg,#2a9561,#1f7a4d);color:#fff;border:0;box-shadow:0 3px 10px rgba(31,122,77,.22)}
+.libHead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}.libHead .secLbl{margin-bottom:8px}
+.libHead #prepAll{margin:0 0 6px;padding:8px 14px;border-radius:999px;background:#fff;color:#1f7a4d;border:1.5px solid #bfe0cd;box-shadow:none;font-size:13px}
+.pdfRow{background:#fff;border:1px solid var(--line);border-left:4px solid #b9c9d9;border-radius:16px;padding:12px;margin:8px 0;box-shadow:0 1px 3px rgba(20,60,40,.07)}
+.pdfRow.cur{border-left-color:#2563b0;background:linear-gradient(90deg,#eef4fc,#fff 60%)}
+.pdfRow .mrTop{align-items:flex-start}.pdfRow .prTx{min-width:0;flex:1}.pdfRow .prTx b{display:block;font-size:14.5px;line-height:1.3;overflow-wrap:anywhere;color:#16324f}
+.prMeta{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.pchip{display:inline-block;padding:3px 10px;border-radius:999px;background:#eef1f5;color:#4b5b70;font-size:12px;font-weight:600}
+.pchip.geo{background:#e0f3e8;color:#1f7a4d}.pchip.cur{background:#dce8f8;color:#2563b0}
+.pdfRow .mrActs{margin-top:11px}
+.pdfRow .mrActs button{display:flex;align-items:center;justify-content:center}
+.pdfRow .mrActs button.secondary{background:#fff;color:#2563b0;border:1.5px solid #c9d8ea;box-shadow:none}
+
+#pdfPager{display:flex!important;align-items:center;justify-content:space-between;gap:10px;margin:10px 0;padding:8px 10px;border:1px solid var(--line);border-radius:14px;background:#fff}
+#pdfPager[style*="none"]{display:none!important}
+#pdfPager button{margin:0;background:#fff;color:#2563b0;border:1.5px solid #c9d8ea;box-shadow:none}
+#pdfPager #pgLabel{font-size:13px;font-weight:650;color:#16324f}
+#pdfToMeasure{width:100%;margin:0 0 4px;min-height:48px;border-radius:14px}
 </style>
 <script>
 /* ---------- UI layer: icons, collapsible cards, topic navigation ---------- */
