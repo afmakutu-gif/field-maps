@@ -333,6 +333,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <button class="vbtn" id="measureBtn">Measure</button>
     <button class="vbtn" id="pinBtn">Pin</button>
     <button class="vbtn" id="spotBtn">Spots</button>
+    <button class="vbtn" id="trkBtn">Track</button>
    </div>
    <div id="vbar2">
     <button class="vbtn" id="routeBtn">Route</button>
@@ -352,6 +353,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <div class="r2"><div id="dtColors" class="cols"></div><div class="sizes" id="dtSizes"><button data-s="0" aria-label="Thin"><i style="width:5px;height:5px"></i></button><button data-s="1" class="on" aria-label="Medium"><i style="width:9px;height:9px"></i></button><button data-s="2" aria-label="Thick"><i style="width:14px;height:14px"></i></button></div></div>
     <div class="r3"><button id="dtUndo">Undo</button><button id="dtClear">Clear all</button><button id="dtDone" class="go">Done</button></div>
    </div>
+   <div id="trkBar" style="display:none"><div class="tbHead"><span class="tbT">Record a track</span><span id="tbLive"></span><button type="button" id="tbClose" aria-label="Close">×</button></div><div class="seg2" id="tbMode"><button class="on" data-m="distance" type="button">Distance</button><button data-m="area" type="button">Area</button></div><div class="tbRead"><b id="tbVal">0 m</b><span id="tbSub"></span></div><div class="tbRow"><button type="button" id="tbStart">Start</button><button type="button" id="tbStop" class="danger" disabled>Stop</button></div><div class="tbSave" id="tbSave" style="display:none"><input id="tbName" placeholder="Name (optional)"><button type="button" id="tbSaveBtn">Save</button></div><div id="tbMsg"></div></div>
    <div id="followHud"><div class="fhTop"><div class="fhTx"><div id="fhMain"></div><div id="fhSub"></div></div><div id="fhSpd"><b>--</b><small>km/h</small></div></div><div class="row"><button class="small" id="fhLock" style="display:none">Re-centre</button><button class="small secondary" id="fhVoice">Voice on</button><button class="small secondary" id="fhHead">Heading up</button><button class="small danger" id="fhStop">Stop</button></div></div>
    <div id="pinBox">
     <div class="rbTop"><b>Pins and notes</b><span><button class="small secondary" id="pnClose">Close</button></span></div>
@@ -516,7 +518,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.17-29</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.17-30</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -3735,9 +3737,9 @@ renderNoteLib();
    <li>On the Notes tab you can write notes with photos, video and voice, and export a note as a card with a map picture of the area.</li>
   </ul></details>
   <details><summary>9. Record a track</summary><ul>
-   <li>Open the <b>GPS</b> tab. Choose <b>Distance</b> or <b>Area</b>.</li>
+   <li>On the map, tap <b>Track</b> in the menu. Choose <b>Distance</b> or <b>Area</b>, then <b>Start</b>. You can record without leaving the map. (The <b>GPS</b> tab has the same controls plus sharing.)</li>
    <li>For an area, walk or drive around the edge. The area and perimeter update as you go.</li>
-   <li>Press <b>Start tracking</b>, then <b>Stop tracking</b> at the end. Name it, check the date and time, and tap <b>Save</b>.</li>
+   <li>Press <b>Start</b>, then <b>Stop</b> at the end. Name it, check the date and time, and tap <b>Save</b>.</li>
    <li><b>Share GPX</b> or <b>Share KML</b> sends the file through your phone's share menu. Saved tracks also have Rename / date and Share in Records.</li>
    <li>Keep the screen on while tracking.</li>
   </ul></details>
@@ -4019,6 +4021,23 @@ details.fold[open]>summary{margin-bottom:8px}
 
 #mapPill{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 70px);padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.92);border:1px solid var(--line);color:#1f5a3d;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:12;pointer-events:none;box-shadow:0 2px 6px rgba(20,60,40,.12)}
 #viewerBox.full #mapPill{bottom:calc(8px + env(safe-area-inset-bottom))}
+
+#trkBtn.rec{background:#d64545!important;color:#fff!important;animation:recp 1.4s infinite}
+@keyframes recp{0%,100%{box-shadow:0 0 0 0 rgba(214,69,69,.5)}50%{box-shadow:0 0 0 6px rgba(214,69,69,0)}}
+#trkBtn.open:not(.rec){background:var(--green)!important;color:#fff!important}
+#trkBar{position:absolute;left:8px;right:8px;bottom:54px;z-index:31;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:0 8px 24px rgba(37,99,184,.2)}
+#viewerBox.full #trkBar{bottom:calc(54px + env(safe-area-inset-bottom))}
+#trkBar .tbHead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+#trkBar .tbT{display:flex;align-items:center;gap:8px;font-weight:700;color:#16324f;font-size:14px}#trkBar .tbT svg{width:18px;height:18px;color:#d64545}
+#tbLive{font-size:12px;font-weight:700;color:#d64545;margin-left:auto}
+#tbClose{margin:0 0 0 auto;width:30px;height:30px;padding:0;border-radius:50%;background:#eef1f5;color:#4b5b70;border:0;box-shadow:none;font-size:20px;line-height:1}
+#tbLive:not(:empty)+#tbClose{margin-left:8px}
+#trkBar .seg2{margin:0 0 8px}
+#trkBar .tbRead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 8px}#tbVal{font-size:26px;color:#2563b0;letter-spacing:-.01em}#tbSub{font-size:12.5px;color:var(--muted)}
+#trkBar .tbRow{display:grid;grid-template-columns:1fr 1fr;gap:8px}#trkBar .tbRow button{margin:0;min-height:44px;border-radius:12px}
+#trkBar .tbSave{display:flex;gap:8px;margin-top:8px}#trkBar .tbSave input{flex:1;min-width:0;margin:0;height:44px}#trkBar .tbSave button{margin:0;min-height:44px;border-radius:12px}
+#tbMsg{font-size:12.5px;color:var(--muted);margin-top:6px}#tbMsg:empty{display:none}
+#trkBar #tbStop:not(:disabled){background:#d64545;color:#fff;border:0}
 </style>
 <script>
 /* ---------- UI layer: icons, collapsible cards, topic navigation ---------- */
@@ -4064,6 +4083,7 @@ details.fold[open]>summary{margin-bottom:8px}
   home:'<path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9"/>',
   star:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'
  };
+ P.rec='<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4" fill="currentColor"/>';
  const ico=(n,c)=>`<svg class="ic ${c||""}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||P.grid}</svg>`;
  window.ico=ico;
  const $$=id=>document.getElementById(id);
@@ -4072,10 +4092,41 @@ details.fold[open]>summary{margin-bottom:8px}
   const b=$$(id);if(!b)return;b.innerHTML=ico(icon)+'<span class="lb"></span>';const lb=b.querySelector(".lb");lb.textContent=label;
   Object.defineProperty(b,"textContent",{configurable:true,get(){return lb.textContent;},set(v){const t=String(v).replace(/^[^A-Za-z]+/,"");lb.textContent=t;if(flip){const n=flip(t);b.querySelector("svg").outerHTML=ico(n);}}});
  }
- mk("locateBtn","cross","Me");mk("findBtn","search","Find");mk("measureBtn","ruler","Measure");mk("pinBtn","pin","Pin");mk("spotBtn","alert","Spots");
+ mk("locateBtn","cross","Me");mk("findBtn","search","Find");mk("measureBtn","ruler","Measure");mk("pinBtn","pin","Pin");mk("spotBtn","alert","Spots");mk("trkBtn","rec","Track");
  mk("routeBtn","route","Route");mk("drawBtn","pencil","Draw");mk("rotBtn","rotate","Rotate");mk("lockBtn","lock","Lock",t=>/locked/i.test(t)?"lock":"lock");
  mk("gmBtn","sliders","GPS tools");mk("fullBtn","max","Full",t=>/exit/i.test(t)?"min":"max");
  [["distanceMode","ruler","Length"],["areaMode","area","Area"],["undoPoint","undo","Undo"],["clearPoints","x","Clear"]].forEach(([i,ic,l])=>{const b=$$(i);if(b){b.innerHTML=ico(ic)+'<span>'+l+'</span>';}});
+
+ /* Track from the map menu: same recorder as the GPS tab, controls on the map */
+ (()=>{const tb=$$("trkBar"),tbtn=$$("trkBtn");if(!tb||!tbtn)return;
+  const g=id=>document.getElementById(id);
+  const running=()=>!g("stopTrack").disabled;
+  const pts=()=>{const m=/(\d+)/.exec(g("routeCount").textContent||"");return m?+m[1]:0;};
+  function place(){const fh=g("followHud");const on=fh&&fh.style.display==="block";tb.style.bottom=on?(fh.offsetHeight+60)+"px":"";}
+  function sync(){const r=running();
+   g("tbVal").textContent=g("routeDistance").textContent;
+   g("tbSub").textContent=[g("routeSub").textContent,g("routeCount").textContent].filter(Boolean).join(" · ");
+   g("tbStart").disabled=r;g("tbStop").disabled=!r;
+   const mode=document.querySelector("#trkMode button.on");const m=mode?mode.dataset.m:"distance";
+   document.querySelectorAll("#tbMode button").forEach(b=>{b.classList.toggle("on",b.dataset.m===m);});
+   g("tbMode").classList.toggle("lock",r);
+   tbtn.classList.toggle("rec",r);tbtn.textContent=r?"Rec":"Track";
+   g("tbLive").textContent=r?"● Recording":"";
+   g("tbSave").style.display=(!r&&pts()>=(m==="area"?3:2))?"flex":"none";
+   g("tbMsg").textContent=g("routeStatus").textContent||"";place();}
+  const mo=new MutationObserver(sync);
+  ["routeDistance","routeSub","routeCount","routeStatus"].forEach(id=>mo.observe(g(id),{childList:true,characterData:true,subtree:true}));
+  mo.observe(g("stopTrack"),{attributes:true,attributeFilter:["disabled"]});
+  mo.observe(g("trkMode"),{attributes:true,subtree:true,attributeFilter:["class"]});
+  mo.observe(g("followHud"),{attributes:true,attributeFilter:["style"]});
+  tbtn.onclick=()=>{const open=tb.style.display!=="none";tb.style.display=open?"none":"block";tbtn.classList.toggle("open",!open);sync();};
+  g("tbClose").onclick=()=>{tb.style.display="none";tbtn.classList.remove("open");};
+  document.querySelectorAll("#tbMode button").forEach(b=>b.onclick=()=>{const t=document.querySelector('#trkMode button[data-m="'+b.dataset.m+'"]');if(t)t.click();sync();});
+  g("tbStart").onclick=()=>{g("startTrack").click();setTimeout(sync,200);};
+  g("tbStop").onclick=()=>{g("stopTrack").click();setTimeout(sync,200);};
+  g("tbName").oninput=()=>{g("routeLabel").value=g("tbName").value;};
+  g("tbSaveBtn").onclick=()=>{g("routeLabel").value=g("tbName").value;g("saveRoute").click();setTimeout(sync,500);};
+  tb.querySelector(".tbT").insertAdjacentHTML("afterbegin",ico("rec"));sync();})();
  /* buttons elsewhere: icon in front of the label */
  [["guideBtn","help"],["getPosition","cross"],["choosePdf","file"],["camBtn","camera"],["vidBtn","video"],["galBtn","image"],["saveNote","save"],["saveMeasurement","save"],["saveRoute","save"],["shareGpx","share"],["shareKml","share"],["refreshRecords","refresh"],["backupRecords","download"],["exportGpx","download"],["exportKml","download"],["manualSet","pin"],["diagRun","gear"],["startTrack","play"],["stopTrack","stop"],["attachGps","cross"]].forEach(([i,ic])=>{const b=$$(i);if(b&&!b.querySelector("svg"))b.insertAdjacentHTML("afterbegin",ico(ic));});
 
