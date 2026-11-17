@@ -316,12 +316,13 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 <section id="measure" class="panel">
  <div class="card" id="measureCard">
   <h2>Map measurement</h2>
+  <div id="mapTitle" class="none"><span class="mtIc" data-ic="map"></span><div class="mtTx"><small>Current map</small><b>No map open</b></div></div>
   <p class="muted" id="measureHint">Add a PDF map or image in Maps first. Then drag to move, pinch to zoom and tap to place points.</p>
   <p id="geoStatus" class="status"></p>
   <div id="viewerBox">
    <div id="viewer"><div id="vpane"><canvas id="baseCanvas"></canvas><svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
    <button id="hereToast" type="button" style="display:none"></button><div id="spdChip" class="chip" style="display:none"></div><button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button><button id="oriBtn" class="vbtn" style="display:none">⟲ Map flip: Normal</button><button id="ptrBtn" class="vbtn" style="display:none">Pointer</button>
-   <div id="northTag" title="North"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3 7 17l5-3 5 3z" fill="#2563b8" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg><span>N</span></div>
+   <div id="mapPill" style="display:none"></div><div id="northTag" title="North"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3 7 17l5-3 5 3z" fill="#2563b8" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg><span>N</span></div>
    <div id="liveResult" class="chip" style="display:none">No map loaded</div>
    <div id="readBar"><div class="rdLeft"><span id="rdKind">DISTANCE</span><b id="rdVal">No map loaded</b><small id="rdSub"></small></div><div class="rdRight"><div class="seg2 u" id="rdUnits"></div><button type="button" id="rdSave">Save</button></div></div>
    <div id="renderChip" class="chip" style="display:none">Drawing...</div>
@@ -351,7 +352,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <div class="r2"><div id="dtColors" class="cols"></div><div class="sizes" id="dtSizes"><button data-s="0" aria-label="Thin"><i style="width:5px;height:5px"></i></button><button data-s="1" class="on" aria-label="Medium"><i style="width:9px;height:9px"></i></button><button data-s="2" aria-label="Thick"><i style="width:14px;height:14px"></i></button></div></div>
     <div class="r3"><button id="dtUndo">Undo</button><button id="dtClear">Clear all</button><button id="dtDone" class="go">Done</button></div>
    </div>
-   <div id="followHud"><div id="fhMain"></div><div id="fhSub"></div><div class="row"><button class="small" id="fhLock" style="display:none">Re-centre</button><button class="small secondary" id="fhVoice">Voice on</button><button class="small secondary" id="fhHead">Heading up</button><button class="small danger" id="fhStop">Stop</button></div></div>
+   <div id="followHud"><div class="fhTop"><div class="fhTx"><div id="fhMain"></div><div id="fhSub"></div></div><div id="fhSpd"><b>--</b><small>km/h</small></div></div><div class="row"><button class="small" id="fhLock" style="display:none">Re-centre</button><button class="small secondary" id="fhVoice">Voice on</button><button class="small secondary" id="fhHead">Heading up</button><button class="small danger" id="fhStop">Stop</button></div></div>
    <div id="pinBox">
     <div class="rbTop"><b>Pins and notes</b><span><button class="small secondary" id="pnClose">Close</button></span></div>
     <div id="pnHome">
@@ -515,7 +516,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.16-28</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.17-29</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -579,6 +580,7 @@ document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=
 
 async function updateDashboard(){
  $("dashMap").textContent=mapName||"None yet";
+ {const mp=$("mapPill");if(mp){mp.textContent=mapName||"";mp.style.display=mapName?"block":"none";}const mt=$("mapTitle");if(mt){mt.querySelector("b").textContent=mapName||"No map open";mt.classList.toggle("none",!mapName);}}
  $("dashScale").textContent=src?(src.geo?"Georeferenced":(manualScale?"Calibrated":"Not set")):"Not set";
  $("dashGps").textContent=watchId!==null?`Tracking · ${route.length} pts`:(currentPosition?"Fix acquired":"Not started");
  try{$("dashRecords").textContent=(await allRecords()).length;}catch(e){}
@@ -1338,7 +1340,7 @@ function speedUpdate(pt){
  spdKmh=spdKmh==null?v:spdKmh*0.6+v*0.4;if(spdKmh>spdMax)spdMax=spdKmh;
  pt.kmh=spdKmh;
 }
-function speedChip(){const c=$("spdChip");if(!c)return;if(gpsPos&&!gpsPos.manual){c.style.display="block";c.innerHTML=`<b>${spdKmh==null?"--":Math.round(spdKmh)}</b> km/h`;}else c.style.display="none";}
+function speedChip(){const c=$("spdChip");if(!c)return;const v=spdKmh==null?"--":Math.round(spdKmh);const fh=$("followHud"),inNav=!!(fh&&fh.style.display==="block");const fs=$("fhSpd");if(fs){const bb=fs.querySelector("b");if(bb)bb.textContent=v;}if(gpsPos&&!gpsPos.manual&&!inNav){c.style.display="block";c.innerHTML=`<b>${v}</b> km/h`;}else c.style.display="none";}
 let fixing=false,gmOpen=false,meLock=true;
 $("gmBtn").onclick=()=>{if(!gpsPos){hereToast("Turn on \u25CE Me first to use GPS tools.",null,3500);return;}gmOpen=!gmOpen;fixUI();};
 const fixKey=()=>"pscFix|"+(src?src.name:"");
@@ -3299,7 +3301,7 @@ renderNoteLib();
   follow={pts:pts.map(p=>({lat:p.lat,lon:p.lon})),title,id:rec&&rec.id,lock:true,headingUp:true,target:null};
   if(rec&&rec.id){shown.add(rec.id);bump(rec);}
   const cum=[0];for(let i=1;i<follow.pts.length;i++)cum.push(cum[i-1]+haversine(follow.pts[i-1],follow.pts[i]));follow.cum=cum;follow.total=cum[cum.length-1];
-  openBox(false);$$("followHud").style.display="block";hud("Finding your position...","");
+  openBox(false);$$("followHud").style.display="block";try{speedChip();}catch(e){}hud("Finding your position...","");
   if(locWatch===null){$("locateBtn").click();}
   if(gpsPos)routeFix(gpsPos);
   focusOn(follow.pts);
@@ -3358,7 +3360,7 @@ renderNoteLib();
   else if(!hz)v.hz="";
   if(!v.half&&along>f.total/2&&f.total>1500){v.half=true;say("Halfway. "+sayDist(left)+" to go.");}
  };
- function stopFollow(){try{if(canSpeak())speechSynthesis.cancel();}catch(e){}follow=null;$$("followHud").style.display="none";scheduleDraw();}
+ function stopFollow(){try{if(canSpeak())speechSynthesis.cancel();}catch(e){}follow=null;$$("followHud").style.display="none";try{speedChip();}catch(e){}scheduleDraw();}
  $$("fhStop").onclick=stopFollow;
  $$("fhLock").onclick=()=>{if(!follow)return;follow.lock=true;$$("fhLock").style.display="none";if(gpsPos)centerOnMe();};
  $$("fhHead").onclick=()=>{if(!follow)return;follow.headingUp=!follow.headingUp;$$("fhHead").classList.toggle("on",follow.headingUp);if(!follow.headingUp)setAngle(0);};
@@ -4004,6 +4006,19 @@ details.fold[open]>summary{margin-bottom:8px}
 #pdfPager button{margin:0;background:#fff;color:#2563b0;border:1.5px solid #c9d8ea;box-shadow:none}
 #pdfPager #pgLabel{font-size:13px;font-weight:650;color:#16324f}
 #pdfToMeasure{width:100%;margin:0 0 4px;min-height:48px;border-radius:14px}
+
+#mapTitle{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:9px 12px;border-radius:14px;background:linear-gradient(135deg,#1f7a4d,#2563b0);color:#fff;box-shadow:0 4px 12px rgba(37,99,176,.2)}
+#mapTitle.none{background:#eef1f5;color:#4b5b70;box-shadow:none}
+#mapTitle .mtIc{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.2);display:grid;place-items:center;flex:none}
+#mapTitle.none .mtIc{background:#dfe6ee}#mapTitle .mtIc svg{width:18px;height:18px}
+#mapTitle .mtTx{min-width:0;flex:1}#mapTitle small{display:block;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;opacity:.8;line-height:1.1}
+#mapTitle b{display:block;font-size:15px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#followHud .fhTop{display:flex;align-items:flex-start;gap:10px}#followHud .fhTx{flex:1;min-width:0}
+#fhSpd{flex:none;min-width:74px;text-align:center;padding:6px 10px;border-radius:14px;background:linear-gradient(135deg,#1f7a4d,#2563b0);color:#fff;line-height:1}
+#fhSpd b{display:block;font-size:30px;font-weight:800;letter-spacing:-.02em}#fhSpd small{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;margin-top:2px;opacity:.9}
+
+#mapPill{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 70px);padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.92);border:1px solid var(--line);color:#1f5a3d;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:12;pointer-events:none;box-shadow:0 2px 6px rgba(20,60,40,.12)}
+#viewerBox.full #mapPill{bottom:calc(8px + env(safe-area-inset-bottom))}
 </style>
 <script>
 /* ---------- UI layer: icons, collapsible cards, topic navigation ---------- */
