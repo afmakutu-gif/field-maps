@@ -518,7 +518,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.17-30</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.17-31</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -1037,19 +1037,22 @@ function realSize(){
  const iw=window.innerWidth||document.documentElement.clientWidth||360,ih=window.innerHeight||document.documentElement.clientHeight||640;
  return {w:Math.round(full?Math.max(viewer.clientWidth,iw):(viewer.clientWidth||r.width)),h:Math.round(full?Math.max(viewer.clientHeight,ih):(viewer.clientHeight||r.height))};
 }
+let autoFit=true;
 function fitView(){
+ autoFit=true;
  const z=vsize(),vw=z.w||360,vh=z.h||480;
  const fz=Math.min(vw/src.w,vh/src.h);view.zoom=fz;minZoom=fz*0.7;maxZoom=Math.max(12,fz*40);
  view.x=(src.w-vw/fz)/2;view.y=(src.h-vh/fz)/2;rendered=null;
 }
 function zoomAbout(f,cx,cy){
+ autoFit=false;
  const old=view.zoom,nz=clamp(old*f,minZoom,maxZoom);
  const wx=view.x+cx/old,wy=view.y+cy/old;
  view.zoom=nz;view.x=wx-cx/nz;view.y=wy-cy/nz;clampView();changed();
 }
 function onViewerResize(){
  if(!vsize().w||!vsize().h)return;applyRot();
- if(src&&needFit){fitView();needFit=false;}
+ if(src&&needFit){fitView();needFit=false;}else if(src&&autoFit){fitView();}
  scheduleRender(60);scheduleDraw();applyBaseTransform();
 }
 if(window.ResizeObserver)new ResizeObserver(onViewerResize).observe(viewer);
@@ -1057,7 +1060,7 @@ window.addEventListener("orientationchange",()=>setTimeout(onViewerResize,300));
 
 function setSource(s){
  try{if(src&&src.dispose)src.dispose();}catch(e){}
- src=s;mapName=s.name;inkLoad(s.name);hit=null;measurePoints=[];manualScale=null;lastTap=null;needFit=true;rendered=null;
+ src=s;mapName=s.name;inkLoad(s.name);hit=null;measurePoints=[];manualScale=null;lastTap=null;needFit=true;autoFit=true;rendered=null;
  $("geoStatus").textContent=s.geo?`Georeferenced map: distances, areas and your GPS position are automatic.${s.geo.fitError>2?" (approximate, up to "+s.geo.fitError.toFixed(1)+" m)":""}`:"This map has no georeference, so calibrate the scale below. Your GPS position can't be shown on it.";
  $("calibBox").style.display=s.geo?"none":"block";
  $("scaleInfo").textContent="Map scale not calibrated.";
@@ -1070,6 +1073,8 @@ function setSource(s){
 const ptrs=new Map();let pinch=null,tapCand=null;
 function localXY(cx,cy){const r=viewer.getBoundingClientRect();const d=vdelta(cx-r.left-r.width/2,cy-r.top-r.height/2),v=vsize();return {x:d[0]+v.w/2,y:d[1]+v.h/2};}
 viewer.addEventListener("contextmenu",e=>e.preventDefault());
+viewer.addEventListener("pointerdown",()=>{autoFit=false;},true);
+viewer.addEventListener("wheel",()=>{autoFit=false;},{capture:true,passive:true});
 viewer.addEventListener("pointerdown",e=>{
  if(!src)return;
  try{viewer.setPointerCapture(e.pointerId);}catch(x){}
@@ -1250,7 +1255,7 @@ async function runFind(){
 }
 function goToText(it){
  const sz=vsize(),fz=Math.min(sz.w/src.w,sz.h/src.h);
- let z=sz.w*0.1/Math.max(it[3],6);z=clamp(Math.max(z,fz*2.2),minZoom,maxZoom);
+ let z=sz.w*0.1/Math.max(it[3],6);z=clamp(Math.min(Math.max(z,fz*2.5),fz*6),minZoom,maxZoom);autoFit=false;
  view.zoom=z;view.x=it[1]-sz.w/2/z;view.y=it[2]-sz.h/2/z;clampView();changed();
  hit={x:it[1],y:it[2],r:Math.max(it[3]*0.8,10)};clearTimeout(hitTimer);hitTimer=setTimeout(()=>{hit=null;scheduleDraw();},12000);
  $("findBox").style.display="none";try{$("findInput").blur();}catch(e){}
@@ -1310,8 +1315,14 @@ $("fullBtn").onclick=()=>setFull(!$("viewerBox").classList.contains("full"));
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&$("viewerBox").classList.contains("full"))setFull(false);});
 
 /* --- my position on the map --- */
+function slightZoom(targetM){
+ if(!src||!src.geo)return;
+ const v=vsize(),mpu=src.geo.mpu||1,fz=Math.min(v.w/src.w,v.h/src.h);
+ const tz=clamp(v.w*mpu/targetM,fz*2.5,fz*10);
+ if(view.zoom<tz*0.98){view.zoom=Math.min(tz,maxZoom);autoFit=false;}
+}
 function centerOnMe(){
- if(!src||!src.geo||!gpsPos)return;
+ if(!src||!src.geo||!gpsPos)return;autoFit=false;
  const wp=src.geo.toWorld(gpsPos.lat,gpsPos.lon);
  view.x=wp[0]-vsize().w/2/view.zoom;view.y=wp[1]-vsize().h/2/view.zoom;
  clampView();changed();
@@ -1360,7 +1371,7 @@ function gpsFix(pt){
  if(src&&src.geo){
   const w=src.geo.toWorld(pt.lat,pt.lon),inside=w[0]>=0&&w[1]>=0&&w[0]<=src.w&&w[1]<=src.h;
   $("geoStatus").textContent=inside?`My position: ${pt.lat.toFixed(6)}, ${pt.lon.toFixed(6)} (±${Math.round(pt.acc)} m)${getFix()?" · fix applied":""}${src.geo.fitError>3?" · map fit ±"+Math.round(src.geo.fitError)+" m":""}${pt.acc>60?" · weak signal, move to open sky":""}`:"You are outside the area of this map.";
-  if(followFirst){followFirst=false;if(inside)centerOnMe();}
+  if(followFirst){followFirst=false;if(inside){slightZoom(700);centerOnMe();}}
   else if(meLock&&inside&&!fixing)centerOnMe();
  }
  scheduleDraw();
@@ -1380,7 +1391,7 @@ $("locateBtn").onclick=()=>{
   followFirst=true;meLock=true;$("locateBtn").classList.add("on");$("stopLoc").style.display="inline-flex";
   $("geoStatus").textContent="Finding your position...";
   locWatch=navigator.geolocation.watchPosition(p=>gpsFix(toPos(p)),err=>{if(manualPos){$("geoStatus").textContent="Phone location is blocked here. Showing the position you typed.";gpsFix(manualPos);centerOnMe();}else{$("geoStatus").textContent=gpsError(err)+" You can type your position on the GPS tab.";stopLocate();}},{enableHighAccuracy:true,maximumAge:2000,timeout:30000});
- }else{meLock=true;lockUI();centerOnMe();}
+ }else{meLock=true;lockUI();slightZoom(700);centerOnMe();}
 };
 $("stopLoc").onclick=stopLocate;
 
@@ -2943,7 +2954,7 @@ try{if(sessionStorage.getItem("pscLiveRender")==="1"){sessionStorage.removeItem(
  await renderPrepared();
  let key=null;try{key=localStorage.getItem("pscLastMap");}catch(e){}
  if(!key)return;
- try{const r=await idbGetMany("meta",[key]);if(r[0]&&r[0].done&&r[0].vp)openPrepared(r[0],true);}catch(e){}
+ try{const r=await idbGetMany("meta",[key]);if(r[0]&&r[0].done&&r[0].vp){openPrepared(r[0],true);[250,800,1800].forEach(ms=>setTimeout(()=>{if(src&&autoFit&&vsize().w){fitView();scheduleRender(0);scheduleDraw();}},ms));}}catch(e){}
 })();
 </script>
 <script>
