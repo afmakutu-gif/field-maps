@@ -558,7 +558,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-36</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-37</footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4800,7 +4800,10 @@ function pzPt(e){const r=$("pzCv").getBoundingClientRect();return {x:(e.clientX-
   if(f.k==="map"){if(!PZ.r.mapShot)return;peEdit(PZ.r.mapShot,{onDone:async d=>{PZ.r.mapShot=d;PZ.A.map=await loadImg(d);pzPaint();}});return;}
   const i=f.i;peEdit(PZ.r.photos[i],{onDone:async d=>{PZ.r.photos[i]=d;PZ.A.photos[i]=await loadImg(d);pzPaint();}});};
  $("pzArea").onclick=()=>{const g=PZ.r.gps;if(!g||!mapPicker(g,async m=>{PZ.r.mapShot=m.img;PZ.r.mapName=m.map;PZ.A.map=await loadImg(m.img);pzPaint();}))$("pzMsg").textContent="To choose a new map area, open a prepared map that covers this note's GPS position first.";};
- $("pzAdd").onchange=async e=>{const fs=[...e.target.files];e.target.value="";for(const f of fs){const d=await shrinkImage(f,1600);if(!d)continue;PZ.r.photos=(PZ.r.photos||[]).concat([d]);PZ.A.photos.push(await loadImg(d));}PZ.L=pzFit(Object.assign({},PZ.r,{poster:PZ.L}),PZ.A);pzPaint();};
+ $("pzAdd").onchange=async e=>{const fs=[...e.target.files];e.target.value="";for(const f of fs){const d=await shrinkImage(f,1600);if(!d)continue;PZ.r.photos=(PZ.r.photos||[]).concat([d]);PZ.A.photos.push(await loadImg(d));}const n0=PZ.A.photos.length-fs.length;PZ.L=pzFit(Object.assign({},PZ.r,{poster:PZ.L}),PZ.A);
+  let last=null;for(let i=n0;i<PZ.A.photos.length;i++){const f=PZ.L.frames.find(x=>x.k==="photo"&&x.i===i),im=PZ.A.photos[i];if(!f||!im)continue;f.w=720;f.h=Math.max(240,Math.min(680,Math.round(720*im.height/im.width)));f.fit="cover";f.y=Math.max(340,Math.min(f.y,PZ_H-110-f.h));f.x=Math.round((PZ_W-f.w)/2/10)*10;last=f;}
+  if(last){PZ.L.frames.splice(PZ.L.frames.indexOf(last),1);PZ.L.frames.push(last);PZ.sel=last.id;$("pzMsg").textContent="Picture added. Drag it to place it, or drag the blue corner to resize.";}
+  pzPaint();};
  $("pzDone").onclick=async()=>{await pzSave();$("pz").style.display="none";PZ.r=null;try{renderNoteLib();}catch(x){}};
  const render=()=>{const c=document.createElement("canvas");c.width=PZ_W;c.height=PZ_H;pzDraw(c.getContext("2d"),PZ.r,PZ.L,PZ.A,null);return c;};
  const nm=ext=>"note-"+(PZ.r.title||"untitled").replace(/[^\w\-]+/g,"_").slice(0,40)+"."+ext;
