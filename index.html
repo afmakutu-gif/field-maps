@@ -309,8 +309,9 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  <div class="card" id="scanCard">
   <h2>Map lines</h2>
   <p class="muted" style="margin:0 0 10px">Find roads, streams and boundaries drawn on the original PDF. Open the PDF first, then scan. This only reads the map; it changes nothing.</p>
-  <button type="button" id="scanBtn" class="addBig" disabled>Scan map lines</button>
-  <p id="scanStat" class="status" role="status">Open a PDF above to begin.</p>
+  <button type="button" id="scanPick" class="addBig">Choose PDF to scan</button>
+  <button type="button" id="scanBtn" class="secondary" style="display:none;width:100%;margin-top:8px" disabled>Scan the open PDF again</button>
+  <p id="scanStat" class="status" role="status">Pick the original PDF map (not a picture). It is scanned as soon as it opens.</p>
   <div id="scanOut"></div>
  </div>
  <div class="card">
@@ -526,7 +527,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.18-33</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.18-34</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -4274,7 +4275,9 @@ function scanSvg(sp){
 (()=>{
  const g=id=>document.getElementById(id);
  const btn=g("scanBtn"),stat=g("scanStat"),out=g("scanOut"),off=g("scanOff");
- window.__scanReady=()=>{btn.disabled=false;if(!scanData)stat.textContent="Ready to scan "+(window.__scanCtx.title||"this map")+".";};
+ let pendingScan=false;const pick=g("scanPick");
+ pick.onclick=()=>{pendingScan=true;stat.textContent="Choose the PDF...";const f=g("pdfFile");f.value="";f.click();};
+ window.__scanReady=()=>{btn.disabled=false;btn.style.display="block";if(pendingScan){pendingScan=false;try{switchTab("maps");}catch(e){}setTimeout(()=>{try{g("scanCard").scrollIntoView({block:"start"});}catch(e){}scan().catch(e=>{stat.textContent="Scan failed: "+(e&&e.message||e);btn.disabled=false;});},500);}else if(!scanData)stat.textContent="Ready to scan "+(window.__scanCtx.title||"this map")+".";};
  const mul=(A,B)=>[A[0]*B[0]+A[1]*B[2],A[0]*B[1]+A[1]*B[3],A[2]*B[0]+A[3]*B[2],A[2]*B[1]+A[3]*B[3],A[4]*B[0]+A[5]*B[2]+B[4],A[4]*B[1]+A[5]*B[3]+B[5]];
  const hex=(r,gg,b)=>"#"+[r,gg,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0")).join("");
  const nameOf=c=>{const [r,gg,b]=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));const mx=Math.max(r,gg,b),mn=Math.min(r,gg,b);
