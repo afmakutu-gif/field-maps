@@ -308,10 +308,11 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 
  <div class="card" id="scanCard">
   <h2>Map lines</h2>
-  <p class="muted" style="margin:0 0 10px">Find roads, streams and boundaries drawn on the original PDF. Open the PDF first, then scan. This only reads the map; it changes nothing.</p>
-  <button type="button" id="scanPick" class="addBig">Choose PDF to scan</button>
+  <p class="muted" style="margin:0 0 10px">Find roads, streams and boundaries drawn in a map. Maps you prepared with Extra-sharp keep their PDF inside the app, so you can scan them without uploading again. This only reads the map; it changes nothing.</p>
+  <div id="scanMaps"></div>
+  <button type="button" id="scanPick" class="secondary" style="width:100%;margin-top:8px">Scan a different PDF file</button>
   <button type="button" id="scanBtn" class="secondary" style="display:none;width:100%;margin-top:8px" disabled>Scan the open PDF again</button>
-  <p id="scanStat" class="status" role="status">Pick the original PDF map (not a picture). It is scanned as soon as it opens.</p>
+  <p id="scanStat" class="status" role="status">Choose a map above to scan it.</p>
   <div id="scanOut"></div>
  </div>
  <div class="card">
@@ -527,7 +528,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.18-34</footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-35</footer>
 
 <div id="pe">
  <div class="peTop"><button id="peCancel" class="secondary">Cancel</button><button id="peUndo" class="secondary">Undo</button><button id="peReset" class="secondary">Reset</button><button id="peRemove" class="danger">Remove photo</button><button id="peDone">Done</button></div>
@@ -2374,7 +2375,7 @@ function paintPreparedNow(){
   acts.appendChild(o);acts.appendChild(d);row.appendChild(acts);el.appendChild(row);
  });
 }
-async function renderPrepared(){preparedList=await listPrepared();paintPreparedNow();}
+async function renderPrepared(){preparedList=await listPrepared();paintPreparedNow();try{window.__renderScanMaps&&window.__renderScanMaps();}catch(e){}}
 function openPrepared(meta,go){
  if(pdfTask){try{pdfTask.destroy();}catch(e){}pdfTask=null;pdfDoc=null;activeDocIdx=-1;$("pdfPager").style.display="none";renderLibrary();}
  let geo=null;try{if(meta.g)geo=buildGeo(meta.g,vpLike(meta.vp));}catch(e){}
@@ -4382,7 +4383,8 @@ function scanSvg(sp){
   }
   const list=[...styles.values()].sort((x,y)=>y.lenW-x.lenW);
   const flist=[...fills.values()].sort((x,y)=>y.n-x.n);
-  scanData={styles:list,fills:flist,ops:N,mpu,title:ctx.title};
+  scanData={styles:list,fills:flist,ops:N,mpu,title:ctx.title,prep:ctx.prep||null};
+  try{if(ctx.release)ctx.release();}catch(e){}
   render();btn.disabled=false;
  }
  const dashTxt=st=>st.dash.length?(st.dash.length&&Math.max(...st.dash)<=Math.max(2.5,st.w*1.6)?"dotted":"dashed"):"solid";
@@ -4406,6 +4408,7 @@ function scanSvg(sp){
   out.innerHTML=h;
   out.querySelectorAll(".sty[data-k]").forEach(el=>{el.querySelector("button").onclick=()=>{
    const st=sy[+el.dataset.k];if(scanShow.has(st.key))scanShow.delete(st.key);else scanShow.add(st.key);
+   if(scanShow.size&&d.prep&&(typeof tileCtx==="undefined"||!tileCtx||tileCtx.mapKey!==d.prep.mapKey)){try{openPrepared(d.prep,true);}catch(e){}}
    render();off.style.display=scanShow.size?"block":"none";
    if(scanShow.size){switchTab("measure");}try{scheduleDraw();}catch(e){}};});
   g("scanClear").onclick=()=>{scanShow.clear();off.style.display="none";render();try{scheduleDraw();}catch(e){}};
@@ -4415,6 +4418,26 @@ function scanSvg(sp){
    t+="\nFILLS\n";d.fills.slice(0,15).forEach(f=>{t+=`${f.col} ${nameOf(f.col)} | ${f.n} shapes | avg size ${(f.sz/f.n).toFixed(1)}u\n`;});
    try{stat.textContent=await shareText("psc-line-scan.txt",t,"text/plain","PSC line scan");}catch(e){stat.textContent="Could not share: "+e.message;}};
  }
+
+ async function scanPrepared(m){
+  stat.textContent="Opening the saved PDF for "+m.title+"...";btn.disabled=true;out.innerHTML="";scanShow.clear();scanData=null;off.style.display="none";
+  let task=null;
+  try{
+   const blob=(await idbGetMany("tiles",[m.mapKey+"|pdf"]))[0];
+   if(!blob){stat.textContent="This map has no PDF saved inside the app. Use 'Scan a different PDF file' once, or prepare it again with Extra-sharp on.";return;}
+   task=await openLightDoc(blob);const doc=await task.promise,page=await doc.getPage(m.pageNo||1);
+   window.__scanCtx={page,vp:page.getViewport({scale:1}),geo:geoOfMeta(m),title:m.title,doc,prep:m,release:()=>{try{task.destroy();}catch(e){}}};
+   await scan();
+  }catch(e){stat.textContent="Scan failed: "+(e&&e.message||e);try{task&&task.destroy();}catch(x){}}
+  btn.disabled=false;
+ }
+ window.__renderScanMaps=()=>{
+  const host=g("scanMaps");if(!host)return;const L=(typeof preparedList!=="undefined"&&preparedList)||[];
+  if(!L.length){host.innerHTML='<div class="emptyBox" style="margin:0"><b>No prepared maps yet</b><span>Prepare a map first, or scan a PDF file below.</span></div>';return;}
+  host.innerHTML=L.map((m,i)=>`<div class="sty" data-i="${i}"><span class="mrIc" style="width:36px;height:36px;border-radius:11px;background:#e6effa;color:#2563b0;display:grid;place-items:center;flex:none">${window.ico?window.ico("map"):""}</span><div class="stx"><b>${esc(m.title)}</b><small>${m.live?"PDF saved in the app, ready to scan":"No PDF kept (standard). Needs the PDF file once"}</small></div><button type="button">${m.live?"Scan":"Pick PDF"}</button></div>`).join("");
+  host.querySelectorAll(".sty").forEach(el=>{const m=L[+el.dataset.i];el.querySelector("button").onclick=()=>{if(m.live)scanPrepared(m);else pick.onclick();};});
+ };
+ try{window.__renderScanMaps();}catch(e){}
  btn.onclick=()=>{scan().catch(e=>{stat.textContent="Scan failed: "+(e&&e.message||e);btn.disabled=false;});};
  off.onclick=()=>{scanShow.clear();off.style.display="none";if(scanData)render();try{scheduleDraw();}catch(e){}};
 })();
