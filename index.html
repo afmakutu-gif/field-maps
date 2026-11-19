@@ -581,7 +581,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-57<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-58<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -3402,6 +3402,8 @@ renderNoteLib();
   if(gpsPos)routeFix(gpsPos);
   focusOn(follow.pts);
   voiceStart(follow);
+  try{const f0=follow;if(window.__rdOpenAreas)window.__rdOpenAreas(f0.pts).then(zs=>{if(follow!==f0||!zs.length)return;f0.zones=zs.map(z=>({start:z.start,end:z.end,said:{}}));
+   const tot=zs.reduce((q,z)=>q+(z.end-z.start),0);say("Note. This route crosses open or conservation area for "+sayDist(tot)+".");});}catch(e){}
  }
 
  window.__routeApi={setPlan:(pts,title)=>{plan={id:null,title:title||"Road route",main:false,points:pts.map(p=>({lat:p.lat,lon:p.lon}))};$$("rbName").value=plan.title;sel=-1;moveArmed=false;openBox(true);setView(false);stats();try{focusOn(plan.points);}catch(e){}},follow:(pts,title)=>startFollow(pts,title,null)};
@@ -3442,6 +3444,12 @@ renderNoteLib();
   if(left<30){if(!v.arrived){v.arrived=true;say("You have arrived at your destination.",true);}return;}
   if(off>40){if(!v.off){v.off=true;say("You are off the route. Return to the green line, or edit the route.",true);}return;}
   if(v.off){v.off=false;say("Back on route.");}
+  if(f.zones){for(const z of f.zones){
+   const d=z.start-along;
+   if(!z.said.far&&d<=250&&d>30&&along<z.end){z.said.far=true;say("Open area ahead in "+sayDist(d)+", for "+sayDist(z.end-z.start)+".");}
+   if(!z.said.inn&&along>=z.start-30&&along<z.end){z.said.inn=true;say("Entering open area. "+sayDist(z.end-Math.max(along,z.start))+" through it.",true);}
+   if(z.said.inn&&!z.said.out&&along>=z.end){z.said.out=true;say("Leaving open area.");}
+  }}
   const t=f.turns.find(x=>x.at>along-8);
   if(t){
    const d=t.at-along;
@@ -4938,7 +4946,7 @@ async function rdBuild(tolM,gapM,stat){
  RD.joined=joined;RD.medGap=medGap;RD.key=rdKey();RD.srcRef=src;
  return RD;
 }
-function rdBridge(nx,ny,ea,eb,mpu,maxM){
+function rdBridge(nx,ny,ea,eb,mpu,maxM,minSize){
  const n=nx.length,m=ea.length,par=new Int32Array(n);for(let i=0;i<n;i++)par[i]=i;
  const find=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;},deg=new Int32Array(n);
  for(let e=0;e<m;e++){deg[ea[e]]++;deg[eb[e]]++;const r1=find(ea[e]),r2=find(eb[e]);if(r1!==r2)par[r1]=r2;}
@@ -4948,7 +4956,7 @@ function rdBridge(nx,ny,ea,eb,mpu,maxM){
  for(let i=0;i<n;i++){const k=K(Math.floor(nx[i]/cw),Math.floor(ny[i]/cw)),p=h.get(k);nxt[i]=p===undefined?-1:p;h.set(k,i);}
  const A=[],B=[];
  for(let e=0;e<n;e++){
-  if(deg[e]>1)continue;const re=find(e);if(re===find(main))continue;
+  if(deg[e]>1)continue;const re=find(e);if(re===find(main))continue;if(minSize&&size[re]<minSize)continue;
   const cx=Math.floor(nx[e]/cw),cy=Math.floor(ny[e]/cw);let best=-1,bd=cw;
   for(let ax=cx-1;ax<=cx+1;ax++)for(let ay=cy-1;ay<=cy+1;ay++){let i=h.get(K(ax,ay));while(i!==undefined&&i>=0){if(find(i)!==re){const d=Math.hypot(nx[i]-nx[e],ny[i]-ny[e]);if(d<bd){bd=d;best=i;}}i=nxt[i];}}
   if(best>=0){A.push(e);B.push(best);par[find(e)]=find(best);}
@@ -4991,6 +4999,7 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl,doShort){
   ea=na;eb=nb;ec=nc;el=nl;ecl=ncl;};
  try{if(doShort){const sc=rdShortcuts(nx,ny,ea,eb,el,ecl,mpu);addB(sc.A,sc.B);}}catch(e){}
  try{const br=rdBridge(nx,ny,ea,eb,mpu,RDBRIDGE);addB(br.A,br.B);}catch(e){}
+ try{const br=rdBridge(nx,ny,ea,eb,mpu,600,300);addB(br.A,br.B);}catch(e){}
  const n=nx.length,m=ea.length,off=new Int32Array(n+1);
  for(let e=0;e<m;e++){off[ea[e]+1]++;off[eb[e]+1]++;}
  for(let i=0;i<n;i++)off[i+1]+=off[i];
@@ -5071,7 +5080,7 @@ function rdSections(world){
   for(let k=0;k<st;k++){const t=(k+0.5)/st,x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t,z=rdZoneAt(x,y),pos=acc+L*t;
    if(z>=0){if(cur&&cur.z===z&&pos-cur.end<=40){cur.end=pos;cur.pts.push([x,y]);}else{cur={z,start:pos,end:pos,pts:[[x,y]]};secs.push(cur);}}}
   acc+=L;}
- const out=secs.map(c=>({z:c.z,len:c.end-c.start+5,pts:c.pts})).filter(c=>c.len>=20);
+ const out=secs.map(c=>({z:c.z,start:c.start,len:c.end-c.start+5,pts:c.pts})).filter(c=>c.len>=20);
  out.forEach((c,i)=>c.n=i+1);return out;
 }
 const RDBL={key:undefined,pts:[],v:0};
@@ -5109,6 +5118,11 @@ function rdSimplify(P,tol){
   if(md>tol&&mi>0){keep[mi]=1;st.push([a,mi],[mi,b]);}}
  return P.filter((_,i)=>keep[i]);
 }
+window.__rdOpenAreas=async function(pts){
+ try{if(!src||!src.geo)return [];await rdEnsure();await rdZEnsure();if(!RZ||!RZ.z.length||!RD)return [];
+  const world=pts.map(p=>{const w=src.geo.toWorld(p.lat,p.lon);return [w[0],w[1]];});
+  return rdSections(world).map(c=>({start:c.start,end:c.start+c.len}));}catch(e){return [];}
+};
 window.__rdReroute=async function(from,to,blockedLL){
  let added=null;
  try{
