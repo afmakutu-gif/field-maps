@@ -581,7 +581,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-58<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-59<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4455,7 +4455,7 @@ function scanSvg(sp){
    if(!path.length)return;let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18,n=0;
    for(const sp of path)for(const p of sp){n++;if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1];}
    let f=fills.get(fc);if(!f){f={col:fc,n:0,sz:0};fills.set(fc,f);}f.n++;f.sz+=Math.max(x1-x0,y1-y0);
-   if(fc==="#38a800"&&zpts<1500000&&(mpu*Math.max(x1-x0,y1-y0))>=30){const rings=[];for(const sp of path){if(sp.length<3)continue;const a=new Float32Array(sp.length*2);for(let i=0;i<sp.length;i++){a[i*2]=sp[i][0];a[i*2+1]=sp[i][1];}rings.push(a);zpts+=sp.length;}if(rings.length)zl.push({rings,bb:[x0,y0,x1,y1]});}
+   if((fc==="#38a800"||fc==="#cccccc")&&zpts<1500000&&(mpu*Math.max(x1-x0,y1-y0))>=30){const rings=[];for(const sp of path){if(sp.length<3)continue;const a=new Float32Array(sp.length*2);for(let i=0;i<sp.length;i++){a[i*2]=sp[i][0];a[i*2+1]=sp[i][1];}rings.push(a);zpts+=sp.length;}if(rings.length)zl.push({rings,bb:[x0,y0,x1,y1]});}
   }
   for(let i=0;i<N;i++){
    const op=fn[i],a=ar[i];
@@ -4870,7 +4870,9 @@ const rdCostOf=(cid,len)=>len*RDPROF.best[cid];
 let RD=null,RDR=null,RDR2=null,RDCFG={};const RDP={pick:null,A:null,B:null};
 try{RDCFG=JSON.parse(localStorage.getItem("pscRoadCfg")||"{}");}catch(e){}
 const rdIsRoad=l=>/^\s*road/i.test(l||"");
-function rdDefType(st){const c=st.col;if(c==="#ffff00")return "tar";if(c==="#000000")return st.w>=3.5?"tar":st.w>=3?"plant":"road";if(c==="#734c00")return "road";if(c==="#b2b2b2")return "minor";if(c==="#ff0000")return "dead";return "road";}
+function rdDefType(st){const c=st.col;if(c==="#ffff00")return "tar";
+ if(c==="#000000"){if(st.w>=3.5)return "tar";const yel=scanData&&scanData.styles.find(x=>x.col==="#ffff00"&&x.w>=2);if(yel&&st.w>=3&&Math.abs(st.n-yel.n)<=Math.max(2,yel.n*0.1))return "tar";return st.w>=3?"plant":"road";}
+ if(c==="#734c00")return st.w>=2.5?"plant":"road";if(c==="#b2b2b2")return "minor";if(c==="#ff0000")return "dead";return "road";}
 const rdType=st=>{const v=RDCFG[st.key];return v==="main"?"plant":(v&&RDT[v]?v:rdDefType(st));};
 function rdRoadStyles(){
  const out=[];if(!scanData)return out;
@@ -5012,7 +5014,7 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl,doShort){
  for(let i=0;i<n;i++){const r=find(i);root[i]=r;size.set(r,(size.get(r)||0)+1);}
  let main=-1,ms=0;size.forEach((v,k)=>{if(v>ms){ms=v;main=k;}});
  let km=0;for(let e=0;e<m;e++)km+=el[e];km/=1000;
- return {n,m,nx,ny,ea,eb,ec,el,ecl,off,to,w,l,cl,root,main,mainSize:ms,pieces:size.size,km,mpu,tolM,gapM,joined:0};
+ return {n,m,nx,ny,ea,eb,ec,el,ecl,off,to,w,l,cl,root,sz:size,main,mainSize:ms,pieces:size.size,km,mpu,tolM,gapM,joined:0};
 }
 async function rdSave(){
  const key=RD&&RD.key;if(!key)return false;
@@ -5093,7 +5095,7 @@ function rdBlkMask(){const g=RD;if(!g)return null;const pts=rdBlList();if(!pts.l
  RDMASK={g,v:RDBL.v,a};return a;}
 function rdNear(x,y,mainOnly){
  let best=-1,bd=1e18;const g=RD,bm=rdBlkMask();
- for(let i=0;i<g.n;i++){if(bm&&bm[i])continue;if(mainOnly&&g.root[i]!==g.main)continue;const d=(g.nx[i]-x)*(g.nx[i]-x)+(g.ny[i]-y)*(g.ny[i]-y);if(d<bd){bd=d;best=i;}}
+ for(let i=0;i<g.n;i++){if(bm&&bm[i])continue;if(mainOnly&&(g.sz.get(g.root[i])||0)<200)continue;const d=(g.nx[i]-x)*(g.nx[i]-x)+(g.ny[i]-y)*(g.ny[i]-y);if(d<bd){bd=d;best=i;}}
  return {id:best,m:Math.sqrt(bd)*g.mpu};
 }
 function rdAstar(s,t,prof){
