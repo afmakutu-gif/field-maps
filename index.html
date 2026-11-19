@@ -578,7 +578,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-41<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-42<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4928,13 +4928,14 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM){
 }
 async function rdSave(){
  const key=RD&&RD.key;if(!key)return false;
- const hdr=new Float64Array([1,RD.n,RD.m,RD.mpu,RD.tolM,RD.gapM]);
+ const hdr=new Float64Array([2,RD.n,RD.m,RD.mpu,RD.tolM,RD.gapM]);
  const blob=new Blob([hdr,RD.nx,RD.ny,RD.ea,RD.eb,RD.ec,RD.el]);
  try{await idbPutMany("tiles",[[key+"|roads",blob]]);return true;}catch(e){return false;}
 }
 async function rdLoad(key){
  try{const b=(await idbGetMany("tiles",[key+"|roads"]))[0];if(!b)return null;
   const buf=await b.arrayBuffer(),h=new Float64Array(buf,0,6),n=h[1],m=h[2];let o=48;
+  if(h[0]<2){RDP.old=true;return null;}
   const f32=c=>{const a=new Float32Array(buf,o,c);o+=4*c;return a;},i32=c=>{const a=new Int32Array(buf,o,c);o+=4*c;return a;};
   const nx=f32(n),ny=f32(n),ea=i32(m),eb=i32(m),ec=f32(m),el=f32(m);
   const g=rdFinish(nx,ny,ea,eb,ec,el,h[3],h[4],h[5]);g.key=key;g.srcRef=src;return g;
@@ -4943,6 +4944,7 @@ async function rdLoad(key){
 async function rdEnsure(){
  const key=rdKey();
  if(RD&&((key&&RD.key===key)||(!key&&RD.srcRef===src)))return RD;
+ RDP.old=false;
  if(key){const g=await rdLoad(key);if(g){RD=g;return RD;}}
  return null;
 }
@@ -4980,10 +4982,10 @@ async function rdRun(){
  if(!RDP.A||!RDP.B){rdMsg("Set the start and the destination first.");return;}
  rdMsg("Finding the route...");await rdTick();
  const g=await rdEnsure();
- if(!g){rdMsg("This map has no road network yet. Go to Maps, scan the map, then open Road network.");return;}
+ if(!g){rdMsg(RDP.old?"This map's saved road network is from an older version. Go to Maps and scan the map again to rebuild it.":"This map has no road network yet. Go to Maps and scan the map first.");return;}
  const a=rdNear(RDP.A[0],RDP.A[1],true),b=rdNear(RDP.B[0],RDP.B[1],true);
  if(a.id<0||b.id<0){rdMsg("The road network is empty.");return;}
- if(a.m>1500||b.m>1500){rdMsg("The "+(a.m>1500?"start":"destination")+" is "+rdKm(Math.max(a.m,b.m))+" from the nearest road. Pick a point nearer a road.");return;}
+ if(a.m>1500||b.m>1500){rdMsg("The "+(a.m>1500?"start":"destination")+" is "+rdKm(Math.max(a.m,b.m))+" from the nearest road in the main network."+(g.mainSize/g.n<0.6?" The roads are broken into many pieces: in Maps, Road network, make the gap distance bigger and tap Build again.":" Pick a point nearer a road."));return;}
  const path=rdAstar(a.id,b.id);
  if(!path){rdMsg("No road connection found between these points. The roads may have a gap. Open Maps, Road network and tap Show separate pieces, or join gaps with a bigger distance.");RDR=null;scheduleDraw();return;}
  let P=path.map(i=>[g.nx[i],g.ny[i]]),len=0;
@@ -5087,8 +5089,9 @@ window.roadSvg=function(sp){
   nb().classList.remove("min");g("nvMin").textContent="Minimise";
   if(!src||!src.geo){rdMsg("Open a map with location data first.");return;}
   const gr=await rdEnsure();
-  if(!gr)rdMsg('No road network for this map yet. <button class="small" id="rdGoMaps" type="button">Go to Maps</button> then scan the map: the road network is built automatically.');
-  else rdMsg("Choose the start and the destination. The road route appears on the map.");
+  if(RDP.A||RDP.B)return;
+  if(!gr)rdMsg((RDP.old?"The saved road network is from an older version. ":"No road network for this map yet. ")+'<button class="small" id="rdGoMaps" type="button">Go to Maps</button> then scan the map: the road network is built automatically.');
+  else rdMsg("Choose the start and the destination. The road route appears on the map."+(gr.mainSize/gr.n<0.6?" <b>Warning:</b> the roads are still in many pieces ("+Math.round(gr.mainSize/gr.n*100)+"% connected). Routes may be wrong until you rebuild with a bigger gap distance.":""));
  };
  g("navBtn").onclick=()=>open(nb().style.display!=="block");
  g("nvClose").onclick=()=>open(false);
