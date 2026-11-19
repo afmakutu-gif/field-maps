@@ -111,6 +111,7 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #fhMain{font-size:18px}#fhSub{font-size:13px;color:var(--muted);margin:2px 0 6px}
 .rdWarn{margin:8px 0;padding:8px 10px;border-radius:12px;background:#fff6e5;border:1px solid #f1c27a;color:#6b4300;font-size:14px;line-height:1.4}.rdWarn.ok{background:#eaf7ef;border-color:#9fd5b3;color:#1f6b3f}.rdWr{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}#followHud .row{display:flex;gap:6px;flex-wrap:wrap}#followHud #fhRrRow{margin-top:6px}
 #followHud button.on{background:var(--greenDark);color:#fff}
+#navStart{display:none;position:absolute;left:8px;right:8px;bottom:8px;max-height:70%;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;z-index:32;box-shadow:0 8px 24px rgba(37,99,184,.22)}#navStart .row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}#navStart .nvStep{font-weight:700;color:var(--ink);margin:8px 0 2px}#navStart button.on{background:var(--greenDark);color:#fff}#navStart .rbTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 #viewerBox.full #followHud{bottom:calc(54px + env(safe-area-inset-bottom))}
 #fixPos,#fixClr,#oriBtn{position:absolute;right:8px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
 #fixPos{bottom:92px}#oriBtn{bottom:128px}#fixClr{bottom:164px}
@@ -404,7 +405,8 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <div class="r3"><button id="dtUndo">Undo</button><button id="dtClear">Clear all</button><button id="dtDone" class="go">Done</button></div>
    </div>
    <div id="trkBar" style="display:none"><div class="tbHead"><span class="tbT">Record a track</span><span id="tbLive"></span><button type="button" id="tbClose" aria-label="Close">×</button></div><div class="seg2" id="tbMode"><button class="on" data-m="distance" type="button">Distance</button><button data-m="area" type="button">Area</button></div><div class="tbRead"><b id="tbVal">0 m</b><span id="tbSub"></span></div><div class="tbRow"><button type="button" id="tbStart">Start</button><button type="button" id="tbStop" class="danger" disabled>Stop</button></div><div class="tbSave" id="tbSave" style="display:none"><input id="tbName" placeholder="Name (optional)"><button type="button" id="tbSaveBtn">Save</button></div><div id="tbMsg"></div></div>
-   <div id="followHud"><div class="fhTop"><div class="fhTx"><div id="fhMain"></div><div id="fhSub"></div></div><div id="fhSpd"><b>--</b><small>km/h</small></div></div><div class="row"><button class="small" id="fhLock" style="display:none">Re-centre</button><button class="small secondary" id="fhVoice">Voice on</button><button class="small secondary" id="fhHead">Heading up</button><button class="small secondary" id="fhRr">Reroute</button><button class="small danger" id="fhStop">Stop</button></div><div class="row" id="fhRrRow" style="display:none"><button class="small" id="fhBlk">Road blocked ahead</button><button class="small secondary" id="fhRecalc">Recalculate</button><button class="small secondary" id="fhRrX">Cancel</button></div></div>
+   <div id="followHud"><div class="fhTop"><div class="fhTx"><div id="fhMain"></div><div id="fhSub"></div></div><div id="fhSpd"><b>--</b><small>km/h</small></div></div><div class="row"><button class="small" id="fhLock" style="display:none">Re-centre</button><button class="small secondary" id="fhVoice">Voice on</button><button class="small secondary" id="fhHead">Heading up</button><button class="small secondary" id="fhRr">Reroute</button><button class="small danger" id="fhStop">Stop</button></div><div class="row" id="fhRrRow" style="display:none"><button class="small" id="fhBlk">Road blocked ahead</button><button class="small secondary" id="fhRecalc">Recalculate</button><button class="small secondary" id="fhRrX">Cancel</button></div><div class="row" id="fhOffRow" style="display:none"><b style="flex-basis:100%;color:#b42323">You have left the route.</b><button class="small" id="fhOffGo">Reroute from here</button><button class="small secondary" id="fhOffNo">Keep going</button></div></div>
+   <div id="navStart"><div class="rbTop"><b style="font-size:17px">Start navigation</b></div><div id="nsRoute" style="color:#52627a;margin-bottom:4px"></div><div class="nvStep">Voice guidance</div><div class="row"><button class="small secondary" id="nsVoiceOn">On</button><button class="small secondary" id="nsVoiceOff">Off</button></div><div class="nvStep">Map direction</div><div class="row"><button class="small secondary" id="nsHeadUp">Head up</button><button class="small secondary" id="nsNorth">North up</button></div><div class="nvStep">If I leave the route</div><div class="row"><button class="small secondary" id="nsOffAsk">Ask me first</button><button class="small secondary" id="nsOffAuto">Reroute automatically</button><button class="small secondary" id="nsOffNone">Do nothing</button></div><div class="row" style="margin-top:10px"><button class="small" id="nsGo">Start</button><button class="small secondary" id="nsCancel">Cancel</button></div></div>
    <div id="pinBox">
     <div class="rbTop"><b>Pins and notes</b><span><button class="small secondary" id="pnClose">Close</button></span></div>
     <div id="pnHome">
@@ -581,7 +583,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-63<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-64<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -3391,10 +3393,14 @@ renderNoteLib();
  };
  /* ---- following ---- */
  const proj=(lat0,lon0)=>{const kx=Math.cos(lat0*Math.PI/180)*111320,ky=110540;return p=>({x:(p.lon-lon0)*kx,y:(p.lat-lat0)*ky});};
- async function startFollow(pts,title,rec){
+ async function startFollow(pts,title,rec,opts){
   if(!hasGeo()){msg("Open a map with location data first.");return;}
   if(!navigator.geolocation){msg("GPS is not supported here.");return;}
-  follow={pts:pts.map(p=>({lat:p.lat,lon:p.lon})),title,id:rec&&rec.id,lock:true,headingUp:true,target:null};
+  if(!(opts&&opts.confirmed)){showStartWin(pts,title,()=>startFollow(pts,title,rec,{confirmed:true}));return;}
+  const carry=opts&&opts.carry;
+  follow={pts:pts.map(p=>({lat:p.lat,lon:p.lon})),title,id:rec&&rec.id,lock:true,headingUp:headUpPref,target:null,dist:carry?carry.dist:0,mvT:carry?carry.mvT:0,prev:null,offN:0};
+  $$("fhHead").classList.toggle("on",headUpPref);if(!headUpPref){try{setAngle(0);}catch(e){}}
+  $$("fhOffRow").style.display="none";
   if(rec&&rec.id){shown.add(rec.id);bump(rec);}
   const cum=[0];for(let i=1;i<follow.pts.length;i++)cum.push(cum[i-1]+haversine(follow.pts[i-1],follow.pts[i]));follow.cum=cum;follow.total=cum[cum.length-1];
   openBox(false);$$("followHud").style.display="block";try{speedChip();}catch(e){}hud("Finding your position...","");
@@ -3434,6 +3440,24 @@ renderNoteLib();
   }
   return out;
  }
+ let headUpPref=true,offMode="ask";try{headUpPref=localStorage.getItem("pscHeadUp")!=="0";offMode=localStorage.getItem("pscOffMode")||"ask";}catch(e){}
+ const avgPrior=()=>{let a=0;try{a=parseFloat(localStorage.getItem("pscAvgDrive"))||0;}catch(e){}return a>=5?a:speed;};
+ function showStartWin(pts,title,go){
+  const w=$$("navStart"),tot=dist(pts),pr=avgPrior(),mins=Math.round(tot/1000/pr*60);
+  $$("nsRoute").textContent=(title||"Route")+" · "+km(tot)+" · about "+(mins<60?mins+" min":Math.floor(mins/60)+" h "+String(mins%60).padStart(2,"0")+" min")+" at "+Math.round(pr)+" km/h";
+  const paint=()=>{$$("nsVoiceOn").classList.toggle("on",voiceOn);$$("nsVoiceOff").classList.toggle("on",!voiceOn);$$("nsHeadUp").classList.toggle("on",headUpPref);$$("nsNorth").classList.toggle("on",!headUpPref);$$("nsOffAsk").classList.toggle("on",offMode==="ask");$$("nsOffAuto").classList.toggle("on",offMode==="auto");$$("nsOffNone").classList.toggle("on",offMode==="none");};
+  const sv=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+  $$("nsVoiceOn").onclick=()=>{voiceOn=true;sv("pscVoice","1");setVoiceBtn();paint();say("Voice guidance on",true);};
+  $$("nsVoiceOff").onclick=()=>{voiceOn=false;sv("pscVoice","0");if(canSpeak())speechSynthesis.cancel();setVoiceBtn();paint();};
+  $$("nsHeadUp").onclick=()=>{headUpPref=true;sv("pscHeadUp","1");paint();};
+  $$("nsNorth").onclick=()=>{headUpPref=false;sv("pscHeadUp","0");paint();};
+  $$("nsOffAsk").onclick=()=>{offMode="ask";sv("pscOffMode","ask");paint();};
+  $$("nsOffAuto").onclick=()=>{offMode="auto";sv("pscOffMode","auto");paint();};
+  $$("nsOffNone").onclick=()=>{offMode="none";sv("pscOffMode","none");paint();};
+  $$("nsCancel").onclick=()=>{w.style.display="none";};
+  $$("nsGo").onclick=()=>{w.style.display="none";go();};
+  paint();w.style.display="block";
+ }
  const turnWord=t=>(t.deg>110?"sharp ":t.deg<60?"slight ":"")+t.dir;
  window.voiceStart=function(f){
   f.turns=findTurns(f.pts,f.cum);f.vs={off:false,hz:"",half:false,last:0,start:false};
@@ -3442,7 +3466,7 @@ renderNoteLib();
  window.voiceTick=function(f,along,off,left,hz){
   if(!voiceOn||!f.vs)return;const v=f.vs;
   if(left<30){if(!v.arrived){v.arrived=true;say("You have arrived at your destination.",true);}return;}
-  if(off>40){if(!v.off){v.off=true;say("You are off the route. Return to the green line, or edit the route.",true);}return;}
+  if(off>40){if(!v.off){v.off=true;say(offMode==="auto"?"You are off the route.":offMode==="none"?"You are off the route. Return to the green line.":"You are off the route. Tap reroute to find a new way.",true);}return;}
   if(v.off){v.off=false;say("Back on route.");}
   if(f.zones){for(const z of f.zones){
    const d=z.start-along;
@@ -3465,7 +3489,7 @@ renderNoteLib();
   else if(!hz)v.hz="";
   if(!v.half&&along>f.total/2&&f.total>1500){v.half=true;say("Halfway. "+sayDist(left)+" to go.");}
  };
- function stopFollow(){try{if(canSpeak())speechSynthesis.cancel();}catch(e){}follow=null;$$("followHud").style.display="none";try{speedChip();}catch(e){}scheduleDraw();}
+ function stopFollow(){try{if(canSpeak())speechSynthesis.cancel();}catch(e){}try{if(follow&&follow.dist>1500&&follow.mvT>180)localStorage.setItem("pscAvgDrive",String(Math.round(follow.dist/follow.mvT*3.6)));}catch(e){}follow=null;$$("fhOffRow").style.display="none";$$("followHud").style.display="none";try{speedChip();}catch(e){}scheduleDraw();}
  $$("fhStop").onclick=stopFollow;
  $$("fhRr").onclick=()=>{const r=$$("fhRrRow");r.style.display=r.style.display==="none"?"flex":"none";};
  async function doReroute(block){
@@ -3478,9 +3502,11 @@ renderNoteLib();
   hud("Rerouting...","");say("Rerouting.",true);
   const r=await window.__rdReroute({lat:gpsPos.lat,lon:gpsPos.lon},dest,blk);
   if(!r||r.err){hud((r&&r.err)||"Could not reroute.","");say("I could not find another way.",true);return;}
-  startFollow(r.pts,(f.title||"Route").replace(/ \(rerouted\)$/,"")+" (rerouted)",null);
+  startFollow(r.pts,(f.title||"Route").replace(/ \(rerouted\)$/,"")+" (rerouted)",null,{confirmed:true,carry:{dist:f.dist,mvT:f.mvT}});
  }
  $$("fhBlk").onclick=()=>doReroute(true);$$("fhRecalc").onclick=()=>doReroute(false);$$("fhRrX").onclick=()=>{$$("fhRrRow").style.display="none";};
+ $$("fhOffGo").onclick=()=>{$$("fhOffRow").style.display="none";doReroute(false);};
+ $$("fhOffNo").onclick=()=>{$$("fhOffRow").style.display="none";if(follow)follow.muteUntil=Date.now()+120000;};
  $$("fhLock").onclick=()=>{if(!follow)return;follow.lock=true;$$("fhLock").style.display="none";if(gpsPos)centerOnMe();};
  $$("fhHead").onclick=()=>{if(!follow)return;follow.headingUp=!follow.headingUp;$$("fhHead").classList.toggle("on",follow.headingUp);if(!follow.headingUp)setAngle(0);};
  $$("fhHead").classList.add("on");
@@ -3494,10 +3520,21 @@ renderNoteLib();
   const along=follow.cum[bi]+bt*(follow.cum[bi+1]-follow.cum[bi]),left=Math.max(0,follow.total-along);
   const nxt=Math.min(bi+1,P.length-1);follow.target=P[nxt];
   const dn=Math.hypot(pp[nxt].x,pp[nxt].y);
-  let a=`<b>${km(left)}</b> left · ${minsLive(left)}`,b="";
+  const tn=pt.t||Date.now(),pv=follow.prev;
+  if(pv&&!pt.manual){const dt=(tn-pv.t)/1000;if(dt>0.5&&dt<30&&(pt.acc||0)<40){const dd=haversine(pv,pt);if(dd/dt>=1.5){follow.dist+=dd;follow.mvT+=dt;}}}
+  follow.prev={lat:pt.lat,lon:pt.lon,t:tn};
+  const learned=follow.dist>=300&&follow.mvT>=60,avg=learned?follow.dist/follow.mvT*3.6:avgPrior();
+  const eta=m=>{const mn=Math.max(1,Math.round(m/1000/avg*60)),at=new Date(Date.now()+mn*60000),hh=String(at.getHours()).padStart(2,"0")+":"+String(at.getMinutes()).padStart(2,"0");return "arrive "+hh+" · "+(mn<60?mn+" min":Math.floor(mn/60)+" h "+String(mn%60).padStart(2,"0")+" min")+" at "+(learned?"your average ":"")+Math.round(avg)+" km/h";};
+  let a=`<b>${km(left)}</b> left · ${eta(left)}`,b="";
   if(left<30)a="<b>You have arrived</b>";
   else b=(nxt<P.length-1?"Next point in ":"Destination in ")+km(dn);
-  if(best>40){a+=' <span style="color:#d64545">· off route '+km(best)+"</span>";b="Edit the route or drive back to the green line.";}
+  if(best>40){a+=' <span style="color:#d64545">· off route '+km(best)+"</span>";b="Reroute, or drive back to the green line.";
+   follow.offN=(follow.offN||0)+1;
+   if(follow.offN>=3&&left>=30&&!(follow.muteUntil&&Date.now()<follow.muteUntil)){
+    if(offMode==="auto"){if(!follow.autoAt||Date.now()-follow.autoAt>60000){follow.autoAt=Date.now();doReroute(false);}}
+    else if(offMode==="ask")$$("fhOffRow").style.display="flex";
+   }
+  }else{follow.offN=0;if($$("fhOffRow").style.display!=="none")$$("fhOffRow").style.display="none";}
   let hzs="";try{const hz=window.nearestHazard&&nearestHazard(pt);if(hz){hzs=hz;b="Hazard: "+hz+(b?" · "+b:"");}}catch(e){}
   hud(a,b);
   try{voiceTick(follow,along,best,left,hzs);}catch(e){}
