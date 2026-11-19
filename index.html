@@ -579,7 +579,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-51<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-52<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4993,7 +4993,7 @@ async function rdRun(){
  if(!RDP.A||!RDP.B){rdMsg("Set the start and the destination first.");return;}
  rdMsg("Finding the route...");await rdTick();
  const g=await rdEnsure();
- if(!g){rdMsg(RDP.old?"This map's saved road network is from an older version. Go to Maps and scan the map again to rebuild it.":"This map has no road network yet. Go to Maps and scan the map first.");return;}
+ if(!g){rdMsg((RDP.old?"This map's saved road network is from an older version. ":"This map has no road network yet. ")+'<button class="small" id="rdGoMaps" type="button">Go to Maps</button> then scan the map: the road network is built automatically.');return;}
  const a=rdNear(RDP.A[0],RDP.A[1],true),b=rdNear(RDP.B[0],RDP.B[1],true);
  if(a.id<0||b.id<0){rdMsg("The road network is empty.");return;}
  if(a.m>1500||b.m>1500){rdMsg("The "+(a.m>1500?"start":"destination")+" is "+rdKm(Math.max(a.m,b.m))+" from the nearest road in the main network."+(g.mainSize/g.n<0.6?" The roads are broken into many pieces: in Maps, Road network, make the gap distance bigger and tap Build again.":" Pick a point nearer a road."));return;}
