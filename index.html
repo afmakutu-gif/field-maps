@@ -93,10 +93,10 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 .spFig{margin:8px 0}.spFig img{width:100%;border-radius:10px;display:block}
 .spTh{position:relative;display:inline-block;margin:4px}.spTh img{height:84px;min-width:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}.spTh button{position:absolute;top:2px;right:2px;min-height:0;padding:0 7px}
 #viewerBox.full #spotBox{bottom:calc(8px + env(safe-area-inset-bottom))}
-#routeBox{display:none;position:absolute;left:8px;right:8px;bottom:8px;max-height:52%;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;z-index:30;box-shadow:0 8px 24px rgba(37,99,184,.18)}
+#routeBox,#navBox{display:none;position:absolute;left:8px;right:8px;bottom:8px;max-height:52%;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;z-index:30;box-shadow:0 8px 24px rgba(37,99,184,.18)}
 #routeBox.min #rbPlan>:not(.rbStats):not(.rbMini),#routeBox.min #rbLibView,#routeBox.min #rbMsg{display:none}
 #routeBox.min{max-height:none}
-#routeBox .rbTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+#routeBox .rbTop,#navBox .rbTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#navBox.min>:not(.rbTop):not(#rdMsg){display:none}#navBox .row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}#navBox .nvStep{font-weight:700;color:var(--ink);margin:8px 0 2px}
 #routeBox input[type=text],#routeBox input:not([type]){width:100%;margin:6px 0}
 #routeBox:not(.min) .rbMini{display:none}
 #routeBox .rbStats{font-size:15px;margin:4px 0 8px}
@@ -450,15 +450,18 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <input id="spCamIn" type="file" accept="image/*" capture="environment" style="display:none"><input id="spGalIn" type="file" accept="image/*" multiple style="display:none">
     <p id="spMsg" class="muted"></p>
    </div>
+   <div id="navBox">
+    <div class="rbTop"><b>Navigate</b><span><button class="small secondary" id="nvMin">Minimise</button> <button class="small secondary" id="nvClose">Close</button></span></div>
+    <div class="nvStep">1. Where do you start?</div>
+    <div class="row"><button class="small" id="rdAMe">My position</button><button class="small" id="rdA">Tap on map</button></div>
+    <div class="nvStep">2. Where are you going?</div>
+    <div class="row"><button class="small" id="rdBFind">Find compartment</button><button class="small" id="rdB">Tap on map</button><button class="small secondary" id="rdClr">Clear</button></div>
+    <p id="rdMsg" class="muted" style="margin:6px 0 0">Choose the start and the destination. The road route appears on the map.</p>
+   </div>
    <div id="routeBox">
     <div class="rbTop"><b>Route planner</b><span><button class="small secondary" id="rbMin">Minimise</button> <button class="small secondary" id="rbClose">Close</button></span></div>
     <div id="rbPlan">
      <div id="rbStats" class="rbStats"></div>
-     <details id="rbRoad"><summary><b>Road route (A to B)</b></summary>
-      <div class="row"><button class="small" id="rdA">Set start</button><button class="small" id="rdAMe">Start = my position</button></div>
-      <div class="row"><button class="small" id="rdB">Set destination</button><button class="small" id="rdBFind">Find compartment</button><button class="small secondary" id="rdClr">Clear</button></div>
-      <p id="rdMsg" class="muted" style="margin:6px 0 0">Needs the road network from Maps, Road network.</p>
-     </details>
      <div class="row rbMini"><button class="small secondary" id="rbUndo2">Undo</button><button class="small" id="rbSave2">Save route</button></div>
      <div class="row"><button class="small secondary" id="rbUndo">Undo</button><button class="small secondary" id="rbDelPt">Delete point</button><button class="small secondary" id="rbMovePt">Move point</button><button class="small secondary" id="rbRev">Reverse</button><button class="small secondary" id="rbClear">Clear</button></div>
      <input id="rbName" placeholder="Route name, e.g. Main road to D038">
@@ -575,7 +578,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-40<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-41<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -3251,12 +3254,12 @@ renderNoteLib();
   if(on){if(!hasGeo()){msg("Route planning needs a map with location data (georeferenced). Open one first.");}else msg("");stats();}
   else{part=null;moveArmed=false;sel=-1;scheduleDraw();}
  }
- $$("routeBtn").onclick=()=>openBox(!rOpen);$$("rbClose").onclick=()=>openBox(false);
+ $$("routeBtn").onclick=()=>{try{if($$("navBox").style.display==="block")window.__navClose();}catch(e){}openBox(!rOpen);};$$("rbClose").onclick=()=>openBox(false);
  $$("rbMin").onclick=()=>{const b=$$("routeBox");b.classList.toggle("min");$$("rbMin").textContent=b.classList.contains("min")?"Expand":"Minimise";};
  $$("rbUndo2").onclick=()=>$$("rbUndo").click();$$("rbSave2").onclick=()=>$$("rbSave").click();
  /* ---- taps while planning ---- */
  window.routeTap=function(cx,cy){
-  if(rOpen&&window.__rdTap&&window.__rdTap(cx,cy))return true;
+  if(window.__rdTap&&window.__rdTap(cx,cy))return true;
   if(!rOpen||libView&&!part)return false;
   if(!hasGeo()){msg("Route planning needs a georeferenced map.");return true;}
   const m=localXY(cx,cy),z=view.zoom;
@@ -5067,8 +5070,8 @@ window.roadSvg=function(sp){
  rm("rdBFind").onclick=()=>{window.__rdWantB=it=>rdSet("B",[it[1],it[2]]);const b=g("findBox");b.style.display="block";try{g("findInput").focus();}catch(e){}rdMsg("Type the compartment name, then tap it in the list.");};
  rm("rdClr").onclick=()=>{RDP.A=RDP.B=null;RDP.pick=null;RDR=null;rdMsg("");scheduleDraw();};
  g("rdMsg").addEventListener("click",e=>{
-  if(e.target.id==="rdUse"){const pts=rdPoints();if(window.__routeApi&&pts.length>1){window.__routeApi.setPlan(pts,rdTitle());RDR=null;rdMsg("Loaded into the planner. You can edit, save or follow it.");}}
-  if(e.target.id==="rdNav"){const pts=rdPoints();if(window.__routeApi&&pts.length>1){const t=rdTitle();RDR=null;window.__routeApi.follow(pts,t);}}
+  if(e.target.id==="rdUse"){const pts=rdPoints();if(window.__routeApi&&pts.length>1){try{window.__navClose();}catch(x){}window.__routeApi.setPlan(pts,rdTitle());RDR=null;rdMsg("Loaded into the planner. You can edit, save or follow it.");}}
+  if(e.target.id==="rdNav"){const pts=rdPoints();if(window.__routeApi&&pts.length>1){const t=rdTitle();RDR=null;try{window.__navClose();}catch(x){}window.__routeApi.follow(pts,t);}}
  });
 })();
 </script>
@@ -5076,15 +5079,22 @@ window.roadSvg=function(sp){
 /* v39: Navigate button + update now */
 (()=>{
  const g=id=>document.getElementById(id);
- g("navBtn").onclick=async()=>{
-  if(!src||!src.geo){const m=g("measureHint");if(m)m.textContent="Open a map with location data first, then tap Navigate.";return;}
-  if(g("routeBox").style.display!=="block")g("routeBtn").click();
-  g("rbRoad").open=true;
+ const nb=()=>g("navBox");
+ const open=async on=>{
+  nb().style.display=on?"block":"none";g("navBtn").classList.toggle("on",on);
+  if(!on){RDP.pick=null;return;}
+  if(g("routeBox").style.display==="block")g("rbClose").click();
+  nb().classList.remove("min");g("nvMin").textContent="Minimise";
+  if(!src||!src.geo){rdMsg("Open a map with location data first.");return;}
   const gr=await rdEnsure();
   if(!gr)rdMsg('No road network for this map yet. <button class="small" id="rdGoMaps" type="button">Go to Maps</button> then scan the map: the road network is built automatically.');
-  else rdMsg("Set the start and the destination (tap the map, use my position, or find a compartment).");
+  else rdMsg("Choose the start and the destination. The road route appears on the map.");
  };
- g("rdMsg").addEventListener("click",e=>{if(e.target.id==="rdGoMaps"){switchTab("maps");setTimeout(()=>{try{g("scanCard").scrollIntoView({block:"start"});}catch(x){}},200);}});
+ g("navBtn").onclick=()=>open(nb().style.display!=="block");
+ g("nvClose").onclick=()=>open(false);
+ g("nvMin").onclick=()=>{nb().classList.toggle("min");g("nvMin").textContent=nb().classList.contains("min")?"Expand":"Minimise";};
+ window.__navClose=()=>open(false);
+ g("rdMsg").addEventListener("click",e=>{if(e.target.id==="rdGoMaps"){open(false);switchTab("maps");setTimeout(()=>{try{g("scanCard").scrollIntoView({block:"start"});}catch(x){}},200);}});
  g("updNow").onclick=async()=>{
   g("updNow").textContent="Updating...";
   try{const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister();}catch(e){}
