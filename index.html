@@ -581,7 +581,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-59<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-60<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4980,9 +4980,9 @@ function rdShortcuts(nx,ny,ea,eb,el,ecl,mpu){
   while(hk.length&&ex<4000){const u=pop();if(u===t)return true;ex++;const du=dist[u];for(let p=off[u];p<off[u+1];p++){const v=to[p],nd=du+ln[p];if(nd>lim)continue;if(stamp[v]!==st||nd<dist[v]){stamp[v]=st;dist[v]=nd;push(nd,v);}}}
   return false;};
  const A=[],B=[],seen=new Set();
- for(let e=0;e<n&&A.length<30000;e++){
+ for(let e=0;e<n&&A.length<8000;e++){
   const dg=off[e+1]-off[e];if(dg>1||cls[e]>2)continue;
-  const Rm=cls[e]<=1?200:100,Rw=Rm/mpu;let dx=0,dy=0,hasDir=false,nbr=-1;
+  const Rm=cls[e]<=1?200:60,Rw=Rm/mpu;let dx=0,dy=0,hasDir=false,nbr=-1;
   if(dg===1){nbr=to[off[e]];dx=nx[e]-nx[nbr];dy=ny[e]-ny[nbr];const L=Math.hypot(dx,dy);if(L>0){dx/=L;dy/=L;hasDir=true;}}
   const cx=Math.floor(nx[e]/cw),cy=Math.floor(ny[e]/cw),cand=[];
   for(let ax=cx-1;ax<=cx+1;ax++)for(let ay=cy-1;ay<=cy+1;ay++){let i=h.get(K(ax,ay));while(i!==undefined&&i>=0){
@@ -5158,7 +5158,7 @@ async function rdRun(){
  if(a.id<0||b.id<0){rdMsg("The road network is empty.");return;}
  if(a.m>1500||b.m>1500){rdMsg("The "+(a.m>1500?"start":"destination")+" is "+rdKm(Math.max(a.m,b.m))+" from the nearest road in the main network."+(g.mainSize/g.n<0.6?" The roads are broken into many pieces: in Maps, Road network, make the gap distance bigger and tap Build again.":" Pick a point nearer a road."));return;}
  const path=rdAstar(a.id,b.id,RDPROF.best);
- if(!path){rdMsg("No road connection found between these points. The roads may have a gap. Open Maps, Road network and tap Show separate pieces, or join gaps with a bigger distance.");RDR=null;RDR2=null;scheduleDraw();return;}
+ if(!path){rdMsg("No road connection found between these points. They may be on different farms with no road drawn between them, or a road may have a gap. Turn on Show road network on the map to see which roads are joined.");RDR=null;RDR2=null;scheduleDraw();return;}
  const mk=pa=>{let P=pa.map(i=>[g.nx[i],g.ny[i]]),len=0;for(let i=1;i<P.length;i++)len+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1])*g.mpu;
   P=rdSimplify(P,1.5/g.mpu);const world=[RDP.A].concat(P,[RDP.B]);return {A:RDP.A,B:RDP.B,world,m:len,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1],secs:rdSections(world)};};
  RDR=mk(path);RDR2=null;
@@ -5206,7 +5206,8 @@ window.roadSvg=function(sp){
  if(RD&&RD.net&&src){
   const g=RD,sz=vsize(),R=Math.hypot(sz.w,sz.h)/2/view.zoom*1.05,cx=view.x+sz.w/2/view.zoom,cy=view.y+sz.h/2/view.zoom;
   const CC=["#ffb300","#0b3d91","#ff2bd6","#8e8e8e","#e53935","#ff2bd6","#00e5ff"],CW=[4,4,2.5,2.5,2.5,2.5,4];
-  const inV=e=>{const a=g.ea[e],x=g.nx[a],y=g.ny[a];return !(Math.abs(x-cx)>R||Math.abs(y-cy)>R)&&g.root[a]===g.main;};
+  if(!g.big){g.big=new Uint8Array(g.n);for(let i=0;i<g.n;i++)g.big[i]=(g.sz.get(g.root[i])||0)>=200?1:0;}
+  const inV=e=>{const a=g.ea[e],x=g.nx[a],y=g.ny[a];return !(Math.abs(x-cx)>R||Math.abs(y-cy)>R)&&g.big[a]===1;};
   let cnt=0;for(let e=0;e<g.m;e++){if(g.ecl[e]>=2&&g.ecl[e]!==6&&inV(e))cnt++;}
   const step=Math.max(1,Math.ceil(cnt/9000)),D=CC.map(()=>"");let ci=0;
   for(let e=0;e<g.m;e++){if(!inV(e))continue;const c=g.ecl[e];if(c>=2&&c!==6&&(ci++)%step)continue;const a=g.ea[e],b=g.eb[e],p=sp({x:g.nx[a],y:g.ny[a]}),q=sp({x:g.nx[b],y:g.ny[b]});D[c]+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;}
