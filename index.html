@@ -579,7 +579,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-52<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-53<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4839,7 +4839,8 @@ function pzPt(e){const r=$("pzCv").getBoundingClientRect();return {x:(e.clientX-
 /* ===== v38: road network from the Road layer + A to B navigation ===== */
 const RDK=["tar","plant","road","minor","dead"],RDJ=5;
 const RDT={tar:{n:"Tar road (public)",m:0.5},plant:{n:"Plantation main road",m:0.75},road:{n:"Compartment / plantation road",m:1},minor:{n:"Minor track",m:1.3},dead:{n:"Dead end",m:3},skip:{n:"Do not use",m:0}};
-const RDPROF={best:[0.5,0.75,1,1.3,3,1.2],short:[1,1,0.95,1.1,3,1.2]};
+const RDPROF={best:[0.5,0.75,1,1.3,3,1.2,4],short:[1,1,0.95,1.1,3,1.2,4]};
+const RDBRIDGE=150;
 const rdCostOf=(cid,len)=>len*RDPROF.best[cid];
 let RD=null,RDR=null,RDR2=null,RDCFG={};const RDP={pick:null,A:null,B:null};
 try{RDCFG=JSON.parse(localStorage.getItem("pscRoadCfg")||"{}");}catch(e){}
@@ -4917,10 +4918,33 @@ async function rdBuild(tolM,gapM,stat){
  }
  jd.sort((a,b)=>a-b);const medGap=jd.length?jd[jd.length>>1]:0;
  RD=rdFinish(nx.slice(0,n),ny.slice(0,n),Int32Array.from(ea),Int32Array.from(eb),Float32Array.from(ec),Float32Array.from(el),mpu,tolM,gapM,Uint8Array.from(ecl));
- RD.ecl=Uint8Array.from(ecl);RD.joined=joined;RD.medGap=medGap;RD.key=rdKey();RD.srcRef=src;
+ RD.joined=joined;RD.medGap=medGap;RD.key=rdKey();RD.srcRef=src;
  return RD;
 }
+function rdBridge(nx,ny,ea,eb,mpu,maxM){
+ const n=nx.length,m=ea.length,par=new Int32Array(n);for(let i=0;i<n;i++)par[i]=i;
+ const find=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;},deg=new Int32Array(n);
+ for(let e=0;e<m;e++){deg[ea[e]]++;deg[eb[e]]++;const r1=find(ea[e]),r2=find(eb[e]);if(r1!==r2)par[r1]=r2;}
+ const size=new Int32Array(n);for(let i=0;i<n;i++)size[find(i)]++;
+ let main=-1,ms=0;for(let i=0;i<n;i++)if(size[i]>ms){ms=size[i];main=i;}
+ const cw=maxM/mpu,nxt=new Int32Array(n),h=new Map(),K=(a,b)=>(a+4096)*8388608+(b+4096);
+ for(let i=0;i<n;i++){const k=K(Math.floor(nx[i]/cw),Math.floor(ny[i]/cw)),p=h.get(k);nxt[i]=p===undefined?-1:p;h.set(k,i);}
+ const A=[],B=[];
+ for(let e=0;e<n;e++){
+  if(deg[e]>1)continue;const re=find(e);if(re===find(main))continue;
+  const cx=Math.floor(nx[e]/cw),cy=Math.floor(ny[e]/cw);let best=-1,bd=cw;
+  for(let ax=cx-1;ax<=cx+1;ax++)for(let ay=cy-1;ay<=cy+1;ay++){let i=h.get(K(ax,ay));while(i!==undefined&&i>=0){if(find(i)!==re){const d=Math.hypot(nx[i]-nx[e],ny[i]-ny[e]);if(d<bd){bd=d;best=i;}}i=nxt[i];}}
+  if(best>=0){A.push(e);B.push(best);par[find(e)]=find(best);}
+ }
+ return {A,B};
+}
 function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl){
+ try{const br=rdBridge(nx,ny,ea,eb,mpu,RDBRIDGE);
+  if(br.A.length){const k=br.A.length,m0=ea.length,na=new Int32Array(m0+k),nb=new Int32Array(m0+k),nc=new Float32Array(m0+k),nl=new Float32Array(m0+k),ncl=new Uint8Array(m0+k);
+   na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
+   for(let j=0;j<k;j++){const a=br.A[j],b=br.B[j],len=Math.hypot(nx[a]-nx[b],ny[a]-ny[b])*mpu;na[m0+j]=a;nb[m0+j]=b;nl[m0+j]=len;nc[m0+j]=len*RDPROF.best[6];ncl[m0+j]=6;}
+   ea=na;eb=nb;ec=nc;el=nl;ecl=ncl;}
+ }catch(e){}
  const n=nx.length,m=ea.length,off=new Int32Array(n+1);
  for(let e=0;e<m;e++){off[ea[e]+1]++;off[eb[e]+1]++;}
  for(let i=0;i<n;i++)off[i+1]+=off[i];
@@ -4933,7 +4957,7 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl){
  for(let i=0;i<n;i++){const r=find(i);root[i]=r;size.set(r,(size.get(r)||0)+1);}
  let main=-1,ms=0;size.forEach((v,k)=>{if(v>ms){ms=v;main=k;}});
  let km=0;for(let e=0;e<m;e++)km+=el[e];km/=1000;
- return {n,m,nx,ny,ea,eb,ec,el,off,to,w,l,cl,root,main,mainSize:ms,pieces:size.size,km,mpu,tolM,gapM,joined:0};
+ return {n,m,nx,ny,ea,eb,ec,el,ecl,off,to,w,l,cl,root,main,mainSize:ms,pieces:size.size,km,mpu,tolM,gapM,joined:0};
 }
 async function rdSave(){
  const key=RD&&RD.key;if(!key)return false;
@@ -4948,7 +4972,7 @@ async function rdLoad(key){
   const f32=c=>{const a=new Float32Array(buf,o,c);o+=4*c;return a;},i32=c=>{const a=new Int32Array(buf,o,c);o+=4*c;return a;};
   const nx=f32(n),ny=f32(n),ea=i32(m),eb=i32(m),el=f32(m),ecl=new Uint8Array(buf,o,m);
   const ec=new Float32Array(m);for(let e=0;e<m;e++)ec[e]=rdCostOf(ecl[e],el[e]);
-  const g=rdFinish(nx,ny,ea,eb,ec,el,h[3],h[4],h[5],ecl);g.ecl=ecl;g.key=key;g.srcRef=src;return g;
+  const g=rdFinish(nx,ny,ea,eb,ec,el,h[3],h[4],h[5],ecl);g.key=key;g.srcRef=src;return g;
  }catch(e){return null;}
 }
 async function rdEnsure(){
