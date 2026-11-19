@@ -579,7 +579,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-45<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-46<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4841,7 +4841,7 @@ const RDT={main:{n:"Main road",m:0.8},road:{n:"Road",m:1},minor:{n:"Minor track"
 let RD=null,RDR=null,RDCFG={};const RDP={pick:null,A:null,B:null};
 try{RDCFG=JSON.parse(localStorage.getItem("pscRoadCfg")||"{}");}catch(e){}
 const rdIsRoad=l=>/^\s*road/i.test(l||"");
-function rdDefType(st){const c=st.col;if(c==="#ffff00")return "main";if(c==="#000000")return st.w>=3.5?"main":"road";if(c==="#734c00")return st.w<2?"minor":"road";if(c==="#b2b2b2")return "minor";if(c==="#ff0000")return "main";return "road";}
+function rdDefType(st){const c=st.col;if(c==="#ffff00")return "main";if(c==="#000000")return st.w>=3.5?"main":"road";if(c==="#734c00")return st.w<2?"minor":"road";if(c==="#b2b2b2")return "minor";if(c==="#ff0000")return "dead";return "road";}
 const rdType=st=>RDCFG[st.key]||rdDefType(st);
 function rdRoadStyles(){
  const out=[];if(!scanData)return out;
@@ -4855,7 +4855,9 @@ async function rdBuild(tolM,gapM,stat){
  const lines=[];let tp=0;
  scanData.styles.forEach(st=>{const mult=RDT[rdType(st)].m;if(!mult)return;st.lines.forEach(a=>{if(rdIsRoad(a.ly)){lines.push([a,mult]);tp+=a.length/2;}});});
  if(!lines.length)throw new Error("No road lines found. The map needs a drawing layer named Road.");
- const tolW=Math.max(tolM/mpu,0.2),cell=tolW*1.0001,cap=tp+16;
+ const tolW=Math.max(tolM/mpu,0.2),cell=tolW*1.0001,stepW=4/mpu,longW=6/mpu;let extra=0;
+ for(const [a] of lines){for(let i=2;i<a.length;i+=2){const d=Math.hypot(a[i]-a[i-2],a[i+1]-a[i-1]);if(d>longW)extra+=Math.ceil(d/stepW);}}
+ const cap=tp+extra+16;
  const nx=new Float32Array(cap),ny=new Float32Array(cap),nxt=new Int32Array(cap);let n=0;
  const head=new Map(),K=(cx,cy)=>(cx+1024)*2097152+(cy+1024);
  const node=(x,y)=>{
@@ -4866,10 +4868,13 @@ async function rdBuild(tolM,gapM,stat){
  const em=new Map(),ea=[],eb=[],ec=[],el=[];let done=0;
  for(const [a,mult] of lines){
   let prev=-1;
+  const link=(p,id)=>{if(p>=0&&id!==p){const A=Math.min(p,id),B=Math.max(p,id),k=A*4194304+B,len=Math.hypot(nx[A]-nx[B],ny[A]-ny[B])*mpu,c=len*mult,e=em.get(k);
+    if(e===undefined){em.set(k,ea.length);ea.push(A);eb.push(B);ec.push(c);el.push(len);}else if(c<ec[e])ec[e]=c;}};
   for(let i=0;i<a.length;i+=2){
+   if(i>0){const px=a[i-2],py=a[i-1],dx=a[i]-px,dy=a[i+1]-py,d=Math.hypot(dx,dy);
+    if(d>longW){const kk=Math.ceil(d/stepW);for(let j=1;j<kk;j++){const m2=node(px+dx*j/kk,py+dy*j/kk);link(prev,m2);prev=m2;}}}
    const id=node(a[i],a[i+1]);
-   if(prev>=0&&id!==prev){const A=Math.min(prev,id),B=Math.max(prev,id),k=A*4194304+B,len=Math.hypot(nx[A]-nx[B],ny[A]-ny[B])*mpu,c=len*mult,e=em.get(k);
-    if(e===undefined){em.set(k,ea.length);ea.push(A);eb.push(B);ec.push(c);el.push(len);}else if(c<ec[e])ec[e]=c;}
+   link(prev,id);
    prev=id;
   }
   if((++done&0x1fff)===0){stat.textContent="Building the road network... "+Math.round(done/lines.length*100)+"%";await rdTick();}
