@@ -579,7 +579,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-50<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-51<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4837,14 +4837,15 @@ function pzPt(e){const r=$("pzCv").getBoundingClientRect();return {x:(e.clientX-
 </script>
 <script>
 /* ===== v38: road network from the Road layer + A to B navigation ===== */
-const RDK=["main","road","minor","dead"],RDJ=1.2;
-const rdCostOf=(cid,len)=>len*(cid>=4?RDJ:RDT[RDK[cid]].m);
-const RDT={main:{n:"Main road",m:0.8},road:{n:"Road",m:1},minor:{n:"Minor track",m:1.2},dead:{n:"Dead end",m:3},skip:{n:"Do not use",m:0}};
-let RD=null,RDR=null,RDCFG={};const RDP={pick:null,A:null,B:null};
+const RDK=["tar","plant","road","minor","dead"],RDJ=5;
+const RDT={tar:{n:"Tar road (public)",m:0.5},plant:{n:"Plantation main road",m:0.75},road:{n:"Compartment / plantation road",m:1},minor:{n:"Minor track",m:1.3},dead:{n:"Dead end",m:3},skip:{n:"Do not use",m:0}};
+const RDPROF={best:[0.5,0.75,1,1.3,3,1.2],short:[1,1,0.95,1.1,3,1.2]};
+const rdCostOf=(cid,len)=>len*RDPROF.best[cid];
+let RD=null,RDR=null,RDR2=null,RDCFG={};const RDP={pick:null,A:null,B:null};
 try{RDCFG=JSON.parse(localStorage.getItem("pscRoadCfg")||"{}");}catch(e){}
 const rdIsRoad=l=>/^\s*road/i.test(l||"");
-function rdDefType(st){const c=st.col;if(c==="#ffff00")return "main";if(c==="#000000")return st.w>=3?"main":"road";if(c==="#734c00")return "road";if(c==="#b2b2b2")return "minor";if(c==="#ff0000")return "dead";return "road";}
-const rdType=st=>RDCFG[st.key]||rdDefType(st);
+function rdDefType(st){const c=st.col;if(c==="#ffff00")return "tar";if(c==="#000000")return st.w>=3.5?"tar":st.w>=3?"plant":"road";if(c==="#734c00")return "road";if(c==="#b2b2b2")return "minor";if(c==="#ff0000")return "dead";return "road";}
+const rdType=st=>{const v=RDCFG[st.key];return v==="main"?"plant":(v&&RDT[v]?v:rdDefType(st));};
 function rdRoadStyles(){
  const out=[];if(!scanData)return out;
  scanData.styles.forEach(st=>{let n=0,len=0;for(const a of st.lines){if(!rdIsRoad(a.ly))continue;n++;for(let i=2;i<a.length;i+=2)len+=Math.hypot(a[i]-a[i-2],a[i+1]-a[i-1]);}if(n)out.push({st,n,km:len*(scanData.mpu||1)/1000});});
@@ -4906,7 +4907,7 @@ async function rdBuild(tolM,gapM,stat){
        if(ok&&sc<bs){bs=sc;best=i;bd=d;}}
      }
      i=n2[i];}}
-    if(best>=0){const len=bd*mpu,A=Math.min(e,best),B=Math.max(e,best);ea.push(A);eb.push(B);ec.push(len*RDJ);el.push(len);ecl.push(4);par[find(e)]=find(best);deg[e]++;deg[best]++;joined++;c++;jd.push(len);}
+    if(best>=0){const len=bd*mpu,A=Math.min(e,best),B=Math.max(e,best);ea.push(A);eb.push(B);ec.push(len*1.2);el.push(len);ecl.push(5);par[find(e)]=find(best);deg[e]++;deg[best]++;joined++;c++;jd.push(len);}
     if((++c&0x3fff)===0){await rdTick();}
    }
   };
@@ -4915,16 +4916,16 @@ async function rdBuild(tolM,gapM,stat){
   await pass(gW*0.3,false,false);    /* anything else that is very close */
  }
  jd.sort((a,b)=>a-b);const medGap=jd.length?jd[jd.length>>1]:0;
- RD=rdFinish(nx.slice(0,n),ny.slice(0,n),Int32Array.from(ea),Int32Array.from(eb),Float32Array.from(ec),Float32Array.from(el),mpu,tolM,gapM);
+ RD=rdFinish(nx.slice(0,n),ny.slice(0,n),Int32Array.from(ea),Int32Array.from(eb),Float32Array.from(ec),Float32Array.from(el),mpu,tolM,gapM,Uint8Array.from(ecl));
  RD.ecl=Uint8Array.from(ecl);RD.joined=joined;RD.medGap=medGap;RD.key=rdKey();RD.srcRef=src;
  return RD;
 }
-function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM){
+function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl){
  const n=nx.length,m=ea.length,off=new Int32Array(n+1);
  for(let e=0;e<m;e++){off[ea[e]+1]++;off[eb[e]+1]++;}
  for(let i=0;i<n;i++)off[i+1]+=off[i];
- const fill=off.slice(0,n),to=new Int32Array(2*m),w=new Float32Array(2*m),l=new Float32Array(2*m);
- for(let e=0;e<m;e++){const a=ea[e],b=eb[e];let p=fill[a]++;to[p]=b;w[p]=ec[e];l[p]=el[e];p=fill[b]++;to[p]=a;w[p]=ec[e];l[p]=el[e];}
+ const fill=off.slice(0,n),to=new Int32Array(2*m),w=new Float32Array(2*m),l=new Float32Array(2*m),cl=new Uint8Array(2*m);
+ for(let e=0;e<m;e++){const a=ea[e],b=eb[e];let p=fill[a]++;to[p]=b;w[p]=ec[e];l[p]=el[e];cl[p]=ecl[e];p=fill[b]++;to[p]=a;w[p]=ec[e];l[p]=el[e];cl[p]=ecl[e];}
  const par=new Int32Array(n);for(let i=0;i<n;i++)par[i]=i;
  const find=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;};
  for(let e=0;e<m;e++){const r1=find(ea[e]),r2=find(eb[e]);if(r1!==r2)par[r1]=r2;}
@@ -4932,22 +4933,22 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM){
  for(let i=0;i<n;i++){const r=find(i);root[i]=r;size.set(r,(size.get(r)||0)+1);}
  let main=-1,ms=0;size.forEach((v,k)=>{if(v>ms){ms=v;main=k;}});
  let km=0;for(let e=0;e<m;e++)km+=el[e];km/=1000;
- return {n,m,nx,ny,ea,eb,ec,el,off,to,w,l,root,main,mainSize:ms,pieces:size.size,km,mpu,tolM,gapM,joined:0};
+ return {n,m,nx,ny,ea,eb,ec,el,off,to,w,l,cl,root,main,mainSize:ms,pieces:size.size,km,mpu,tolM,gapM,joined:0};
 }
 async function rdSave(){
  const key=RD&&RD.key;if(!key)return false;
- const hdr=new Float64Array([3,RD.n,RD.m,RD.mpu,RD.tolM,RD.gapM]);
+ const hdr=new Float64Array([4,RD.n,RD.m,RD.mpu,RD.tolM,RD.gapM]);
  const blob=new Blob([hdr,RD.nx,RD.ny,RD.ea,RD.eb,RD.el,RD.ecl]);
  try{await idbPutMany("tiles",[[key+"|roads",blob]]);return true;}catch(e){return false;}
 }
 async function rdLoad(key){
  try{const b=(await idbGetMany("tiles",[key+"|roads"]))[0];if(!b)return null;
   const buf=await b.arrayBuffer(),h=new Float64Array(buf,0,6),n=h[1],m=h[2];let o=48;
-  if(h[0]<3){RDP.old=true;return null;}
+  if(h[0]<4){RDP.old=true;return null;}
   const f32=c=>{const a=new Float32Array(buf,o,c);o+=4*c;return a;},i32=c=>{const a=new Int32Array(buf,o,c);o+=4*c;return a;};
   const nx=f32(n),ny=f32(n),ea=i32(m),eb=i32(m),el=f32(m),ecl=new Uint8Array(buf,o,m);
   const ec=new Float32Array(m);for(let e=0;e<m;e++)ec[e]=rdCostOf(ecl[e],el[e]);
-  const g=rdFinish(nx,ny,ea,eb,ec,el,h[3],h[4],h[5]);g.ecl=ecl;g.key=key;g.srcRef=src;return g;
+  const g=rdFinish(nx,ny,ea,eb,ec,el,h[3],h[4],h[5],ecl);g.ecl=ecl;g.key=key;g.srcRef=src;return g;
  }catch(e){return null;}
 }
 async function rdEnsure(){
@@ -4963,16 +4964,17 @@ function rdNear(x,y,mainOnly){
  for(let i=0;i<g.n;i++){if(mainOnly&&g.root[i]!==g.main)continue;const d=(g.nx[i]-x)*(g.nx[i]-x)+(g.ny[i]-y)*(g.ny[i]-y);if(d<bd){bd=d;best=i;}}
  return {id:best,m:Math.sqrt(bd)*g.mpu};
 }
-function rdAstar(s,t){
+function rdAstar(s,t,prof){
+ prof=prof||RDPROF.best;const hm=Math.min(...prof)*0.99;
  const g=RD,n=g.n,dist=new Float32Array(n).fill(Infinity),prev=new Int32Array(n).fill(-1),done=new Uint8Array(n);
- const tx=g.nx[t],ty=g.ny[t],hf=i=>Math.hypot(g.nx[i]-tx,g.ny[i]-ty)*g.mpu*0.8;
+ const tx=g.nx[t],ty=g.ny[t],hf=i=>Math.hypot(g.nx[i]-tx,g.ny[i]-ty)*g.mpu*hm;
  const hk=[],hv=[];
  const push=(k,v)=>{let i=hk.length;hk.push(k);hv.push(v);while(i>0){const p=(i-1)>>1;if(hk[p]<=k)break;hk[i]=hk[p];hv[i]=hv[p];i=p;}hk[i]=k;hv[i]=v;};
  const pop=()=>{const rv=hv[0],lk=hk.pop(),lv=hv.pop();if(hk.length){let i=0;const L=hk.length;for(;;){let c=2*i+1;if(c>=L)break;if(c+1<L&&hk[c+1]<hk[c])c++;if(hk[c]>=lk)break;hk[i]=hk[c];hv[i]=hv[c];i=c;}hk[i]=lk;hv[i]=lv;}return rv;};
  dist[s]=0;push(hf(s),s);
  while(hk.length){
   const u=pop();if(done[u])continue;done[u]=1;if(u===t)break;
-  for(let p=g.off[u];p<g.off[u+1];p++){const v=g.to[p],nd=dist[u]+g.w[p];if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}
+  for(let p=g.off[u];p<g.off[u+1];p++){const v=g.to[p],nd=dist[u]+g.l[p]*prof[g.cl[p]];if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}
  }
  if(!done[t])return null;
  const path=[];for(let v=t;v>=0;v=prev[v])path.push(v);path.reverse();return path;
@@ -4995,23 +4997,26 @@ async function rdRun(){
  const a=rdNear(RDP.A[0],RDP.A[1],true),b=rdNear(RDP.B[0],RDP.B[1],true);
  if(a.id<0||b.id<0){rdMsg("The road network is empty.");return;}
  if(a.m>1500||b.m>1500){rdMsg("The "+(a.m>1500?"start":"destination")+" is "+rdKm(Math.max(a.m,b.m))+" from the nearest road in the main network."+(g.mainSize/g.n<0.6?" The roads are broken into many pieces: in Maps, Road network, make the gap distance bigger and tap Build again.":" Pick a point nearer a road."));return;}
- const path=rdAstar(a.id,b.id);
- if(!path){rdMsg("No road connection found between these points. The roads may have a gap. Open Maps, Road network and tap Show separate pieces, or join gaps with a bigger distance.");RDR=null;scheduleDraw();return;}
- let P=path.map(i=>[g.nx[i],g.ny[i]]),len=0;
- for(let i=1;i<P.length;i++)len+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1])*g.mpu;
- P=rdSimplify(P,1.5/g.mpu);
- const full=[RDP.A].concat(P,[RDP.B]);
- RDR={A:RDP.A,B:RDP.B,world:full,m:len,offA:a.m,offB:b.m};
+ const path=rdAstar(a.id,b.id,RDPROF.best);
+ if(!path){rdMsg("No road connection found between these points. The roads may have a gap. Open Maps, Road network and tap Show separate pieces, or join gaps with a bigger distance.");RDR=null;RDR2=null;scheduleDraw();return;}
+ const mk=pa=>{let P=pa.map(i=>[g.nx[i],g.ny[i]]),len=0;for(let i=1;i<P.length;i++)len+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1])*g.mpu;
+  P=rdSimplify(P,1.5/g.mpu);return {A:RDP.A,B:RDP.B,world:[RDP.A].concat(P,[RDP.B]),m:len,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1]};};
+ RDR=mk(path);RDR2=null;
+ try{const p2=rdAstar(a.id,b.id,RDPROF.short);if(p2){const r2=mk(p2);if(r2.m<RDR.m*0.97&&r2.key!==RDR.key)RDR2=r2;}}catch(e){}
+ const full=RDR.world;
  let sp=30;try{sp=parseFloat(localStorage.getItem("pscSpeed"))||30;}catch(e){}
- const mins=Math.round((len+a.m+b.m)/1000/sp*60);
- rdMsg(`<b>${rdKm(len)}</b> by road, about ${mins<60?mins+" min":Math.floor(mins/60)+" h "+String(mins%60).padStart(2,"0")+" min"} at ${sp} km/h.`+(a.m>60||b.m>60?`<br><small>Off-road ends: start ${rdKm(a.m)}, destination ${rdKm(b.m)}.</small>`:"")+`<div class="row" style="margin-top:6px"><button class="small" id="rdUse">Use as route</button><button class="small" id="rdNav">Follow now</button></div>`);
+ const tm=r=>{const mins=Math.round((r.m+a.m+b.m)/1000/sp*60);return mins<60?mins+" min":Math.floor(mins/60)+" h "+String(mins%60).padStart(2,"0")+" min";};
+ const btn=(k)=>`<div class="row" style="margin:4px 0 8px"><button class="small" id="rdUse${k}">Use as route</button><button class="small" id="rdNav${k}">Follow now</button></div>`;
+ rdMsg((RDR2?`<b style="color:#1f7ae0">Blue: preferred route</b> (tar, then plantation roads)<br>`:"")+`<b>${rdKm(RDR.m)}</b> by road, about ${tm(RDR)} at ${sp} km/h.`+btn("")
+  +(RDR2?`<b style="color:#2f9e66">Green: shorter route</b> (more compartment roads)<br><b>${rdKm(RDR2.m)}</b> by road, about ${tm(RDR2)}.`+btn("2"):"")
+  +(a.m>60||b.m>60?`<small>Off-road ends: start ${rdKm(a.m)}, destination ${rdKm(b.m)}.</small>`:""));
  scheduleDraw();
  try{const xs=full.map(p=>p[0]),ys=full.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),sz=vsize(),z=clamp(Math.min(sz.w/(x1-x0+40),sz.h*0.45/(y1-y0+40)),minZoom,maxZoom);autoFit=false;view.zoom=z;view.x=(x0+x1)/2-sz.w/2/z;view.y=(y0+y1)/2-sz.h*0.28/z;clampView();changed();}catch(e){}
 }
-function rdPoints(){
- return RDR?RDR.world.map(p=>{const l=src.geo.toLL(p[0],p[1]);return {lat:+l.lat.toFixed(6),lon:+l.lon.toFixed(6)};}):[];
+function rdPoints(R){
+ R=R||RDR;return R?R.world.map(p=>{const l=src.geo.toLL(p[0],p[1]);return {lat:+l.lat.toFixed(6),lon:+l.lon.toFixed(6)};}):[];
 }
-function rdTitle(){return "Road route "+(RDR?rdKm(RDR.m):"");}
+function rdTitle(R){R=R||RDR;return "Road route "+(R?rdKm(R.m):"");}
 function rdSet(which,w){
  RDP[which]=w;RDP.pick=null;
  const e=document.getElementById(which==="A"?"rdAMsg":"rdBMsg");
@@ -5036,6 +5041,11 @@ window.roadSvg=function(sp){
   const step=Math.max(1,Math.ceil(cnt/9000));let ci=0;
   for(let e=0;e<g.m;e++){const a=g.ea[e],x=g.nx[a],y=g.ny[a];if(Math.abs(x-cx)>R||Math.abs(y-cy)>R)continue;if(g.root[a]!==g.main)continue;if((ci++)%step)continue;const b=g.eb[e],p=sp({x,y}),q=sp({x:g.nx[b],y:g.ny[b]});d+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;k++;}
   if(d)o+=`<path d="${d}" fill="none" stroke="#ff2bd6" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>`;
+ }
+ if(RDR2){
+  const pts=RDR2.world.map(p=>sp({x:p[0],y:p[1]}));
+  const dd="M"+pts.map(q=>q.x.toFixed(1)+" "+q.y.toFixed(1)).join("L");
+  o+=`<path d="${dd}" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="#2f9e66" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>`;
  }
  if(RDR){
   const pts=RDR.world.map(p=>sp({x:p[0],y:p[1]}));
@@ -5086,10 +5096,11 @@ window.roadSvg=function(sp){
  rm("rdB").onclick=()=>{RDP.pick="B";rdMsg("Tap the destination on the map.");};
  rm("rdAMe").onclick=()=>{if(!src||!src.geo){rdMsg("Open a map with location data first.");return;}if(typeof gpsPos==="undefined"||!gpsPos){rdMsg("Turn on Me first so the app knows where you are.");return;}const w=src.geo.toWorld(gpsPos.lat,gpsPos.lon);rdSet("A",[w[0],w[1]]);};
  rm("rdBFind").onclick=()=>{window.__rdWantB=it=>rdSet("B",[it[1],it[2]]);const b=g("findBox");b.style.display="block";try{g("findInput").focus();}catch(e){}rdMsg("Type the compartment name, then tap it in the list.");};
- rm("rdClr").onclick=()=>{RDP.A=RDP.B=null;RDP.pick=null;RDR=null;rdMsg("");scheduleDraw();};
+ rm("rdClr").onclick=()=>{RDP.A=RDP.B=null;RDP.pick=null;RDR=null;RDR2=null;rdMsg("");scheduleDraw();};
  g("rdMsg").addEventListener("click",e=>{
-  if(e.target.id==="rdUse"){const pts=rdPoints();if(window.__routeApi&&pts.length>1){try{window.__navClose();}catch(x){}window.__routeApi.setPlan(pts,rdTitle());RDR=null;rdMsg("Loaded into the planner. You can edit, save or follow it.");}}
-  if(e.target.id==="rdNav"){const pts=rdPoints();if(window.__routeApi&&pts.length>1){const t=rdTitle();RDR=null;try{window.__navClose();}catch(x){}window.__routeApi.follow(pts,t);}}
+  const id=e.target.id,alt=id.endsWith("2"),R=alt?RDR2:RDR;
+  if(id==="rdUse"||id==="rdUse2"){const pts=rdPoints(R);if(window.__routeApi&&pts.length>1){try{window.__navClose();}catch(x){}window.__routeApi.setPlan(pts,rdTitle(R));RDR=null;RDR2=null;rdMsg("Loaded into the planner. You can edit, save or follow it.");}}
+  if(id==="rdNav"||id==="rdNav2"){const pts=rdPoints(R);if(window.__routeApi&&pts.length>1){const t=rdTitle(R);RDR=null;RDR2=null;try{window.__navClose();}catch(x){}window.__routeApi.follow(pts,t);}}
  });
 })();
 </script>
