@@ -580,7 +580,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-54<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-55<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4918,7 +4918,7 @@ async function rdBuild(tolM,gapM,stat){
   await pass(gW*0.3,false,false);    /* anything else that is very close */
  }
  jd.sort((a,b)=>a-b);const medGap=jd.length?jd[jd.length>>1]:0;
- RD=rdFinish(nx.slice(0,n),ny.slice(0,n),Int32Array.from(ea),Int32Array.from(eb),Float32Array.from(ec),Float32Array.from(el),mpu,tolM,gapM,Uint8Array.from(ecl));
+ RD=rdFinish(nx.slice(0,n),ny.slice(0,n),Int32Array.from(ea),Int32Array.from(eb),Float32Array.from(ec),Float32Array.from(el),mpu,tolM,gapM,Uint8Array.from(ecl),true);
  RD.joined=joined;RD.medGap=medGap;RD.key=rdKey();RD.srcRef=src;
  return RD;
 }
@@ -4939,13 +4939,42 @@ function rdBridge(nx,ny,ea,eb,mpu,maxM){
  }
  return {A,B};
 }
-function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl){
- try{const br=rdBridge(nx,ny,ea,eb,mpu,RDBRIDGE);
-  if(br.A.length){const k=br.A.length,m0=ea.length,na=new Int32Array(m0+k),nb=new Int32Array(m0+k),nc=new Float32Array(m0+k),nl=new Float32Array(m0+k),ncl=new Uint8Array(m0+k);
-   na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
-   for(let j=0;j<k;j++){const a=br.A[j],b=br.B[j],len=Math.hypot(nx[a]-nx[b],ny[a]-ny[b])*mpu;na[m0+j]=a;nb[m0+j]=b;nl[m0+j]=len;nc[m0+j]=len*RDPROF.best[6];ncl[m0+j]=6;}
-   ea=na;eb=nb;ec=nc;el=nl;ecl=ncl;}
- }catch(e){}
+function rdShortcuts(nx,ny,ea,eb,el,ecl,mpu){
+ const n=nx.length,m=ea.length,off=new Int32Array(n+1);
+ for(let e=0;e<m;e++){off[ea[e]+1]++;off[eb[e]+1]++;}
+ for(let i=0;i<n;i++)off[i+1]+=off[i];
+ const fill=off.slice(0,n),to=new Int32Array(2*m),ln=new Float32Array(2*m),cls=new Int8Array(n).fill(9);
+ for(let e=0;e<m;e++){const a=ea[e],b=eb[e];let p=fill[a]++;to[p]=b;ln[p]=el[e];p=fill[b]++;to[p]=a;ln[p]=el[e];const c=ecl[e];if(c<cls[a])cls[a]=c;if(c<cls[b])cls[b]=c;}
+ const cw=200/mpu,K=(a,b)=>(a+4096)*8388608+(b+4096),h=new Map(),nxt=new Int32Array(n);
+ for(let i=0;i<n;i++){const k=K(Math.floor(nx[i]/cw),Math.floor(ny[i]/cw)),p=h.get(k);nxt[i]=p===undefined?-1:p;h.set(k,i);}
+ const dist=new Float32Array(n),stamp=new Int32Array(n);let st=0;const hk=[],hv=[];
+ const push=(k,v)=>{let i=hk.length;hk.push(k);hv.push(v);while(i>0){const p=(i-1)>>1;if(hk[p]<=k)break;hk[i]=hk[p];hv[i]=hv[p];i=p;}hk[i]=k;hv[i]=v;};
+ const pop=()=>{const rv=hv[0],lk=hk.pop(),lv=hv.pop();if(hk.length){let i=0;const L=hk.length;for(;;){let c=2*i+1;if(c>=L)break;if(c+1<L&&hk[c+1]<hk[c])c++;if(hk[c]>=lk)break;hk[i]=hk[c];hv[i]=hv[c];i=c;}hk[i]=lk;hv[i]=lv;}return rv;};
+ const reach=(s0,t,lim)=>{st++;hk.length=0;hv.length=0;stamp[s0]=st;dist[s0]=0;push(0,s0);let ex=0;
+  while(hk.length&&ex<4000){const u=pop();if(u===t)return true;ex++;const du=dist[u];for(let p=off[u];p<off[u+1];p++){const v=to[p],nd=du+ln[p];if(nd>lim)continue;if(stamp[v]!==st||nd<dist[v]){stamp[v]=st;dist[v]=nd;push(nd,v);}}}
+  return false;};
+ const A=[],B=[],seen=new Set();
+ for(let e=0;e<n&&A.length<30000;e++){
+  const dg=off[e+1]-off[e];if(dg>1||cls[e]>2)continue;
+  const Rm=cls[e]<=1?200:100,Rw=Rm/mpu;let dx=0,dy=0,hasDir=false,nbr=-1;
+  if(dg===1){nbr=to[off[e]];dx=nx[e]-nx[nbr];dy=ny[e]-ny[nbr];const L=Math.hypot(dx,dy);if(L>0){dx/=L;dy/=L;hasDir=true;}}
+  const cx=Math.floor(nx[e]/cw),cy=Math.floor(ny[e]/cw),cand=[];
+  for(let ax=cx-1;ax<=cx+1;ax++)for(let ay=cy-1;ay<=cy+1;ay++){let i=h.get(K(ax,ay));while(i!==undefined&&i>=0){
+   if(i!==e&&i!==nbr){const vx=nx[i]-nx[e],vy=ny[i]-ny[e],d=Math.hypot(vx,vy);if(d>0&&d<=Rw&&(!hasDir||(vx*dx+vy*dy)/d>=0.2))cand.push([d,i]);}
+   i=nxt[i];}}
+  if(!cand.length)continue;cand.sort((p,q)=>p[0]-q[0]);
+  for(let c=0;c<Math.min(3,cand.length);c++){const d=cand[c][0]*mpu,j=cand[c][1];
+   if(!reach(e,j,Math.max(4*d,d+150))){const k=Math.min(e,j)*4194304+Math.max(e,j);if(!seen.has(k)){seen.add(k);A.push(e);B.push(j);}break;}}
+ }
+ return {A,B};
+}
+function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl,doShort){
+ const addB=(Ar,Br)=>{if(!Ar.length)return;const k=Ar.length,m0=ea.length,na=new Int32Array(m0+k),nb=new Int32Array(m0+k),nc=new Float32Array(m0+k),nl=new Float32Array(m0+k),ncl=new Uint8Array(m0+k);
+  na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
+  for(let j=0;j<k;j++){const a=Ar[j],b=Br[j],len=Math.hypot(nx[a]-nx[b],ny[a]-ny[b])*mpu;na[m0+j]=a;nb[m0+j]=b;nl[m0+j]=len;nc[m0+j]=len*RDPROF.best[6];ncl[m0+j]=6;}
+  ea=na;eb=nb;ec=nc;el=nl;ecl=ncl;};
+ try{if(doShort){const sc=rdShortcuts(nx,ny,ea,eb,el,ecl,mpu);addB(sc.A,sc.B);}}catch(e){}
+ try{const br=rdBridge(nx,ny,ea,eb,mpu,RDBRIDGE);addB(br.A,br.B);}catch(e){}
  const n=nx.length,m=ea.length,off=new Int32Array(n+1);
  for(let e=0;e<m;e++){off[ea[e]+1]++;off[eb[e]+1]++;}
  for(let i=0;i<n;i++)off[i+1]+=off[i];
@@ -4962,7 +4991,7 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl){
 }
 async function rdSave(){
  const key=RD&&RD.key;if(!key)return false;
- const hdr=new Float64Array([4,RD.n,RD.m,RD.mpu,RD.tolM,RD.gapM]);
+ const hdr=new Float64Array([5,RD.n,RD.m,RD.mpu,RD.tolM,RD.gapM]);
  const blob=new Blob([hdr,RD.nx,RD.ny,RD.ea,RD.eb,RD.el,RD.ecl]);
  try{await idbPutMany("tiles",[[key+"|roads",blob]]);return true;}catch(e){return false;}
 }
@@ -4973,14 +5002,14 @@ async function rdLoad(key){
   const f32=c=>{const a=new Float32Array(buf,o,c);o+=4*c;return a;},i32=c=>{const a=new Int32Array(buf,o,c);o+=4*c;return a;};
   const nx=f32(n),ny=f32(n),ea=i32(m),eb=i32(m),el=f32(m),ecl=new Uint8Array(buf,o,m);
   const ec=new Float32Array(m);for(let e=0;e<m;e++)ec[e]=rdCostOf(ecl[e],el[e]);
-  const g=rdFinish(nx,ny,ea,eb,ec,el,h[3],h[4],h[5],ecl);g.key=key;g.srcRef=src;return g;
+  const g=rdFinish(nx,ny,ea,eb,ec,el,h[3],h[4],h[5],ecl,h[0]<5);g.resave=h[0]<5;g.key=key;g.srcRef=src;return g;
  }catch(e){return null;}
 }
 async function rdEnsure(){
  const key=rdKey();
  if(RD&&((key&&RD.key===key)||(!key&&RD.srcRef===src)))return RD;
  RDP.old=false;
- if(key){const g=await rdLoad(key);if(g){RD=g;return RD;}}
+ if(key){const g=await rdLoad(key);if(g){RD=g;if(g.resave){g.resave=false;try{await rdSave();}catch(e){}}return RD;}}
  return null;
 }
 /* routing */
