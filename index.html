@@ -457,6 +457,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <div class="nvStep">2. Where are you going?</div>
     <div class="row"><button class="small" id="rdBFind">Find compartment</button><button class="small" id="rdB">Tap on map</button><button class="small secondary" id="rdClr">Clear</button></div>
     <div class="row"><button class="small secondary" id="rdNet">Show road network on the map</button></div>
+    <div id="rdLegend" style="display:none;font-size:12px;line-height:1.7;color:#35506b"><b style="color:#ffb300">&#9632;</b> tar &nbsp;<b style="color:#0b3d91">&#9632;</b> plantation main &nbsp;<b style="color:#ff2bd6">&#9632;</b> compartment road &nbsp;<b style="color:#8e8e8e">&#9632;</b> minor &nbsp;<b style="color:#e53935">&#9632;</b> dead end &nbsp;<b style="color:#00e5ff">&#9632;</b> bridge</div>
     <p id="rdMsg" class="muted" style="margin:6px 0 0">Choose the start and the destination. The road route appears on the map.</p>
    </div>
    <div id="routeBox">
@@ -579,7 +580,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-53<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-54<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5060,11 +5061,13 @@ window.roadSvg=function(sp){
   if(d)o+=`<path d="${d}" fill="none" stroke="#e03131" stroke-width="3" stroke-linecap="round"/>`;
  }
  if(RD&&RD.net&&src){
-  const g=RD,sz=vsize(),R=Math.hypot(sz.w,sz.h)/2/view.zoom*1.05,cx=view.x+sz.w/2/view.zoom,cy=view.y+sz.h/2/view.zoom;let d="",k=0,cnt=0;
-  for(let e=0;e<g.m;e++){const a=g.ea[e],x=g.nx[a],y=g.ny[a];if(Math.abs(x-cx)>R||Math.abs(y-cy)>R)continue;if(g.root[a]!==g.main)continue;cnt++;}
-  const step=Math.max(1,Math.ceil(cnt/9000));let ci=0;
-  for(let e=0;e<g.m;e++){const a=g.ea[e],x=g.nx[a],y=g.ny[a];if(Math.abs(x-cx)>R||Math.abs(y-cy)>R)continue;if(g.root[a]!==g.main)continue;if((ci++)%step)continue;const b=g.eb[e],p=sp({x,y}),q=sp({x:g.nx[b],y:g.ny[b]});d+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;k++;}
-  if(d)o+=`<path d="${d}" fill="none" stroke="#ff2bd6" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>`;
+  const g=RD,sz=vsize(),R=Math.hypot(sz.w,sz.h)/2/view.zoom*1.05,cx=view.x+sz.w/2/view.zoom,cy=view.y+sz.h/2/view.zoom;
+  const CC=["#ffb300","#0b3d91","#ff2bd6","#8e8e8e","#e53935","#ff2bd6","#00e5ff"],CW=[4,4,2.5,2.5,2.5,2.5,4];
+  const inV=e=>{const a=g.ea[e],x=g.nx[a],y=g.ny[a];return !(Math.abs(x-cx)>R||Math.abs(y-cy)>R)&&g.root[a]===g.main;};
+  let cnt=0;for(let e=0;e<g.m;e++){if(g.ecl[e]>=2&&g.ecl[e]!==6&&inV(e))cnt++;}
+  const step=Math.max(1,Math.ceil(cnt/9000)),D=CC.map(()=>"");let ci=0;
+  for(let e=0;e<g.m;e++){if(!inV(e))continue;const c=g.ecl[e];if(c>=2&&c!==6&&(ci++)%step)continue;const a=g.ea[e],b=g.eb[e],p=sp({x:g.nx[a],y:g.ny[a]}),q=sp({x:g.nx[b],y:g.ny[b]});D[c]+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;}
+  [2,3,4,5,0,1,6].forEach(c=>{if(D[c])o+=`<path d="${D[c]}" fill="none" stroke="${CC[c]}" stroke-width="${CW[c]}" stroke-linecap="round" opacity=".92"/>`;});
  }
  if(RDR2){
   const pts=RDR2.world.map(p=>sp({x:p[0],y:p[1]}));
@@ -5146,7 +5149,7 @@ window.roadSvg=function(sp){
  };
  g("navBtn").onclick=()=>open(nb().style.display!=="block");
  g("nvClose").onclick=()=>open(false);
- g("rdNet").onclick=async()=>{const gr=await rdEnsure();if(!gr){rdMsg("No road network for this map yet.");return;}gr.net=!gr.net;g("rdNet").textContent=gr.net?"Hide road network":"Show road network on the map";scheduleDraw();};
+ g("rdNet").onclick=async()=>{const gr=await rdEnsure();if(!gr){rdMsg("No road network for this map yet.");return;}gr.net=!gr.net;g("rdNet").textContent=gr.net?"Hide road network":"Show road network on the map";g("rdLegend").style.display=gr.net?"block":"none";scheduleDraw();};
  g("nvMin").onclick=()=>{nb().classList.toggle("min");g("nvMin").textContent=nb().classList.contains("min")?"Expand":"Minimise";};
  window.__navClose=()=>open(false);
  g("rdMsg").addEventListener("click",e=>{if(e.target.id==="rdGoMaps"){open(false);switchTab("maps");setTimeout(()=>{try{g("scanCard").scrollIntoView({block:"start"});}catch(x){}},200);}});
