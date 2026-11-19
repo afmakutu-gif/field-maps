@@ -109,7 +109,7 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #viewerBox.full #routeBox{bottom:calc(8px + env(safe-area-inset-bottom))}
 #followHud{display:none;position:absolute;left:8px;right:8px;bottom:54px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;z-index:30;box-shadow:0 8px 24px rgba(37,99,184,.18)}
 #fhMain{font-size:18px}#fhSub{font-size:13px;color:var(--muted);margin:2px 0 6px}
-#followHud .row{display:flex;gap:6px;flex-wrap:wrap}#followHud #fhRrRow{margin-top:6px}
+.rdWarn{margin:8px 0;padding:8px 10px;border-radius:12px;background:#fff6e5;border:1px solid #f1c27a;color:#6b4300;font-size:14px;line-height:1.4}.rdWarn.ok{background:#eaf7ef;border-color:#9fd5b3;color:#1f6b3f}.rdWr{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}#followHud .row{display:flex;gap:6px;flex-wrap:wrap}#followHud #fhRrRow{margin-top:6px}
 #followHud button.on{background:var(--greenDark);color:#fff}
 #viewerBox.full #followHud{bottom:calc(54px + env(safe-area-inset-bottom))}
 #fixPos,#fixClr,#oriBtn{position:absolute;right:8px;z-index:5;height:30px;min-height:30px;padding:0 10px;font-size:12px}
@@ -581,7 +581,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-56<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-57<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4390,7 +4390,7 @@ function scanSvg(sp){
   const fn=ol.fnArray,ar=ol.argsArray,N=fn.length;
   let ctm=ctx.vp.transform.slice(),stack=[],lw=1,dash=[],sc="#000000",fc="#000000",mc=[],layers={};
   const styles=new Map(),fills=new Map();let pts=0,path=[],cur=null,total=0;
-  const fl=[];
+  const fl=[],zl=[];let zpts=0;
   const ptT=(x,y)=>[x*ctm[0]+y*ctm[2]+ctm[4],x*ctm[1]+y*ctm[3]+ctm[5]];
   const scale=()=>Math.sqrt(Math.abs(ctm[0]*ctm[3]-ctm[1]*ctm[2]))||1;
   const curLayer=()=>{for(let i=mc.length-1;i>=0;i--)if(mc[i])return mc[i];return "";};
@@ -4447,6 +4447,7 @@ function scanSvg(sp){
    if(!path.length)return;let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18,n=0;
    for(const sp of path)for(const p of sp){n++;if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1];}
    let f=fills.get(fc);if(!f){f={col:fc,n:0,sz:0};fills.set(fc,f);}f.n++;f.sz+=Math.max(x1-x0,y1-y0);
+   if(fc==="#38a800"&&zpts<1500000&&(mpu*Math.max(x1-x0,y1-y0))>=30){const rings=[];for(const sp of path){if(sp.length<3)continue;const a=new Float32Array(sp.length*2);for(let i=0;i<sp.length;i++){a[i*2]=sp[i][0];a[i*2+1]=sp[i][1];}rings.push(a);zpts+=sp.length;}if(rings.length)zl.push({rings,bb:[x0,y0,x1,y1]});}
   }
   for(let i=0;i<N;i++){
    const op=fn[i],a=ar[i];
@@ -4476,7 +4477,7 @@ function scanSvg(sp){
   }
   const list=[...styles.values()].sort((x,y)=>y.lenW-x.lenW);
   const flist=[...fills.values()].sort((x,y)=>y.n-x.n);
-  scanData={styles:list,fills:flist,ops:N,mpu,title:ctx.title,prep:ctx.prep||null,mapKey:ctx.mapKey||(ctx.prep&&ctx.prep.mapKey)||null};
+  scanData={styles:list,fills:flist,zones:zl,ops:N,mpu,title:ctx.title,prep:ctx.prep||null,mapKey:ctx.mapKey||(ctx.prep&&ctx.prep.mapKey)||null};
   try{if(ctx.release)ctx.release();}catch(e){}
   render();btn.disabled=false;try{window.__rdAuto&&window.__rdAuto();}catch(e){}
  }
@@ -5028,6 +5029,51 @@ async function rdEnsure(){
  return null;
 }
 /* routing */
+const RDZ={all:false,set:new Set(),v:0};let RZ=null;
+function rdZReset(){RDZ.all=false;RDZ.set.clear();RDZ.v++;}
+async function rdZSave(){
+ const key=rdKey(),zs=scanData&&scanData.zones;if(!key||!zs)return false;
+ const meta=[zs.length];let tot=0;for(const z of zs){meta.push(z.rings.length);for(const r of z.rings){meta.push(r.length);tot+=r.length;}}
+ const data=new Float32Array(tot);let o=0;for(const z of zs)for(const r of z.rings){data.set(r,o);o+=r.length;}
+ try{await idbPutMany("tiles",[[key+"|zones",new Blob([Int32Array.from([meta.length]),Int32Array.from(meta),data])]]);}catch(e){return false;}
+ RZ={key,z:zs.map(z=>({rings:z.rings,bb:z.bb})),g:null};return true;
+}
+async function rdZEnsure(){
+ const key=rdKey();if(RZ&&RZ.key===key)return RZ;
+ RZ={key,z:[],g:null};if(!key)return RZ;
+ try{const b=(await idbGetMany("tiles",[key+"|zones"]))[0];if(!b)return RZ;
+  const buf=await b.arrayBuffer(),ml=new Int32Array(buf,0,1)[0],meta=new Int32Array(buf,4,ml),data=new Float32Array(buf,4+4*ml);
+  let mi=1,o=0;const nz=meta[0],z=[];
+  for(let i=0;i<nz;i++){const nr=meta[mi++],rings=[];let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
+   for(let r=0;r<nr;r++){const len=meta[mi++],a=data.subarray(o,o+len);o+=len;rings.push(a);for(let k=0;k<len;k+=2){const x=a[k],y=a[k+1];if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}}
+   z.push({rings,bb:[x0,y0,x1,y1]});}
+  RZ.z=z;}catch(e){}
+ return RZ;
+}
+function rdZoneAt(x,y){
+ if(!RZ)return -1;const Z=RZ.z;
+ for(let i=0;i<Z.length;i++){const b=Z[i].bb;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;
+  let ins=false;
+  for(const r of Z[i].rings){for(let a=0,c=r.length-2;a<r.length;c=a,a+=2){const xi=r[a],yi=r[a+1],xj=r[c],yj=r[c+1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))ins=!ins;}}
+  if(ins)return i;}
+ return -1;
+}
+function rdZoneMask(){
+ const g=RD;if(!g||!RZ||!RZ.z.length)return null;if(!RDZ.all&&!RDZ.set.size)return null;
+ if(!RZ.nz||RZ.g!==g){const nz=new Int16Array(g.n);for(let i=0;i<g.n;i++)nz[i]=rdZoneAt(g.nx[i],g.ny[i]);RZ.nz=nz;RZ.g=g;RZ.mk=null;}
+ if(RZ.mk&&RZ.mv===RDZ.v)return RZ.mk;
+ const a=new Uint8Array(g.n);for(let i=0;i<g.n;i++){const z=RZ.nz[i];if(z>=0&&(RDZ.all||RDZ.set.has(z)))a[i]=1;}
+ RZ.mk=a;RZ.mv=RDZ.v;return a;
+}
+function rdSections(world){
+ if(!RZ||!RZ.z.length||!RD)return [];const mpu=RD.mpu,secs=[];let cur=null,acc=0;
+ for(let i=1;i<world.length;i++){const a=world[i-1],b=world[i],L=Math.hypot(b[0]-a[0],b[1]-a[1])*mpu,st=Math.max(1,Math.ceil(L/5));
+  for(let k=0;k<st;k++){const t=(k+0.5)/st,x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t,z=rdZoneAt(x,y),pos=acc+L*t;
+   if(z>=0){if(cur&&cur.z===z&&pos-cur.end<=40){cur.end=pos;cur.pts.push([x,y]);}else{cur={z,start:pos,end:pos,pts:[[x,y]]};secs.push(cur);}}}
+  acc+=L;}
+ const out=secs.map(c=>({z:c.z,len:c.end-c.start+5,pts:c.pts})).filter(c=>c.len>=20);
+ out.forEach((c,i)=>c.n=i+1);return out;
+}
 const RDBL={key:undefined,pts:[],v:0};
 function rdBlList(){const k=rdKey();if(RDBL.key!==k){RDBL.key=k;RDBL.v++;try{RDBL.pts=k?JSON.parse(localStorage.getItem("pscBlk|"+k)||"[]"):[];}catch(e){RDBL.pts=[];}}return RDBL.pts;}
 function rdBlSave(){RDBL.v++;try{if(RDBL.key)localStorage.setItem("pscBlk|"+RDBL.key,JSON.stringify(RDBL.pts));}catch(e){}}
@@ -5042,7 +5088,7 @@ function rdNear(x,y,mainOnly){
  return {id:best,m:Math.sqrt(bd)*g.mpu};
 }
 function rdAstar(s,t,prof){
- prof=prof||RDPROF.best;const hm=Math.min(...prof)*0.99,bm=rdBlkMask();
+ prof=prof||RDPROF.best;const hm=Math.min(...prof)*0.99,bm=rdBlkMask(),zm=rdZoneMask();
  const g=RD,n=g.n,dist=new Float32Array(n).fill(Infinity),prev=new Int32Array(n).fill(-1),done=new Uint8Array(n);
  const tx=g.nx[t],ty=g.ny[t],hf=i=>Math.hypot(g.nx[i]-tx,g.ny[i]-ty)*g.mpu*hm;
  const hk=[],hv=[];
@@ -5051,7 +5097,7 @@ function rdAstar(s,t,prof){
  dist[s]=0;push(hf(s),s);
  while(hk.length){
   const u=pop();if(done[u])continue;done[u]=1;if(u===t)break;
-  for(let p=g.off[u];p<g.off[u+1];p++){const v=g.to[p];if(bm&&bm[v]&&v!==t)continue;const nd=dist[u]+g.l[p]*prof[g.cl[p]];if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}
+  for(let p=g.off[u];p<g.off[u+1];p++){const v=g.to[p];if(bm&&bm[v]&&v!==t)continue;let cc=g.l[p]*prof[g.cl[p]];if(zm&&zm[v])cc*=6;const nd=dist[u]+cc;if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}
  }
  if(!done[t])return null;
  const path=[];for(let v=t;v>=0;v=prev[v])path.push(v);path.reverse();return path;
@@ -5067,7 +5113,7 @@ window.__rdReroute=async function(from,to,blockedLL){
  let added=null;
  try{
   if(!src||!src.geo)return {err:"This map has no location data."};
-  const g=await rdEnsure();if(!g)return {err:"This map has no road network yet."};
+  const g=await rdEnsure();if(!g)return {err:"This map has no road network yet."};await rdZEnsure();
   if(blockedLL){const w=src.geo.toWorld(blockedLL.lat,blockedLL.lon);added=[w[0],w[1]];rdBlList().push(added);rdBlSave();}
   const fw=src.geo.toWorld(from.lat,from.lon),tw=src.geo.toWorld(to.lat,to.lon);
   const a=rdNear(fw[0],fw[1],true),b=rdNear(tw[0],tw[1],true);
@@ -5090,6 +5136,7 @@ async function rdRun(){
  if(!RDP.A||!RDP.B){rdMsg("Set the start and the destination first.");return;}
  rdMsg("Finding the route...");await rdTick();
  const g=await rdEnsure();
+ if(g)await rdZEnsure();
  if(!g){rdMsg((RDP.old?"This map's saved road network is from an older version. ":"This map has no road network yet. ")+'<button class="small" id="rdGoMaps" type="button">Go to Maps</button> then scan the map: the road network is built automatically.');return;}
  const a=rdNear(RDP.A[0],RDP.A[1],true),b=rdNear(RDP.B[0],RDP.B[1],true);
  if(a.id<0||b.id<0){rdMsg("The road network is empty.");return;}
@@ -5097,15 +5144,19 @@ async function rdRun(){
  const path=rdAstar(a.id,b.id,RDPROF.best);
  if(!path){rdMsg("No road connection found between these points. The roads may have a gap. Open Maps, Road network and tap Show separate pieces, or join gaps with a bigger distance.");RDR=null;RDR2=null;scheduleDraw();return;}
  const mk=pa=>{let P=pa.map(i=>[g.nx[i],g.ny[i]]),len=0;for(let i=1;i<P.length;i++)len+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1])*g.mpu;
-  P=rdSimplify(P,1.5/g.mpu);return {A:RDP.A,B:RDP.B,world:[RDP.A].concat(P,[RDP.B]),m:len,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1]};};
+  P=rdSimplify(P,1.5/g.mpu);const world=[RDP.A].concat(P,[RDP.B]);return {A:RDP.A,B:RDP.B,world,m:len,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1],secs:rdSections(world)};};
  RDR=mk(path);RDR2=null;
  try{const p2=rdAstar(a.id,b.id,RDPROF.short);if(p2){const r2=mk(p2);if(r2.m<RDR.m*0.97&&r2.key!==RDR.key)RDR2=r2;}}catch(e){}
  const full=RDR.world;
  let sp=30;try{sp=parseFloat(localStorage.getItem("pscSpeed"))||30;}catch(e){}
  const tm=r=>{const mins=Math.round((r.m+a.m+b.m)/1000/sp*60);return mins<60?mins+" min":Math.floor(mins/60)+" h "+String(mins%60).padStart(2,"0")+" min";};
  const btn=(k)=>`<div class="row" style="margin:4px 0 8px"><button class="small" id="rdUse${k}">Use as route</button><button class="small" id="rdNav${k}">Follow now</button></div>`;
- rdMsg((RDR2?`<b style="color:#1f7ae0">Blue: preferred route</b> (tar, then plantation roads)<br>`:"")+`<b>${rdKm(RDR.m)}</b> by road, about ${tm(RDR)} at ${sp} km/h.`+btn("")
-  +(RDR2?`<b style="color:#2f9e66">Green: shorter route</b> (more compartment roads)<br><b>${rdKm(RDR2.m)}</b> by road, about ${tm(RDR2)}.`+btn("2"):"")
+ const zsum=r=>r&&r.secs&&r.secs.length?r.secs.reduce((q,c)=>q+c.len,0):0;
+ const warn=()=>{if(!RZ||!RZ.z.length)return "";const tot=zsum(RDR),act=RDZ.all||RDZ.set.size;
+  if(!tot)return act?'<div class="rdWarn ok">The route keeps out of the open and conservation areas.'+'<br><button class="small secondary" id="rdAvOff">Allow them again</button></div>':'';
+  return '<div class="rdWarn"><b>Warning: open / conservation area</b><br>'+(act?'The route still goes':'The route goes')+' through it for '+rdKm(tot)+' in '+RDR.secs.length+(RDR.secs.length>1?' places':' place')+(act?'. It could not be avoided completely (the destination or the only road is inside).':'.')+RDR.secs.slice(0,6).map((c,i)=>'<div class="rdWr"><span>'+c.n+': '+rdKm(c.len)+'</span><button class="small secondary" id="rdAv'+i+'">Avoid</button></div>').join('')+(RDR.secs.length>6?'<small>and '+(RDR.secs.length-6)+' more</small><br>':'')+'<div class="row" style="margin-top:4px"><button class="small" id="rdAvAll">Avoid all</button>'+(act?'<button class="small secondary" id="rdAvOff">Allow again</button>':'')+'</div></div>';};
+ rdMsg((RDR2?`<b style="color:#1f7ae0">Blue: preferred route</b> (tar, then plantation roads)<br>`:"")+`<b>${rdKm(RDR.m)}</b> by road, about ${tm(RDR)} at ${sp} km/h.`+warn()+btn("")
+  +(RDR2?`<b style="color:#2f9e66">Green: shorter route</b> (more compartment roads)<br><b>${rdKm(RDR2.m)}</b> by road, about ${tm(RDR2)}.`+(zsum(RDR2)?` <small style="color:#9a5b00">Crosses open area for ${rdKm(zsum(RDR2))}.</small>`:"")+btn("2"):"")
   +(a.m>60||b.m>60?`<small>Off-road ends: start ${rdKm(a.m)}, destination ${rdKm(b.m)}.</small>`:""));
  scheduleDraw();
  try{const xs=full.map(p=>p[0]),ys=full.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),sz=vsize(),z=clamp(Math.min(sz.w/(x1-x0+40),sz.h*0.45/(y1-y0+40)),minZoom,maxZoom);autoFit=false;view.zoom=z;view.x=(x0+x1)/2-sz.w/2/z;view.y=(y0+y1)/2-sz.h*0.28/z;clampView();changed();}catch(e){}
@@ -5115,7 +5166,7 @@ function rdPoints(R){
 }
 function rdTitle(R){R=R||RDR;return "Road route "+(R?rdKm(R.m):"");}
 function rdSet(which,w){
- RDP[which]=w;RDP.pick=null;
+ RDP[which]=w;RDP.pick=null;rdZReset();
  const e=document.getElementById(which==="A"?"rdAMsg":"rdBMsg");
  const lbl=document.getElementById("rdLbl");if(lbl)lbl.textContent=(RDP.A?"Start set. ":"")+(RDP.B?"Destination set.":"");
  scheduleDraw();
@@ -5155,6 +5206,8 @@ window.roadSvg=function(sp){
   const dd="M"+pts.map(q=>q.x.toFixed(1)+" "+q.y.toFixed(1)).join("L");
   o+=`<path d="${dd}" fill="none" stroke="#fff" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="#1f7ae0" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`;
  }
+ try{if(RDR&&RDR.secs)RDR.secs.forEach(c=>{if(c.pts.length<1)return;const pp=c.pts.map(p=>sp({x:p[0],y:p[1]}));const dd="M"+pp.map(q=>q.x.toFixed(1)+" "+q.y.toFixed(1)).join("L");const m=pp[pp.length>>1];
+  o+=`<path d="${dd}" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity=".95"/><g><circle cx="${m.x.toFixed(1)}" cy="${m.y.toFixed(1)}" r="11" fill="#f59e0b" stroke="#fff" stroke-width="3"/><text x="${m.x.toFixed(1)}" y="${(m.y+4.5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">${c.n}</text></g>`;});}catch(e){}
  try{rdBlList().forEach(p=>{const q=sp({x:p[0],y:p[1]}),x=q.x.toFixed(1),y=q.y.toFixed(1);o+=`<g><circle cx="${x}" cy="${y}" r="12" fill="#d64545" stroke="#fff" stroke-width="3"/><path d="M${(q.x-5).toFixed(1)} ${(q.y-5).toFixed(1)}L${(q.x+5).toFixed(1)} ${(q.y+5).toFixed(1)}M${(q.x+5).toFixed(1)} ${(q.y-5).toFixed(1)}L${(q.x-5).toFixed(1)} ${(q.y+5).toFixed(1)}" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>`;});}catch(e){}
  [["A","#2f9e66",RDP.A],["B","#d64545",RDP.B]].forEach(([l,c,w])=>{if(!w)return;const q=sp({x:w[0],y:w[1]});o+=`<g><circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="13" fill="${c}" stroke="#fff" stroke-width="3"/><text x="${q.x.toFixed(1)}" y="${(q.y+4.5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">${l}</text></g>`;});
  return o;
@@ -5182,7 +5235,7 @@ window.roadSvg=function(sp){
   g("rdBuild").disabled=true;
   try{
    await rdBuild(tol,gap,stat);
-   const saved=await rdSave();
+   const saved=await rdSave();try{await rdZSave();}catch(e){}
    stat.textContent=statTxt()+(saved?" Saved with this map.":" (Not saved: prepare the map to keep it.)");
    g("rdShow").style.display=RD.pieces>1?"":"none";
   }catch(e){stat.textContent="Could not build: "+(e&&e.message||e);}
@@ -5202,9 +5255,13 @@ window.roadSvg=function(sp){
  rm("rdBFind").onclick=()=>{window.__rdWantB=it=>rdSet("B",[it[1],it[2]]);const b=g("findBox");b.style.display="block";try{g("findInput").focus();}catch(e){}rdMsg("Type the compartment name, then tap it in the list.");};
  rm("rdBlk").onclick=()=>{RDP.pick="BLK";rdMsg("Tap the road where it is blocked, for example a stream crossing. Tap a red mark again to remove it.");};
  rm("rdBlkClr").onclick=()=>{rdBlList().length=0;rdBlSave();scheduleDraw();rdMsg("Blocked places cleared.");if(RDP.A&&RDP.B)rdRun();};
- rm("rdClr").onclick=()=>{RDP.A=RDP.B=null;RDP.pick=null;RDR=null;RDR2=null;rdMsg("");scheduleDraw();};
+ rm("rdClr").onclick=()=>{RDP.A=RDP.B=null;RDP.pick=null;RDR=null;RDR2=null;rdZReset();rdMsg("");scheduleDraw();};
  g("rdMsg").addEventListener("click",e=>{
-  const id=e.target.id,alt=id.endsWith("2"),R=alt?RDR2:RDR;
+  const id=e.target.id;
+  if(/^rdAv\d+$/.test(id)){const sec=(RDR&&RDR.secs||[])[+id.slice(4)];if(sec){RDZ.set.add(sec.z);RDZ.v++;rdRun();}return;}
+  if(id==="rdAvAll"){RDZ.all=true;RDZ.v++;rdRun();return;}
+  if(id==="rdAvOff"){rdZReset();rdRun();return;}
+  const alt=id.endsWith("2"),R=alt?RDR2:RDR;
   if(id==="rdUse"||id==="rdUse2"){const pts=rdPoints(R);if(window.__routeApi&&pts.length>1){try{window.__navClose();}catch(x){}window.__routeApi.setPlan(pts,rdTitle(R));RDR=null;RDR2=null;rdMsg("Loaded into the planner. You can edit, save or follow it.");}}
   if(id==="rdNav"||id==="rdNav2"){const pts=rdPoints(R);if(window.__routeApi&&pts.length>1){const t=rdTitle(R);RDR=null;RDR2=null;try{window.__navClose();}catch(x){}window.__routeApi.follow(pts,t);}}
  });
