@@ -581,7 +581,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-62<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-63<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4389,13 +4389,13 @@ function scanSvg(sp){
  const fmtLen=m=>m>=1000?(m/1000).toFixed(1)+" km":Math.round(m)+" m";
  async function scan(){
   const ctx=window.__scanCtx;if(!ctx||!ctx.page)return;
-  btn.disabled=true;scanShow.clear();scanData=null;off.style.display="none";out.innerHTML="";
+  btn.disabled=true;scanShow.clear();scanData=null;try{RD=null;RDR=null;RDR2=null;RZ=null;}catch(e){}off.style.display="none";out.innerHTML="";
   stat.textContent="Reading the map drawing. This can take a minute on big maps...";
   await new Promise(r=>setTimeout(r,60));
   const OPS=pdfjsLib.OPS,page=ctx.page,mpu=(ctx.geo&&ctx.geo.mpu)||0;
   let layerNames={},ocCfg=null;try{const cfg=await ctx.doc.getOptionalContentConfig();ocCfg=cfg;for(const [id,grp] of cfg){layerNames[id]=grp.name||id;}}catch(e){}
   let ol;try{ol=await page.getOperatorList();}catch(e){stat.textContent="Could not read the drawing: "+(e&&e.message||e);btn.disabled=false;return;}
-  const fn=ol.fnArray,ar=ol.argsArray,N=fn.length;
+  let fn=ol.fnArray,ar=ol.argsArray;const N=fn.length;
   let ctm=ctx.vp.transform.slice(),stack=[],lw=1,dash=[],sc="#000000",fc="#000000",mc=[],hs=[],layers={},clip=null,pendClip=false;
   const hidden=()=>{for(let i=0;i<hs.length;i++)if(hs[i])return true;return false;};
   const pbb=()=>{let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;for(const sp of path)for(const q of sp){if(q[0]<x0)x0=q[0];if(q[0]>x1)x1=q[0];if(q[1]<y0)y0=q[1];if(q[1]>y1)y1=q[1];}return x1<x0?null:[x0,y0,x1,y1];};
@@ -4490,6 +4490,7 @@ function scanSvg(sp){
    }
    if((i&0x3ffff)===0&&i){stat.textContent=`Reading the map drawing... ${Math.round(i/N*100)}%`;await new Promise(r=>setTimeout(r,0));}
   }
+  fn=null;ar=null;ol=null;stack=[];try{page.cleanup();}catch(e){}
   const list=[...styles.values()].sort((x,y)=>y.lenW-x.lenW);
   const flist=[...fills.values()].sort((x,y)=>y.n-x.n);
   scanData={styles:list,fills:flist,zones:zl,ops:N,mpu,title:ctx.title,prep:ctx.prep||null,mapKey:ctx.mapKey||(ctx.prep&&ctx.prep.mapKey)||null};
@@ -5285,6 +5286,7 @@ window.roadSvg=function(sp){
   const tol=+g("rdTol").value,gap=+g("rdGap").value;
   g("rdBuild").disabled=true;
   try{
+   RD=null;RDR=null;RDR2=null;RZ=null;
    await rdBuild(tol,gap,stat);
    const saved=await rdSave();try{await rdZSave();}catch(e){}
    stat.textContent=statTxt()+(saved?" Saved with this map.":" (Not saved: prepare the map to keep it.)");
