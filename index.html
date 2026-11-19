@@ -579,7 +579,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-43<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-44<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5023,8 +5023,10 @@ window.roadSvg=function(sp){
   if(d)o+=`<path d="${d}" fill="none" stroke="#e03131" stroke-width="3" stroke-linecap="round"/>`;
  }
  if(RD&&RD.net&&src){
-  const g=RD,sz=vsize(),R=Math.hypot(sz.w,sz.h)/2/view.zoom*1.05,cx=view.x+sz.w/2/view.zoom,cy=view.y+sz.h/2/view.zoom;let d="",k=0;
-  for(let e=0;e<g.m&&k<9000;e++){const a=g.ea[e],x=g.nx[a],y=g.ny[a];if(Math.abs(x-cx)>R||Math.abs(y-cy)>R)continue;if(g.root[a]!==g.main)continue;const b=g.eb[e],p=sp({x,y}),q=sp({x:g.nx[b],y:g.ny[b]});d+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;k++;}
+  const g=RD,sz=vsize(),R=Math.hypot(sz.w,sz.h)/2/view.zoom*1.05,cx=view.x+sz.w/2/view.zoom,cy=view.y+sz.h/2/view.zoom;let d="",k=0,cnt=0;
+  for(let e=0;e<g.m;e++){const a=g.ea[e],x=g.nx[a],y=g.ny[a];if(Math.abs(x-cx)>R||Math.abs(y-cy)>R)continue;if(g.root[a]!==g.main)continue;cnt++;}
+  const step=Math.max(1,Math.ceil(cnt/9000));let ci=0;
+  for(let e=0;e<g.m;e++){const a=g.ea[e],x=g.nx[a],y=g.ny[a];if(Math.abs(x-cx)>R||Math.abs(y-cy)>R)continue;if(g.root[a]!==g.main)continue;if((ci++)%step)continue;const b=g.eb[e],p=sp({x,y}),q=sp({x:g.nx[b],y:g.ny[b]});d+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;k++;}
   if(d)o+=`<path d="${d}" fill="none" stroke="#ff2bd6" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>`;
  }
  if(RDR){
