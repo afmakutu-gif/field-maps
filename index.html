@@ -579,7 +579,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-49<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.19-50<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -4837,13 +4837,13 @@ function pzPt(e){const r=$("pzCv").getBoundingClientRect();return {x:(e.clientX-
 </script>
 <script>
 /* ===== v38: road network from the Road layer + A to B navigation ===== */
-const RDK=["main","road","minor","dead"],RDJ=3;
+const RDK=["main","road","minor","dead"],RDJ=1.2;
 const rdCostOf=(cid,len)=>len*(cid>=4?RDJ:RDT[RDK[cid]].m);
-const RDT={main:{n:"Main road",m:0.8},road:{n:"Road",m:1},minor:{n:"Minor track",m:3},dead:{n:"Dead end",m:3},skip:{n:"Do not use",m:0}};
+const RDT={main:{n:"Main road",m:0.8},road:{n:"Road",m:1},minor:{n:"Minor track",m:1.2},dead:{n:"Dead end",m:3},skip:{n:"Do not use",m:0}};
 let RD=null,RDR=null,RDCFG={};const RDP={pick:null,A:null,B:null};
 try{RDCFG=JSON.parse(localStorage.getItem("pscRoadCfg")||"{}");}catch(e){}
 const rdIsRoad=l=>/^\s*road/i.test(l||"");
-function rdDefType(st){const c=st.col;if(c==="#ffff00")return "main";if(c==="#000000")return st.w>=3?"main":"road";if(c==="#734c00")return st.w<2?"minor":"road";if(c==="#b2b2b2")return "minor";if(c==="#ff0000")return "dead";return "road";}
+function rdDefType(st){const c=st.col;if(c==="#ffff00")return "main";if(c==="#000000")return st.w>=3?"main":"road";if(c==="#734c00")return "road";if(c==="#b2b2b2")return "minor";if(c==="#ff0000")return "dead";return "road";}
 const rdType=st=>RDCFG[st.key]||rdDefType(st);
 function rdRoadStyles(){
  const out=[];if(!scanData)return out;
