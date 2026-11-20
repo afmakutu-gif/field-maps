@@ -589,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-93<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-94<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5381,6 +5381,34 @@ function rdShortcuts(nx,ny,ea,eb,el,ecl,mpu){
  }
  return {A,B};
 }
+function rdCloseRoads(nx,ny,ea,eb,el,ecl,mpu){
+ /* roads that run 8-90 m apart but are only joined far away (a road drawn on the ground but missing from the map's road layer): add a guessed link where the detour is long */
+ const n=nx.length,m=ea.length,off=new Int32Array(n+1);
+ for(let e=0;e<m;e++){off[ea[e]+1]++;off[eb[e]+1]++;}
+ for(let i=0;i<n;i++)off[i+1]+=off[i];
+ const fill=off.slice(0,n),to=new Int32Array(2*m),ln=new Float32Array(2*m),cls=new Int8Array(n).fill(9);
+ for(let e=0;e<m;e++){const a=ea[e],b=eb[e];let p=fill[a]++;to[p]=b;ln[p]=el[e];p=fill[b]++;to[p]=a;ln[p]=el[e];const c=ecl[e];if(c<cls[a])cls[a]=c;if(c<cls[b])cls[b]=c;}
+ const R=90/mpu,r0=8/mpu,K=(a,b)=>(a+4096)*8388608+(b+4096),h=new Map(),nxt=new Int32Array(n).fill(-1);
+ for(let i=0;i<n;i++){if(cls[i]>2)continue;const k=K(Math.floor(nx[i]/R),Math.floor(ny[i]/R)),p=h.get(k);nxt[i]=p===undefined?-1:p;h.set(k,i);}
+ const dist=new Float32Array(n),stamp=new Int32Array(n);let st=0;const hk=[],hv=[];
+ const push=(k,v)=>{let i=hk.length;hk.push(k);hv.push(v);while(i>0){const p=(i-1)>>1;if(hk[p]<=k)break;hk[i]=hk[p];hv[i]=hv[p];i=p;}hk[i]=k;hv[i]=v;};
+ const pop=()=>{const rv=hv[0],lk=hk.pop(),lv=hv.pop();if(hk.length){let i=0;const L=hk.length;for(;;){let c=2*i+1;if(c>=L)break;if(c+1<L&&hk[c+1]<hk[c])c++;if(hk[c]>=lk)break;hk[i]=hk[c];hv[i]=hv[c];i=c;}hk[i]=lk;hv[i]=lv;}return rv;};
+ const reach=(s0,t,lim)=>{st++;hk.length=0;hv.length=0;stamp[s0]=st;dist[s0]=0;push(0,s0);let ex=0;
+  while(hk.length&&ex<8000){const u=pop();if(u===t)return true;ex++;const du=dist[u];for(let p=off[u];p<off[u+1];p++){const v=to[p],nd=du+ln[p];if(nd>lim)continue;if(stamp[v]!==st||nd<dist[v]){stamp[v]=st;dist[v]=nd;push(nd,v);}}}
+  return false;};
+ const A=[],B=[],occ=new Set(),oc=150/mpu;
+ for(let e=0;e<n&&A.length<3000;e+=3){
+  if(cls[e]>2)continue;const ok0=K(Math.floor(nx[e]/oc),Math.floor(ny[e]/oc));if(occ.has(ok0))continue;
+  const cx=Math.floor(nx[e]/R),cy=Math.floor(ny[e]/R),cand=[];
+  for(let ax=cx-1;ax<=cx+1;ax++)for(let ay=cy-1;ay<=cy+1;ay++){let i=h.get(K(ax,ay));while(i!==undefined&&i>=0){
+   if(Math.abs(i-e)>40){const d=Math.hypot(nx[i]-nx[e],ny[i]-ny[e]);if(d>=r0&&d<=R)cand.push([d,i]);}
+   i=nxt[i];}}
+  if(!cand.length)continue;cand.sort((p,q)=>p[0]-q[0]);
+  for(let c=0;c<Math.min(3,cand.length);c++){const d=cand[c][0]*mpu,j=cand[c][1];
+   if(!reach(e,j,Math.max(12*d,800))){A.push(e);B.push(j);occ.add(ok0);occ.add(K(Math.floor(nx[j]/oc),Math.floor(ny[j]/oc)));break;}}
+ }
+ return {A,B};
+}
 function rdJoinPieces(nx,ny,ea,eb,mpu,R,minSize){
  /* big road pieces that run close to each other but never touch: link them where they pass (any node, not only dead ends) */
  const n=nx.length,m=ea.length,par=new Int32Array(n);for(let i=0;i<n;i++)par[i]=i;
@@ -5414,6 +5442,7 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl,doShort){
  try{const br=rdBridge(nx,ny,ea,eb,mpu,RDBRIDGE);addB(br.A,br.B);}catch(e){}
  try{const br=rdBridge(nx,ny,ea,eb,mpu,600,300);addB(br.A,br.B);}catch(e){}
  try{const jp=rdJoinPieces(nx,ny,ea,eb,mpu,120,300);addB(jp.A,jp.B);}catch(e){}
+ try{const cr2=rdCloseRoads(nx,ny,ea,eb,el,ecl,mpu);addB(cr2.A,cr2.B);}catch(e){}
  const n=nx.length,m=ea.length,off=new Int32Array(n+1);
  for(let e=0;e<m;e++){off[ea[e]+1]++;off[eb[e]+1]++;}
  for(let i=0;i<n;i++)off[i+1]+=off[i];
