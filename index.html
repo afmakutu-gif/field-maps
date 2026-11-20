@@ -588,7 +588,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-87<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-88<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5567,21 +5567,34 @@ function rdLinks(need){
  }
  return lk;
 }
-function rdAstar(s,t,prof,lk){
+function rdNearMany(x,y,main0){
+ /* the nearest road nodes around a point (so a start beside parallel road lines can leave in either direction) */
+ const g=RD,bm=rdBlkMask(),C=[];let best=1e18;
+ for(let i=0;i<g.n;i++){if(bm&&bm[i])continue;if((g.sz.get(g.root[i])||0)<200)continue;const d=(g.nx[i]-x)*(g.nx[i]-x)+(g.ny[i]-y)*(g.ny[i]-y);if(d<best)best=d;C.push(d);}
+ const lim=Math.min(Math.sqrt(best)*g.mpu+45,Math.sqrt(best)*g.mpu*1.6+45,200)/g.mpu,l2=lim*lim,out=[];let k=0;
+ for(let i=0;i<g.n;i++){if(bm&&bm[i])continue;if((g.sz.get(g.root[i])||0)<200)continue;const d=C[k++];if(d<=l2)out.push({id:i,c:Math.sqrt(d)*g.mpu*1.0});}
+ out.sort((a,b)=>a.c-b.c);return out.slice(0,40);
+}
+function rdAstar(s,t,prof,lk,S,T){
  prof=prof||RDPROF.best;const hm=Math.min(...prof)*0.99,bm=rdBlkMask(),zm=rdZoneMask();
  const g=RD,n=g.n,dist=new Float32Array(n).fill(Infinity),prev=new Int32Array(n).fill(-1),done=new Uint8Array(n);
- const tx=g.nx[t],ty=g.ny[t],hf=i=>Math.hypot(g.nx[i]-tx,g.ny[i]-ty)*g.mpu*hm;
+ const tx=g.nx[t],ty=g.ny[t],slack=T&&T.length?250:0,hf=i=>Math.max(0,Math.hypot(g.nx[i]-tx,g.ny[i]-ty)*g.mpu-slack)*hm;
+ const tm=T&&T.length?new Map(T.map(q=>[q.id,q.c])):null;let bestT=Infinity,bt=-1;
  const hk=[],hv=[];
  const push=(k,v)=>{let i=hk.length;hk.push(k);hv.push(v);while(i>0){const p=(i-1)>>1;if(hk[p]<=k)break;hk[i]=hk[p];hv[i]=hv[p];i=p;}hk[i]=k;hv[i]=v;};
- const pop=()=>{const rv=hv[0],lk=hk.pop(),lv=hv.pop();if(hk.length){let i=0;const L=hk.length;for(;;){let c=2*i+1;if(c>=L)break;if(c+1<L&&hk[c+1]<hk[c])c++;if(hk[c]>=lk)break;hk[i]=hk[c];hv[i]=hv[c];i=c;}hk[i]=lk;hv[i]=lv;}return rv;};
- dist[s]=0;push(hf(s),s);
+ const pop=()=>{const rk=hk[0],rv=hv[0],lk=hk.pop(),lv=hv.pop();if(hk.length){let i=0;const L=hk.length;for(;;){let c=2*i+1;if(c>=L)break;if(c+1<L&&hk[c+1]<hk[c])c++;if(hk[c]>=lk)break;hk[i]=hk[c];hv[i]=hv[c];i=c;}hk[i]=lk;hv[i]=lv;}pop.k=rk;return rv;};
+ if(S&&S.length){for(const q of S){if(q.c<dist[q.id]){dist[q.id]=q.c;push(q.c+hf(q.id),q.id);}}}else{dist[s]=0;push(hf(s),s);}
  while(hk.length){
-  const u=pop();if(done[u])continue;done[u]=1;if(u===t)break;
-  for(let p=g.off[u];p<g.off[u+1];p++){const v=g.to[p];if(bm&&bm[v]&&v!==t)continue;let cc=g.l[p]*prof[g.cl[p]];if(zm&&zm[v])cc*=6;const nd=dist[u]+cc;if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}
-  if(lk){const L=lk.get(u);if(L)for(const q of L){const v=q[0];if(bm&&bm[v]&&v!==t)continue;const nd=dist[u]+q[1]*prof[7];if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}}
+  const u=pop();if(done[u])continue;
+  if(tm&&pop.k>=bestT)break;
+  done[u]=1;
+  if(tm){const tc=tm.get(u);if(tc!==undefined&&dist[u]+tc<bestT){bestT=dist[u]+tc;bt=u;}}
+  else if(u===t){bt=t;break;}
+  for(let p=g.off[u];p<g.off[u+1];p++){const v=g.to[p];if(bm&&bm[v]&&v!==t&&!(tm&&tm.has(v)))continue;let cc=g.l[p]*prof[g.cl[p]];if(zm&&zm[v])cc*=6;const nd=dist[u]+cc;if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}
+  if(lk){const L=lk.get(u);if(L)for(const q of L){const v=q[0];if(bm&&bm[v]&&v!==t&&!(tm&&tm.has(v)))continue;const nd=dist[u]+q[1]*prof[7];if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}}
  }
- if(!done[t])return null;
- const path=[];for(let v=t;v>=0;v=prev[v])path.push(v);path.reverse();return path;
+ if(bt<0)return null;
+ const path=[];for(let v=bt;v>=0;v=prev[v])path.push(v);path.reverse();return path;
 }
 function rdSimplify(P,tol){
  if(P.length<3)return P;const keep=new Uint8Array(P.length);keep[0]=keep[P.length-1]=1;const st=[[0,P.length-1]];
@@ -5637,7 +5650,8 @@ window.__rdReroute=async function(from,to,blockedLL){
   const fw=src.geo.toWorld(from.lat,from.lon),tw=src.geo.toWorld(to.lat,to.lon);
   const a=rdNear(fw[0],fw[1],true),b=rdNear(tw[0],tw[1],true);
   if(a.id<0||b.id<0||a.m>6000||b.m>6000)throw "far";
-  const path=rdAstar(a.id,b.id,RDPROF.best)||rdAstar(a.id,b.id,RDPROF.best,rdLinks([a.id,b.id]));if(!path)throw "none";
+  const S1=rdNearMany(fw[0],fw[1]),T1=rdNearMany(tw[0],tw[1]);
+  const path=rdAstar(a.id,b.id,RDPROF.best,null,S1,T1)||rdAstar(a.id,b.id,RDPROF.best,rdLinks([a.id,b.id]),S1,T1);if(!path)throw "none";
   let P=path.map(i=>[g.nx[i],g.ny[i]]),len=0;for(let i=1;i<P.length;i++)len+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1])*g.mpu;
   P=rdSimplify(P,1.5/g.mpu);
   const world=[[fw[0],fw[1]]].concat(P,[[tw[0],tw[1]]]);
@@ -5660,8 +5674,9 @@ async function rdRun(){
  const a=rdNear(RDP.A[0],RDP.A[1],true),b=rdNear(RDP.B[0],RDP.B[1],true);
  if(a.id<0||b.id<0){rdMsg("The road network is empty.");return;}
  if(a.m>6000||b.m>6000){rdMsg("The "+(a.m>6000?"start":"destination")+" is "+rdKm(Math.max(a.m,b.m))+" from the nearest road in the main network."+(g.mainSize/g.n<0.6?" The roads are broken into many pieces: in Maps, Road network, make the gap distance bigger and tap Build again.":" Pick a point nearer a road."));return;}
- let lk=null,path=rdAstar(a.id,b.id,RDPROF.best);
- if(!path){lk=rdLinks([a.id,b.id]);path=rdAstar(a.id,b.id,RDPROF.best,lk);}
+ const S1=rdNearMany(RDP.A[0],RDP.A[1]),T1=rdNearMany(RDP.B[0],RDP.B[1]);
+ let lk=null,path=rdAstar(a.id,b.id,RDPROF.best,null,S1,T1);
+ if(!path){lk=rdLinks([a.id,b.id]);path=rdAstar(a.id,b.id,RDPROF.best,lk,S1,T1);}
  if(!path){rdMsg("No road connection found between these points. They may be on different farms with no road drawn between them, or a road may have a gap. Turn on Show road network on the map to see which roads are joined.");RDR=null;RDR2=null;scheduleDraw();return;}
  const mk=pa=>{const segs=[[]],links=[];let len=0,lm=0;
   for(let i=0;i<pa.length;i++){const u=pa[i];
@@ -5670,7 +5685,7 @@ async function rdRun(){
   let P=[];segs.forEach(sg=>{P=P.concat(rdSimplify(sg,1.5/g.mpu));});
   const world=[RDP.A].concat(P,[RDP.B]);return {A:RDP.A,B:RDP.B,world,m:len,lm,links,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1],secs:rdSections(world)};};
  RDR=mk(path);RDR2=null;
- try{const p2=rdAstar(a.id,b.id,RDPROF.short,lk);if(p2){const r2=mk(p2);if(r2.m<RDR.m*0.97&&r2.key!==RDR.key)RDR2=r2;}}catch(e){}
+ try{const p2=rdAstar(a.id,b.id,RDPROF.short,lk,S1,T1);if(p2){const r2=mk(p2);if(r2.m<RDR.m*0.97&&r2.key!==RDR.key)RDR2=r2;}}catch(e){}
  const full=RDR.world;
  let sp=30;try{sp=parseFloat(localStorage.getItem("pscSpeed"))||30;}catch(e){}
  const tm=r=>{const mins=Math.round((r.m+a.m+b.m)/1000/sp*60);return mins<60?mins+" min":Math.floor(mins/60)+" h "+String(mins%60).padStart(2,"0")+" min";};
