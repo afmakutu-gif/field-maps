@@ -589,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-96<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-97<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5753,12 +5753,12 @@ async function rdRun(){
  let lk=null,path=rdAstar(a.id,b.id,RDPROF.best,null,S1,T1);
  if(!path){lk=rdLinks([a.id,b.id]);path=rdAstar(a.id,b.id,RDPROF.best,lk,S1,T1);}
  if(!path){rdMsg("No road connection found between these points. They may be on different farms with no road drawn between them, or a road may have a gap. Turn on Show road network on the map to see which roads are joined.");RDR=null;RDR2=null;scheduleDraw();return;}
- const mk=pa=>{const segs=[[]],links=[];let len=0,lm=0;
+ const mk=pa=>{const segs=[[]],links=[],gl=[];let len=0,lm=0;
   for(let i=0;i<pa.length;i++){const u=pa[i];
-   if(i>0){const v=pa[i-1],L=lk&&lk.get(v),isl=!!(L&&L.some(x=>x[0]===u)),d=Math.hypot(g.nx[u]-g.nx[v],g.ny[u]-g.ny[v])*g.mpu;len+=d;if(isl){lm+=d;links.push([[g.nx[v],g.ny[v]],[g.nx[u],g.ny[u]]]);segs.push([]);}}
+   if(i>0){const v=pa[i-1],L=lk&&lk.get(v),isl=!!(L&&L.some(x=>x[0]===u)),d=Math.hypot(g.nx[u]-g.nx[v],g.ny[u]-g.ny[v])*g.mpu;len+=d;if(isl){lm+=d;links.push([[g.nx[v],g.ny[v]],[g.nx[u],g.ny[u]]]);segs.push([]);}else{for(let p=g.off[v];p<g.off[v+1];p++){if(g.to[p]===u&&g.cl[p]===6){gl.push([[g.nx[v],g.ny[v]],[g.nx[u],g.ny[u]]]);break;}}}}
    segs[segs.length-1].push([g.nx[u],g.ny[u]]);}
   let P=[];segs.forEach(sg=>{P=P.concat(rdSimplify(sg,1.5/g.mpu));});
-  const world=[RDP.A].concat(P,[RDP.B]);return {A:RDP.A,B:RDP.B,world,m:len,lm,links,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1],secs:rdSections(world)};};
+  const world=[RDP.A].concat(P,[RDP.B]);return {A:RDP.A,B:RDP.B,world,m:len,lm,links,gl,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1],secs:rdSections(world)};};
  RDR=mk(path);RDR2=null;
  try{const p2=rdAstar(a.id,b.id,RDPROF.short,lk,S1,T1);if(p2){const r2=mk(p2);if(r2.m<RDR.m*0.88&&r2.key!==RDR.key)RDR2=r2;}}catch(e){}
  const full=RDR.world;
@@ -5769,7 +5769,7 @@ async function rdRun(){
  const warn=()=>{if(!RZ||!RZ.z.length)return "";const tot=zsum(RDR),act=RDZ.all||RDZ.set.size;
   if(!tot)return act?'<div class="rdWarn ok">The route keeps out of the open and conservation areas.'+'<br><button class="small secondary" id="rdAvOff">Allow them again</button></div>':'';
   return '<div class="rdWarn"><b>Warning: open / conservation area</b><br>'+(act?'The route still goes':'The route goes')+' through it for '+rdKm(tot)+' in '+RDR.secs.length+(RDR.secs.length>1?' places':' place')+(act?'. It could not be avoided completely (the destination or the only road is inside).':'.')+RDR.secs.slice(0,6).map((c,i)=>'<div class="rdWr"><span>'+c.n+': '+rdKm(c.len)+'</span><button class="small secondary" id="rdAv'+i+'">Avoid</button></div>').join('')+(RDR.secs.length>6?'<small>and '+(RDR.secs.length-6)+' more</small><br>':'')+'<div class="row" style="margin-top:4px"><button class="small" id="rdAvAll">Avoid all</button>'+(act?'<button class="small secondary" id="rdAvOff">Allow again</button>':'')+'</div></div>';};
- rdMsg((RDR2?`<b style="color:#1f7ae0">Blue: preferred route</b> (tar, then plantation roads)<br>`:"")+`<b>${rdKm(RDR.m)}</b> by road, about ${tm(RDR)} at ${sp} km/h.`+(RDR.lm>0?`<div class="rdWarn"><b>Gap with no mapped road</b><br>About ${rdKm(RDR.lm)} of this route is a straight dashed guide between farms. The public road there is not on the map, so follow the real road and watch for turns.<br>${(RDR.links||[]).slice(0,3).map((l,i)=>`<button class="small secondary" data-gm="${i}" style="margin-top:6px">${RDR.links.length>1?"Gap "+(i+1)+" in Google Maps":"Open this gap in Google Maps"}</button>`).join(" ")}</div>`:"")+warn()+btn("")
+ rdMsg((RDR2?`<b style="color:#1f7ae0">Blue: preferred route</b> (tar, then plantation roads)<br>`:"")+`<b>${rdKm(RDR.m)}</b> by road, about ${tm(RDR)} at ${sp} km/h.`+(RDR.lm>0?`<div class="rdWarn"><b>Gap with no mapped road</b><br>About ${rdKm(RDR.lm)} of this route is a straight dashed guide between farms. The public road there is not on the map, so follow the real road and watch for turns.<br>${(RDR.links||[]).slice(0,3).map((l,i)=>`<button class="small secondary" data-gm="${i}" style="margin-top:6px">${RDR.links.length>1?"Gap "+(i+1)+" in Google Maps":"Open this gap in Google Maps"}</button>`).join(" ")}</div>`:"")+(RDR.gl&&RDR.gl.length?`<small style="color:#9a5b00">${RDR.gl.length} short guessed ${RDR.gl.length>1?"links":"link"} (white dashes on the blue line) join roads that are not drawn as joined on the map. Check them on the ground.</small>`:"")+warn()+btn("")
   +(RDR2?`<b style="color:#2f9e66">Green: shorter route</b> (more compartment roads)<br><b>${rdKm(RDR2.m)}</b> by road, about ${tm(RDR2)}.`+(zsum(RDR2)?` <small style="color:#9a5b00">Crosses open area for ${rdKm(zsum(RDR2))}.</small>`:"")+btn("2"):"")
   +(a.m>60||b.m>60?`<small>Off-road ends: start ${rdKm(a.m)}, destination ${rdKm(b.m)}.</small>`:""));
  scheduleDraw();
@@ -5857,12 +5857,14 @@ window.roadSvg=function(sp){
   const pts=RDR2.world.map(p=>sp({x:p[0],y:p[1]}));
   const dd="M"+pts.map(q=>q.x.toFixed(1)+" "+q.y.toFixed(1)).join("L");
   o+=`<path d="${dd}" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="#2f9e66" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  (RDR2.gl||[]).forEach(l=>{const a=sp({x:l[0][0],y:l[0][1]}),b=sp({x:l[1][0],y:l[1][1]});o+=`<path d="M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}" stroke="#fff" stroke-width="4" stroke-dasharray="6 6" fill="none"/>`;});
   (RDR2.links||[]).forEach(l=>{const a=sp({x:l[0][0],y:l[0][1]}),b=sp({x:l[1][0],y:l[1][1]});o+=`<path d="M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}" stroke="#fff" stroke-width="5" stroke-dasharray="9 9" fill="none"/>`;});
  }
  if(RDR){
   const pts=RDR.world.map(p=>sp({x:p[0],y:p[1]}));
   const dd="M"+pts.map(q=>q.x.toFixed(1)+" "+q.y.toFixed(1)).join("L");
   o+=`<path d="${dd}" fill="none" stroke="#fff" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="#1f7ae0" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  (RDR.gl||[]).forEach(l=>{const a=sp({x:l[0][0],y:l[0][1]}),b=sp({x:l[1][0],y:l[1][1]});o+=`<path d="M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}" stroke="#fff" stroke-width="4" stroke-dasharray="6 6" fill="none"/>`;});
   (RDR.links||[]).forEach(l=>{const a=sp({x:l[0][0],y:l[0][1]}),b=sp({x:l[1][0],y:l[1][1]});o+=`<path d="M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}" stroke="#fff" stroke-width="6" stroke-dasharray="9 9" fill="none"/>`;});
  }
  try{if(RDR&&RDR.secs)RDR.secs.forEach(c=>{if(c.pts.length<1)return;const pp=c.pts.map(p=>sp({x:p[0],y:p[1]}));const dd="M"+pp.map(q=>q.x.toFixed(1)+" "+q.y.toFixed(1)).join("L");const m=pp[pp.length>>1];
