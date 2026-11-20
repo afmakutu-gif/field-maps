@@ -589,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-105<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-106<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5653,7 +5653,7 @@ function rdNearMany(x,y,main0){
  out.sort((a,b)=>a.c-b.c);return out.slice(0,40);
 }
 function rdAstar(s,t,prof,lk,S,T){
- prof=prof||RDPROF.best;const hm=Math.min(...prof)*0.99,bm=rdBlkMask(),zm=rdZoneMask();
+ prof=prof||RDPROF.best;const hm=Math.min(Math.min(...prof),0.3)*0.99,bm=rdBlkMask(),zm=rdZoneMask();
  const g=RD,n=g.n,dist=new Float32Array(n).fill(Infinity),prev=new Int32Array(n).fill(-1),done=new Uint8Array(n);
  const tx=g.nx[t],ty=g.ny[t],slack=T&&T.length?250:0,hf=i=>Math.max(0,Math.hypot(g.nx[i]-tx,g.ny[i]-ty)*g.mpu-slack)*hm;
  const tm=T&&T.length?new Map(T.map(q=>[q.id,q.c])):null;let bestT=Infinity,bt=-1;
@@ -5667,7 +5667,7 @@ function rdAstar(s,t,prof,lk,S,T){
   done[u]=1;
   if(tm){const tc=tm.get(u);if(tc!==undefined&&dist[u]+tc<bestT){bestT=dist[u]+tc;bt=u;}}
   else if(u===t){bt=t;break;}
-  for(let p=g.off[u];p<g.off[u+1];p++){const v=g.to[p];if(bm&&bm[v]&&v!==t&&!(tm&&tm.has(v)))continue;let cc=g.l[p]*prof[g.cl[p]];if(zm&&zm[v])cc*=6;const nd=dist[u]+cc;if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}
+  for(let p=g.off[u];p<g.off[u+1];p++){const v=g.to[p];if(bm&&bm[v]&&v!==t&&!(tm&&tm.has(v)))continue;let cc=g.cl[p]===8?g.w[p]:g.l[p]*prof[g.cl[p]];if(zm&&zm[v])cc*=6;const nd=dist[u]+cc;if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}
   if(lk){const L=lk.get(u);if(L)for(const q of L){const v=q[0];if(bm&&bm[v]&&v!==t&&!(tm&&tm.has(v)))continue;const nd=dist[u]+q[1]*prof[7];if(nd<dist[v]){dist[v]=nd;prev[v]=u;push(nd+hf(v),v);}}}
  }
  if(bt<0)return null;
