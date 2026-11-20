@@ -586,7 +586,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-77<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-78<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -1066,6 +1066,15 @@ function drawOverlay(){
   let rot=0;if(ptrStyle!=="dot"&&ptrStyle!=="pin"){const w2=src.geo.toWorld(gpsPos.lat+0.0005,gpsPos.lon),nd=Math.atan2(w2[0]-wp[0],-(w2[1]-wp[1]))*180/Math.PI,hd=(gpsPos.hd!=null&&isFinite(gpsPos.hd)&&(gpsPos.sp||0)>0.8)?gpsPos.hd:(lastHd!=null?lastHd:0);rot=nd+hd;}
   o+=`<g transform="translate(${s.x.toFixed(1)} ${s.y.toFixed(1)}) rotate(${rot.toFixed(1)})">${ptrShape(ptrStyle,"#2f9e66")}</g>`;
  }
+ if(gpsPos&&src.geo){
+  const wp=src.geo.toWorld(gpsPos.lat,gpsPos.lon),s2=sp({x:wp[0],y:wp[1]}),m=22;
+  if(s2.x<m||s2.y<m||s2.x>w-m||s2.y>h-m){
+   const cx=w/2,cy=h/2,dx=s2.x-cx,dy=s2.y-cy,hp=hudPad(),t=Math.min(dx?(w/2-40)/Math.abs(dx):1e9,dy?(h/2-60-(dy>0?hp:0))/Math.abs(dy):1e9),px=cx+dx*t,py=cy+dy*t;
+   const dm=Math.hypot(dx,dy)/z*src.geo.mpu,ang=Math.atan2(dy,dx)*180/Math.PI,lab=dm>=1000?(dm/1000).toFixed(dm>=10000?0:1)+" km":Math.round(dm/10)*10+" m";
+   const outMap=wp[0]<0||wp[1]<0||wp[0]>src.w||wp[1]>src.h;const ta=px<w*0.3?'start':px>w*0.7?'end':'middle',tx=ta==='start'?-16:ta==='end'?16:0;
+   o+=`<g transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><g transform="rotate(${(-rotA*180/Math.PI).toFixed(1)})"><circle r="19" fill="#2f9e66" stroke="#fff" stroke-width="3.5"/><g transform="rotate(${(ang+rotA*180/Math.PI).toFixed(1)})"><path d="M-6 -7L8 0L-6 7Z" fill="#fff"/></g><text y="38" x="${tx}" text-anchor="${ta}" font-size="13" font-weight="800" fill="#16583a" stroke="#fff" stroke-width="3.5" paint-order="stroke" font-family="sans-serif">You · ${lab}</text>${outMap?`<text y="54" x="${tx}" text-anchor="${ta}" font-size="12" font-weight="700" fill="#16583a" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="sans-serif">off this map</text>`:""}</g></g>`;
+  }
+ }
  overlay.innerHTML=o;
 }
 
@@ -1444,10 +1453,12 @@ function slightZoom(targetM){
  const tz=clamp(v.w*mpu/targetM,fz*2.5,fz*10);
  if(view.zoom<tz*0.98){view.zoom=Math.min(tz,maxZoom);autoFit=false;}
 }
+function hudPad(){try{const f=$("followHud");return (f&&f.style.display==="block")?f.offsetHeight+54:0;}catch(e){return 0;}}
 function centerOnMe(){
  if(!src||!src.geo||!gpsPos)return;autoFit=false;
- const wp=src.geo.toWorld(gpsPos.lat,gpsPos.lon);
- view.x=wp[0]-vsize().w/2/view.zoom;view.y=wp[1]-vsize().h/2/view.zoom;
+ const wp=src.geo.toWorld(gpsPos.lat,gpsPos.lon),D=hudPad()/2,a=rotA;
+ const ox=-D*Math.sin(a),oy=-D*Math.cos(a);
+ view.x=wp[0]-(vsize().w/2+ox)/view.zoom;view.y=wp[1]-(vsize().h/2+oy)/view.zoom;
  clampView();changed();
 }
 let ptrStyle="dot";try{ptrStyle=localStorage.getItem("pscPointer")||"dot";}catch(e){}
@@ -2460,7 +2471,7 @@ function autoSwitch(pos,force){
  if(!cand.length)return;
  const area=m=>{const g=geoOfMeta(m);return m.vp.width*m.vp.height*g.mpu*g.mpu;};
  cand.sort((a,b)=>area(a)-area(b));const t=cand[0];
- if(autoMap&&!appBusy()){
+ if(autoMap){
   if(asked[t.mapKey]&&now-asked[t.mapKey]<90000)return;
   asked[t.mapKey]=now;
   hereToast("You are on \u201C"+t.title+"\u201D. Tap here to open it.",t,25000);
