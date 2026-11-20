@@ -407,7 +407,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
    </div>
    <div id="trkBar" style="display:none"><div class="tbHead"><span class="tbT">Record a track</span><span id="tbLive"></span><button type="button" id="tbClose" aria-label="Close">×</button></div><div class="seg2" id="tbMode"><button class="on" data-m="distance" type="button">Distance</button><button data-m="area" type="button">Area</button></div><div class="tbRead"><b id="tbVal">0 m</b><span id="tbSub"></span></div><div class="tbRow"><button type="button" id="tbStart">Start</button><button type="button" id="tbStop" class="danger" disabled>Stop</button></div><div class="tbSave" id="tbSave" style="display:none"><input id="tbName" placeholder="Name (optional)"><button type="button" id="tbSaveBtn">Save</button></div><div id="tbMsg"></div></div>
    <div id="followHud"><div class="fhTop"><div class="fhTx"><div id="fhMain"></div><div id="fhSub"></div></div><div id="fhSpd"><b>--</b><small>km/h</small></div></div><div class="row"><button class="small" id="fhLock" style="display:none">Re-centre</button><button class="small secondary" id="fhVoice">Voice on</button><button class="small secondary" id="fhHead">Heading up</button><button class="small secondary" id="fhGm">Google Maps</button><button class="small secondary" id="fhRr">Reroute</button><button class="small danger" id="fhStop">Stop</button></div><div class="row" id="fhRrRow" style="display:none"><button class="small" id="fhBlk">Road blocked ahead</button><button class="small secondary" id="fhRecalc">Recalculate</button><button class="small secondary" id="fhRrX">Cancel</button></div><div class="row" id="fhOffRow" style="display:none"><b style="flex-basis:100%;color:#b42323">You have left the route.</b><button class="small" id="fhOffGo">Reroute from here</button><button class="small secondary" id="fhOffNo">Keep going</button></div></div>
-   <div id="navStart"><div class="rbTop"><b style="font-size:17px">Start navigation</b></div><div id="nsRoute" style="color:#52627a;margin-bottom:4px"></div><div class="nvStep">Voice guidance</div><div class="row"><button class="small secondary" id="nsVoiceOn">On</button><button class="small secondary" id="nsVoiceOff">Off</button></div><div class="nvStep">Map direction</div><div class="row"><button class="small secondary" id="nsHeadUp">Head up</button><button class="small secondary" id="nsNorth">North up</button></div><div class="nvStep">If I leave the route</div><div class="row"><button class="small secondary" id="nsOffAsk">Ask me first</button><button class="small secondary" id="nsOffAuto">Reroute automatically</button><button class="small secondary" id="nsOffNone">Do nothing</button></div><div class="row" style="margin-top:10px"><button class="small" id="nsGo">Start</button><button class="small secondary" id="nsCancel">Cancel</button></div></div>
+   <div id="navStart"><div class="rbTop"><b style="font-size:17px">Start navigation</b></div><div id="nsRoute" style="color:#52627a;margin-bottom:4px"></div><div class="nvStep">Voice guidance</div><div class="row"><button class="small secondary" id="nsVoiceOn">On</button><button class="small secondary" id="nsVoiceOff">Off</button><button class="small secondary" id="nsVoiceTest">Test voice</button></div><div class="nvStep">Map direction</div><div class="row"><button class="small secondary" id="nsHeadUp">Head up</button><button class="small secondary" id="nsNorth">North up</button></div><div class="nvStep">If I leave the route</div><div class="row"><button class="small secondary" id="nsOffAsk">Ask me first</button><button class="small secondary" id="nsOffAuto">Reroute automatically</button><button class="small secondary" id="nsOffNone">Do nothing</button></div><div class="row" style="margin-top:10px"><button class="small" id="nsGo">Start</button><button class="small secondary" id="nsCancel">Cancel</button></div></div>
    <div id="pinBox">
     <div class="rbTop"><b>Pins and notes</b><span><button class="small secondary" id="pnClose">Close</button></span></div>
     <div id="pnHome">
@@ -586,7 +586,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-76<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-77<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -3547,14 +3547,43 @@ renderNoteLib();
  /* ---- voice guidance (spoken turns, distance, off-route, hazards) ---- */
  let voiceOn=true;try{voiceOn=localStorage.getItem("pscVoice")!=="0";}catch(e){}
  const canSpeak=()=>"speechSynthesis" in window;
+ let spkVoice=null,spkMsg="",spkErr=0;
+ function pickVoice(){
+  try{const vs=speechSynthesis.getVoices()||[];if(!vs.length)return null;
+   const by=f=>vs.find(f);
+   return by(v=>/^en[-_]ZA/i.test(v.lang))||by(v=>/^en[-_]GB/i.test(v.lang))||by(v=>/^en/i.test(v.lang))||vs.find(v=>v.default)||vs[0];}catch(e){return null;}
+ }
+ try{speechSynthesis.onvoiceschanged=()=>{spkVoice=pickVoice();};spkVoice=pickVoice();}catch(e){}
+ function speakNow(t){
+  const ss=window.speechSynthesis,u=new SpeechSynthesisUtterance(t);
+  if(!spkVoice)spkVoice=pickVoice();
+  if(spkVoice){try{u.voice=spkVoice;u.lang=spkVoice.lang;}catch(e){}}
+  u.rate=0.95;u.volume=1;
+  u.onerror=e=>{spkErr++;spkMsg="Voice error: "+((e&&e.error)||"unknown");};
+  u.onstart=()=>{spkErr=0;spkMsg="";};
+  ss.speak(u);
+ }
  function say(t,urgent){
   if(!voiceOn||!canSpeak())return;
-  try{const ss=window.speechSynthesis;if(urgent)ss.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-ZA";u.rate=0.95;ss.speak(u);}catch(e){}
+  try{const ss=window.speechSynthesis;
+   if(urgent||ss.speaking){ss.cancel();setTimeout(()=>{try{ss.resume();speakNow(t);}catch(e){}},80);}
+   else{try{ss.resume();}catch(e){}speakNow(t);}
+  }catch(e){}
  }
+ /* called from a tap so the phone allows speech; reports if no voice is installed */
+ window.__voiceTest=()=>{
+  if(!canSpeak()){hereToast("This browser cannot speak. Try Chrome.",null,6000);return;}
+  voiceOn=true;try{localStorage.setItem("pscVoice","1");}catch(e){}
+  try{speechSynthesis.cancel();}catch(e){}
+  spkVoice=pickVoice();
+  if(!spkVoice){hereToast("No voice found on this phone. Android Settings > Languages > Text-to-speech output: install Speech Services by Google, then reopen the app.",null,12000);}
+  setTimeout(()=>{try{speakNow("Voice guidance is working.");}catch(e){}},80);
+  setTimeout(()=>{if(spkErr)hereToast(spkMsg+". Check the phone's media volume and Text-to-speech settings.",null,9000);},1800);
+ };
  window.__say=say;
  const sayDist=m=>m>=1000?(m/1000).toFixed(1).replace(/\.0$/,"")+" kilometres":(Math.round(m/10)*10)+" metres";
  function setVoiceBtn(){const b=$$("fhVoice");b.textContent=voiceOn?"Voice on":"Voice off";b.classList.toggle("on",voiceOn);if(!canSpeak())b.style.display="none";}
- $$("fhVoice").onclick=()=>{voiceOn=!voiceOn;try{localStorage.setItem("pscVoice",voiceOn?"1":"0");}catch(e){}if(!voiceOn&&canSpeak())speechSynthesis.cancel();setVoiceBtn();if(voiceOn)say("Voice guidance on",true);};
+ $$("fhVoice").onclick=()=>{voiceOn=!voiceOn;try{localStorage.setItem("pscVoice",voiceOn?"1":"0");}catch(e){}if(!voiceOn&&canSpeak())speechSynthesis.cancel();setVoiceBtn();if(voiceOn)window.__voiceTest();};
  setVoiceBtn();
  function bearing(a,b){const kx=Math.cos((a.lat+b.lat)/2*Math.PI/180)*111320;return Math.atan2((b.lon-a.lon)*kx,(b.lat-a.lat)*110540);}
  function findTurns(P,cum){
@@ -3579,7 +3608,8 @@ renderNoteLib();
   $$("nsRoute").textContent=(title||"Route")+" · "+km(tot)+" · about "+(mins<60?mins+" min":Math.floor(mins/60)+" h "+String(mins%60).padStart(2,"0")+" min")+" at "+Math.round(pr)+" km/h";
   const paint=()=>{$$("nsVoiceOn").classList.toggle("on",voiceOn);$$("nsVoiceOff").classList.toggle("on",!voiceOn);$$("nsHeadUp").classList.toggle("on",headUpPref);$$("nsNorth").classList.toggle("on",!headUpPref);$$("nsOffAsk").classList.toggle("on",offMode==="ask");$$("nsOffAuto").classList.toggle("on",offMode==="auto");$$("nsOffNone").classList.toggle("on",offMode==="none");};
   const sv=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
-  $$("nsVoiceOn").onclick=()=>{voiceOn=true;sv("pscVoice","1");setVoiceBtn();paint();say("Voice guidance on",true);};
+  $$("nsVoiceOn").onclick=()=>{voiceOn=true;sv("pscVoice","1");setVoiceBtn();paint();window.__voiceTest();};
+  $$("nsVoiceTest").onclick=()=>window.__voiceTest();
   $$("nsVoiceOff").onclick=()=>{voiceOn=false;sv("pscVoice","0");if(canSpeak())speechSynthesis.cancel();setVoiceBtn();paint();};
   $$("nsHeadUp").onclick=()=>{headUpPref=true;sv("pscHeadUp","1");paint();};
   $$("nsNorth").onclick=()=>{headUpPref=false;sv("pscHeadUp","0");paint();};
@@ -3587,7 +3617,7 @@ renderNoteLib();
   $$("nsOffAuto").onclick=()=>{offMode="auto";sv("pscOffMode","auto");paint();};
   $$("nsOffNone").onclick=()=>{offMode="none";sv("pscOffMode","none");paint();};
   $$("nsCancel").onclick=()=>{w.style.display="none";};
-  $$("nsGo").onclick=()=>{w.style.display="none";go();};
+  $$("nsGo").onclick=()=>{w.style.display="none";if(voiceOn&&canSpeak()){try{speechSynthesis.cancel();spkVoice=pickVoice();speakNow(" ");}catch(e){}}go();};
   paint();w.style.display="block";
  }
  const turnWord=t=>(t.deg>110?"sharp ":t.deg<60?"slight ":"")+t.dir;
