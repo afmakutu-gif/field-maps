@@ -46,7 +46,7 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #mapWrap{width:100%;overflow:auto;background:#dde4ec;border-radius:10px;max-height:62vh;border:1px solid var(--line)}
 #mapCanvas{display:block;touch-action:pan-x pan-y}
 #ovPrev{position:relative;height:170px;border-radius:14px;overflow:hidden;background:#dde4ec;border:1px solid #d3e1ee;cursor:pointer;margin-bottom:6px}#ovPv{width:100%;height:100%;display:block}#ovPvTag{position:absolute;right:8px;bottom:8px;background:rgba(255,255,255,.92);color:#1f5f8f;font-weight:800;font-size:12.5px;padding:5px 11px;border-radius:14px}#ovMap{position:fixed;inset:0;z-index:80;background:#dde4ec;touch-action:none}#ovCv{position:absolute;inset:0;width:100%;height:100%}#ovTop{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:linear-gradient(180deg,#1f7a50,#2563b0);color:#fff}#ovTop button{margin:0;padding:8px 16px;background:#fff;color:#1f5f8f;border:0;border-radius:18px;font-weight:800}#ovZ{position:absolute;right:12px;bottom:90px;display:flex;flex-direction:column;gap:8px}#ovZ button{margin:0;width:46px;height:46px;border-radius:14px;background:#fff;color:#1f5f8f;font-size:26px;font-weight:700;border:1px solid #d3e1ee;box-shadow:0 3px 10px rgba(30,60,90,.2);padding:0}#ovAttr{position:absolute;left:8px;bottom:8px;background:rgba(255,255,255,.85);padding:3px 8px;border-radius:8px;font-size:11.5px;color:#35506b}#miToggle{display:block;width:100%;margin:6px 0;padding:7px 12px;font-size:13.5px;font-weight:700;text-align:left;background:#eef4f9;color:#2a5f8f;border:1px solid #d3e1ee;box-shadow:none}#miBody{margin-bottom:6px}#viewerBox{position:relative;--rh:58px;--mo:34px;--bh:66px}#viewerBox.trayOpen{--bh:130px}
-#hereToast{position:absolute;left:8px;right:70px;top:calc(var(--bh) + 2px + var(--rh) + var(--mo));z-index:7;background:#e8f5ee;color:#14502f;border:1px solid #8cc7a6;border-radius:12px;padding:7px 10px;font-size:13px;font-weight:650;text-align:left;min-height:0;display:block;box-shadow:0 4px 14px rgba(37,99,184,.15)}
+#ghBar{display:none;position:absolute;left:8px;right:8px;top:70px;z-index:40;background:#fff;border:1px solid #cfe0ee;border-radius:14px;padding:12px;box-shadow:0 8px 24px rgba(37,99,184,.22);font-size:14px;color:#1d3b57}#ghBar .row{margin-top:8px}#hereToast{position:absolute;left:8px;right:70px;top:calc(var(--bh) + 2px + var(--rh) + var(--mo));z-index:7;background:#e8f5ee;color:#14502f;border:1px solid #8cc7a6;border-radius:12px;padding:7px 10px;font-size:13px;font-weight:650;text-align:left;min-height:0;display:block;box-shadow:0 4px 14px rgba(37,99,184,.15)}
 #viewerBox.full #hereToast{top:calc(var(--bh) + 2px + var(--rh) + var(--mo) + env(safe-area-inset-top))}
 .gpsTag.on{font-weight:700}
 #spdChip{bottom:46px;left:8px;font-size:12px;padding:4px 10px;font-weight:600;color:var(--muted)}#spdChip b{font-size:20px;color:var(--ink);margin-right:2px}
@@ -408,7 +408,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
    </div>
    <div id="trkBar" style="display:none"><div class="tbHead"><span class="tbT">Record a track</span><span id="tbLive"></span><button type="button" id="tbClose" aria-label="Close">×</button></div><div class="seg2" id="tbMode"><button class="on" data-m="distance" type="button">Distance</button><button data-m="area" type="button">Area</button></div><div class="tbRead"><b id="tbVal">0 m</b><span id="tbSub"></span></div><div class="tbRow"><button type="button" id="tbStart">Start</button><button type="button" id="tbStop" class="danger" disabled>Stop</button></div><div class="tbSave" id="tbSave" style="display:none"><input id="tbName" placeholder="Name (optional)"><button type="button" id="tbSaveBtn">Save</button></div><div id="tbMsg"></div></div>
    <div id="followHud"><div class="fhTop"><div class="fhTx"><div id="fhMain"></div><div id="fhSub"></div></div><div id="fhSpd"><b>--</b><small>km/h</small></div></div><div class="row"><button class="small" id="fhLock" style="display:none">Re-centre</button><button class="small secondary" id="fhVoice">Voice on</button><button class="small secondary" id="fhHead">Heading up</button><button class="small secondary" id="fhGm">Google Maps</button><button class="small secondary" id="fhRr">Reroute</button><button class="small danger" id="fhStop">Stop</button></div><div class="row" id="fhRrRow" style="display:none"><button class="small" id="fhBlk">Road blocked ahead</button><button class="small secondary" id="fhRecalc">Recalculate</button><button class="small secondary" id="fhRrX">Cancel</button></div><div class="row" id="fhOffRow" style="display:none"><b style="flex-basis:100%;color:#b42323">You have left the route.</b><button class="small" id="fhOffGo">Reroute from here</button><button class="small secondary" id="fhOffNo">Keep going</button></div></div>
-   <div id="navStart"><div class="rbTop"><b style="font-size:17px">Start navigation</b></div><div id="nsRoute" style="color:#52627a;margin-bottom:4px"></div><div class="nvStep">Voice guidance</div><div class="row"><button class="small secondary" id="nsVoiceOn">On</button><button class="small secondary" id="nsVoiceOff">Off</button><button class="small secondary" id="nsVoiceTest">Test voice</button></div><div class="nvStep">Map direction</div><div class="row"><button class="small secondary" id="nsHeadUp">Head up</button><button class="small secondary" id="nsNorth">North up</button></div><div class="nvStep">If I leave the route</div><div class="row"><button class="small secondary" id="nsOffAsk">Ask me first</button><button class="small secondary" id="nsOffAuto">Reroute automatically</button><button class="small secondary" id="nsOffNone">Do nothing</button></div><div class="row" style="margin-top:10px"><button class="small" id="nsGo">Start</button><button class="small secondary" id="nsCancel">Cancel</button></div></div>
+   <div id="navStart"><div class="rbTop"><b style="font-size:17px">Start navigation</b></div><div id="nsRoute" style="color:#52627a;margin-bottom:4px"></div><div class="nvStep">Voice guidance</div><div class="row"><button class="small secondary" id="nsVoiceOn">On</button><button class="small secondary" id="nsVoiceOff">Off</button><button class="small secondary" id="nsVoiceTest">Test voice</button></div><div class="nvStep">Map direction</div><div class="row"><button class="small secondary" id="nsHeadUp">Head up</button><button class="small secondary" id="nsNorth">North up</button></div><div class="nvStep">If I leave the route</div><div class="row"><button class="small secondary" id="nsOffAsk">Ask me first</button><button class="small secondary" id="nsOffAuto">Reroute automatically</button><button class="small secondary" id="nsOffNone">Do nothing</button></div><div class="nvStep">On public / tar roads</div><div class="row"><button class="small secondary" id="nsGhAsk">Ask to open Google</button><button class="small secondary" id="nsGhSplit">Split-screen tip</button><button class="small secondary" id="nsGhAuto">Open Google automatically</button><button class="small secondary" id="nsGhOff">Stay in app</button></div><div class="row" style="margin-top:10px"><button class="small" id="nsGo">Start</button><button class="small secondary" id="nsCancel">Cancel</button></div></div>
    <div id="pinBox">
     <div class="rbTop"><b>Pins and notes</b><span><button class="small secondary" id="pnClose">Close</button></span></div>
     <div id="pnHome">
@@ -587,7 +587,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-81<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-82<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -1020,6 +1020,36 @@ function updateMeasurement(){
 /* --- drawing the overlay (points, lines, my position) in screen pixels --- */
 function scheduleDraw(){if(drawQueued)return;drawQueued=true;requestAnimationFrame(()=>{drawQueued=false;drawOverlay();});}
 window.__openGoogle=function(o,d){const f=q=>q.lat.toFixed(6)+","+q.lon.toFixed(6);let u="https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(f(d))+"&travelmode=driving";if(o)u+="&origin="+encodeURIComponent(f(o));try{window.open(u,"_blank");}catch(e){location.href=u;}};
+/* Google Maps hand-over for public roads: ask / split-screen tip / auto / off */
+let ghMode="ask";try{ghMode=localStorage.getItem("pscGhMode")||"ask";}catch(e){}
+let ghAway=false,ghTime=0;
+window.__ghMode=m=>{if(m){ghMode=m;try{localStorage.setItem("pscGhMode",m);}catch(e){}}return ghMode;};
+function ghBar(show,msg,opts){
+ let b=document.getElementById("ghBar");
+ if(!b){b=document.createElement("div");b.id="ghBar";b.innerHTML='<div id="ghTx"></div><div class="row"><button type="button" class="small" id="ghOpen">Open Google Maps</button><button type="button" class="small secondary" id="ghNo">Not now</button></div>';document.getElementById("viewerBox").appendChild(b);document.getElementById("ghNo").onclick=()=>{b.style.display="none";};}
+ if(!show){b.style.display="none";return;}
+ document.getElementById("ghTx").textContent=msg;b.style.display="block";
+ document.getElementById("ghOpen").onclick=()=>{b.style.display="none";opts.go();};
+ clearTimeout(ghBar.t);ghBar.t=setTimeout(()=>{b.style.display="none";},30000);
+}
+window.__ghTrigger=function(f,c,d){
+ if(ghMode==="off"||!f||!gpsPos)return;
+ /* hand over to Google up to where the public road meets the plantation again (or the end of the route) */
+ const idx=(m)=>{let i=0;while(i<f.cum.length-1&&f.cum[i]<m)i++;return i;};
+ const endPt=c.end>=f.total-60?f.pts[f.pts.length-1]:f.pts[idx(c.end)];
+ const go=()=>{ghAway=true;ghTime=Date.now();window.__openGoogle({lat:gpsPos.lat,lon:gpsPos.lon},endPt);};
+ const t=d>0?"Public road ahead in "+(d>=1000?(d/1000).toFixed(1)+" km":Math.round(d/10)*10+" m")+".":"You are on a public road.";
+ if(ghMode==="auto"){
+  ghBar(true,t+" Opening Google Maps for the public road. If it does not open, tap the button.",{go});go();try{if(typeof hereToast==="function")hereToast("Google Maps opened for the public road. Come back here when you reach the plantation.",null,8000);}catch(e){}return;}
+ if(ghMode==="split")ghBar(true,t+" Tip: to keep this app beside Google Maps (and keep recording), open Recents and choose split screen. Then open Google Maps.",{go});
+ else ghBar(true,t+" Open Google Maps for the public road? Road recording pauses while Google Maps is in front.",{go});
+};
+window.__ghBack=function(){try{ghBar(false);}catch(e){}};
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden||!ghAway)return;ghAway=false;
+ try{const fh=$("followHud");if(locWatch===null&&fh&&fh.style.display==="block")$("locateBtn").click();}catch(e){}
+ try{hereToast("Welcome back to PSC Field Maps.",null,4000);window.__say&&window.__say("Back in field maps.",false);}catch(e){}
+});
 /* optional online background outside the farm map (OpenStreetMap, free, needs signal) */
 let bgOn=false;try{bgOn=localStorage.getItem("pscBg")==="1";}catch(e){}
 const bgImgs=new Map();
@@ -3557,6 +3587,7 @@ renderNoteLib();
   voiceStart(follow);
   try{const f0=follow;if(window.__rdOpenAreas)window.__rdOpenAreas(f0.pts).then(zs=>{if(follow!==f0||!zs.length)return;f0.zones=zs.map(z=>({start:z.start,end:z.end,said:{}}));
    const tot=zs.reduce((q,z)=>q+(z.end-z.start),0);say("Note. This route crosses open or conservation area for "+sayDist(tot)+".");});}catch(e){}
+  try{const f1=follow;if(window.__rdAnalyse)window.__rdAnalyse(f1.pts).then(r=>{if(follow!==f1)return;f1.sides=r.sides.map(c=>Object.assign(c,{said:{}}));f1.tar=r.tar.map(c=>Object.assign(c,{said:{}}));});}catch(e){}
  }
 
  window.__routeApi={setPlan:(pts,title)=>{plan={id:null,title:title||"Road route",main:false,points:pts.map(p=>({lat:p.lat,lon:p.lon}))};$$("rbName").value=plan.title;sel=-1;moveArmed=false;openBox(true);setView(false);stats();try{focusOn(plan.points);}catch(e){}},follow:(pts,title)=>startFollow(pts,title,null)};
@@ -3597,7 +3628,7 @@ renderNoteLib();
   setTimeout(()=>{if(spkErr)hereToast(spkMsg+". Check the phone's media volume and Text-to-speech settings.",null,9000);},1800);
  };
  window.__say=say;
- const sayDist=m=>m>=1000?(m/1000).toFixed(1).replace(/\.0$/,"")+" kilometres":(Math.round(m/10)*10)+" metres";
+ const sayDist=m=>m>=1000?(m/1000).toFixed(1).replace(/\.0$/,"")+((Math.round(m/100)===10)?" kilometre":" kilometres"):(Math.round(m/10)*10)+" metres";
  function setVoiceBtn(){const b=$$("fhVoice");b.textContent=voiceOn?"Voice on":"Voice off";b.classList.toggle("on",voiceOn);if(!canSpeak())b.style.display="none";}
  $$("fhVoice").onclick=()=>{voiceOn=!voiceOn;try{localStorage.setItem("pscVoice",voiceOn?"1":"0");}catch(e){}if(!voiceOn&&canSpeak())speechSynthesis.cancel();setVoiceBtn();if(voiceOn)window.__voiceTest();};
  setVoiceBtn();
@@ -3632,6 +3663,8 @@ renderNoteLib();
   $$("nsOffAsk").onclick=()=>{offMode="ask";sv("pscOffMode","ask");paint();};
   $$("nsOffAuto").onclick=()=>{offMode="auto";sv("pscOffMode","auto");paint();};
   $$("nsOffNone").onclick=()=>{offMode="none";sv("pscOffMode","none");paint();};
+  const ghP=()=>{const m=window.__ghMode();[["Ask","ask"],["Split","split"],["Auto","auto"],["Off","off"]].forEach(([n,k])=>$$("nsGh"+n).classList.toggle("on",m===k));};
+  [["Ask","ask"],["Split","split"],["Auto","auto"],["Off","off"]].forEach(([n,k])=>{$$("nsGh"+n).onclick=()=>{window.__ghMode(k);ghP();};});ghP();
   $$("nsCancel").onclick=()=>{w.style.display="none";};
   $$("nsGo").onclick=()=>{w.style.display="none";if(voiceOn&&canSpeak()){try{speechSynthesis.cancel();spkVoice=pickVoice();speakNow(" ");}catch(e){}}go();};
   paint();w.style.display="block";
@@ -3651,6 +3684,19 @@ renderNoteLib();
    if(!z.said.far&&d<=250&&d>30&&along<z.end){z.said.far=true;say("Open area ahead in "+sayDist(d)+", for "+sayDist(z.end-z.start)+".");}
    if(!z.said.inn&&along>=z.start-30&&along<z.end){z.said.inn=true;say("Entering open area. "+sayDist(z.end-Math.max(along,z.start))+" through it.",true);}
    if(z.said.inn&&!z.said.out&&along>=z.end){z.said.out=true;say("Leaving open area.");}
+  }}
+  if(f.sides){for(const c of f.sides){
+   const d=c.start-along,w=c.side==="both"?"on both sides of the road":"on your "+c.side;
+   if(!c.said.far&&d<=300&&d>40&&along<c.end){c.said.far=true;say("Open area "+w+" in "+sayDist(d)+", off the main road, for "+sayDist(c.end-c.start)+".");}
+   else if(!c.said.far&&along>=c.start-40&&along<c.end){c.said.far=true;c.said.inn=true;say("Open area "+w+", off the main road, for "+sayDist(c.end-along)+".");}
+   if(!c.said.inn&&along>=c.start-40&&along<c.end){c.said.inn=true;say("Open area "+w+" now.");}
+  }}
+  if(f.tar){for(const c of f.tar){
+   const d=c.start-along,e=c.end-along;
+   if(!c.said.far&&d<=300&&d>40){c.said.far=true;say("Joining the tar road in "+sayDist(d)+".");try{window.__ghTrigger&&window.__ghTrigger(f,c,d);}catch(x){}}
+   if(!c.said.inn&&along>=c.start-40&&along<c.end){c.said.inn=true;if(!c.said.far){c.said.far=true;try{window.__ghTrigger&&window.__ghTrigger(f,c,0);}catch(x){}}say("You are on the tar road, a public road. "+sayDist(Math.max(0,e))+" on it.");}
+   if(c.said.inn&&!c.said.lv&&e<=300&&e>40){c.said.lv=true;say("Leaving the tar road in "+sayDist(e)+".");}
+   if(c.said.inn&&!c.said.out&&along>=c.end-10){c.said.out=true;say("Leaving the tar road now. Plantation roads ahead.",true);try{window.__ghBack&&window.__ghBack();}catch(x){}}
   }}
   const t=f.turns.find(x=>x.at>along-8);
   if(t){
@@ -4064,6 +4110,8 @@ renderNoteLib();
    <li>Use part of a saved route by choosing a start and end point in the Library.</li>
   </ul></details>
   <details><summary>7. Road navigation (A to B)</summary><ul>
+   <li><b>Voice reports on a route</b>: open areas beside the road are announced with the side (on your left, on your right, or on both sides) and how far, always as "off the main road". Open areas the route goes through are announced as before. The voice also says when you are joining the tar (public) road and when you are leaving it for plantation roads.</li>
+   <li><b>Public roads and Google Maps</b>: in the Start navigation window choose what happens at a tar road: ask to open Google Maps, a split-screen tip (keeps this app beside Google so road recording continues), open Google automatically (the phone may ask you to allow it; if it does not open, tap the button), or stay in the app. Google is given the public-road part up to where the plantation starts. Come back to the app when you reach the plantation. Road recording only runs while this app is in front.</li>
    <li><b>Overview map</b>: Maps tab, Prepared maps, tap <i>Overview map</i>. All your maps show on OpenStreetMap with a green dot for you. Tap a map to open it. It needs signal for the background; the outlines work offline. With <i>Offer to open the map I am on</i> ticked, the app asks you to confirm, by a message at the top of the map, before opening the map you are on or switching when you drive into another map.</li>
    <li><b>Re-centre</b>: when GPS is on and you move the map away from your position, a green Re-centre button appears. Tap it to come back to your dot.</li>
    <li><b>Roads outside the map</b>: while GPS is on, if you drive (over 10 km/h) more than 150 m away from any mapped road, the app records the road automatically (red REC label, voice says so). When you rejoin the mapped roads it saves the road link on this phone for this map. Saved roads join the network, so routes between farms use them instead of dashed links. Turn this on or off, or remove saved roads, in the Road network card (Maps tab). Recorded roads show purple on the network overlay.</li>
@@ -5514,6 +5562,39 @@ window.__rdOpenAreas=async function(pts){
  try{if(!src||!src.geo)return [];await rdEnsure();await rdZEnsure();if(!RZ||!RZ.z.length||!RD)return [];
   const world=pts.map(p=>{const w=src.geo.toWorld(p.lat,p.lon);return [w[0],w[1]];});
   return rdSections(world).map(c=>({start:c.start,end:c.start+c.len}));}catch(e){return [];}
+};
+/* along the route: open areas beside the road (left / right / both) and tar or public road sections */
+window.__rdAnalyse=async function(pts){
+ const out={sides:[],tar:[]};
+ try{
+  if(!src||!src.geo)return out;const g=await rdEnsure();if(!g)return out;await rdZEnsure();
+  const world=pts.map(p=>{const w=src.geo.toWorld(p.lat,p.lon);return [w[0],w[1]];}),mpu=g.mpu;
+  /* node classes and a small grid so each sample finds its nearest road quickly */
+  if(!g.ncl){const n=new Uint8Array(g.n).fill(255);for(let e=0;e<g.m;e++){const c=g.ecl[e];if(c>4)continue;if(c<n[g.ea[e]])n[g.ea[e]]=c;if(c<n[g.eb[e]])n[g.eb[e]]=c;}g.ncl=n;}
+  if(!g.grid){const cs=60/mpu,G=new Map();for(let i=0;i<g.n;i++){if(g.ncl[i]===255)continue;const k=Math.floor(g.nx[i]/cs)+","+Math.floor(g.ny[i]/cs);let a=G.get(k);if(!a){a=[];G.set(k,a);}a.push(i);}g.grid=G;g.gcs=cs;}
+  const cls=(x,y)=>{const cs=g.gcs,cx=Math.floor(x/cs),cy=Math.floor(y/cs);let bd=1e18,bc=255;
+   for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const L=g.grid.get((cx+a)+","+(cy+b));if(!L)continue;for(const i of L){const d=(g.nx[i]-x)**2+(g.ny[i]-y)**2;if(d<bd){bd=d;bc=g.ncl[i];}}}
+   return Math.sqrt(bd)*mpu<=60?bc:255;};
+  const hasZ=RZ&&RZ.z.length,off=30/mpu;
+  let acc=0,curS=null,curT=null,lastT=-1e9,tarTrail=0;
+  for(let i=1;i<world.length;i++){
+   const a=world[i-1],b=world[i],L=Math.hypot(b[0]-a[0],b[1]-a[1])*mpu;if(L<=0)continue;
+   const ux=(b[0]-a[0])/(L/mpu),uy=(b[1]-a[1])/(L/mpu),step=Math.max(1,Math.ceil(L/10));
+   for(let k=0;k<step;k++){
+    const t=(k+0.5)/step,x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t,pos=acc+L*t;
+    if(hasZ&&rdZoneAt(x,y)<0){
+     const lx=x+uy*off,ly=y-ux*off,rx=x-uy*off,ry=y+ux*off,l=rdZoneAt(lx,ly)>=0,r=rdZoneAt(rx,ry)>=0;
+     if(l||r){if(curS&&pos-curS.end<=60){curS.end=pos;if(l)curS.l++;if(r)curS.r++;curS.n++;}else{curS={start:pos,end:pos,l:+l,r:+r,n:1};out.sides.push(curS);}}
+    }
+    const c=cls(x,y),isTar=c===0;
+    if(isTar){if(curT&&pos-curT.end<=120)curT.end=pos;else{curT={start:pos,end:pos};out.tar.push(curT);}}
+   }
+   acc+=L;
+  }
+  out.sides=out.sides.filter(c=>c.end-c.start>=40).map(c=>({start:c.start,end:c.end,side:(c.l&&c.r&&Math.min(c.l,c.r)>=0.3*Math.max(c.l,c.r))?"both":(c.l>=c.r?"left":"right")}));
+  out.tar=out.tar.filter(c=>c.end-c.start>=100);
+ }catch(e){}
+ return out;
 };
 window.__rdReroute=async function(from,to,blockedLL){
  let added=null;
