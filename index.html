@@ -587,7 +587,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-82<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-83<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5415,8 +5415,10 @@ function arSave(){
 window.__autoRecEnd=()=>{if(AR.rec)arSave();AR.buf=[];AR.off=AR.inn=AR.still=0;AR.last=null;};
 window.__autoRec=pt=>{
  if(!AR_ON||pt.manual||!src||!src.geo||!rdKey())return;
- if(!RD||RD.key!==rdKey()){ /* load the network quietly (also needed to know where roads are) */
-  if(!AR.loading){AR.loading=true;rdEnsure().catch(()=>{}).then(()=>{AR.loading=false;});}
+ if(!RD||RD.key!==rdKey()){
+  /* the road network is big: only load it once you are really driving, never while standing or just finding your position */
+  AR.mv=(spdKmh||0)>=15?(AR.mv||0)+1:0;
+  if(AR.mv>=5&&!AR.loading&&!AR.failed){AR.loading=true;rdEnsure().catch(()=>{AR.failed=true;}).then(()=>{AR.loading=false;});}
   return;
  }
  if((pt.acc||0)>40)return;
