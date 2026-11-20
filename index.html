@@ -589,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-92<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-93<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5749,19 +5749,36 @@ window.__rdReport=async function(){
   if(!P&&RDP&&RDP.A){P=RDP.A;from="route start";}
   if(!P){try{const sz=vsize();P=[view.x+sz.w/2/view.zoom,view.y+sz.h/2/view.zoom];from="centre of the map view";}catch(e){}}
   if(!P){st.textContent="Open a map first.";return;}
-  const R=300,mp=g.mpu,rr=R/mp,X=P[0],Y=P[1],o=i=>"("+Math.round((g.nx[i]-X)*mp)+"E,"+Math.round(-(g.ny[i]-Y)*mp)+"N)";
-  let t="PSC Field Maps road report ("+from+")\nVersion "+(document.body.innerText.match(/v2026[\d.\-]+/)||[""])[0]+"\nMap "+(src&&src.name||"")+"\nNodes "+g.n+", edges "+g.m+", pieces "+g.pieces+", main piece "+g.mainSize+" nodes, "+g.km.toFixed(0)+" km, gap "+g.gapM+" m, tol "+g.tolM+" m\n";
-  try{t+="Recorded roads: "+rdRecList().length+"\n";}catch(e){}
-  const a=rdNear(X,Y,true);t+="Nearest main-piece node: "+(a.id>=0?a.m.toFixed(0)+" m "+o(a.id):"none")+"\n";
-  const S=rdNearMany(X,Y);t+="Start candidates: "+S.length+" "+S.slice(0,8).map(q=>q.id+"@"+q.c.toFixed(0)+"m").join(", ")+"\n";
-  if(RDR){t+="Current route: "+RDR.m.toFixed(0)+" m, off-road ends "+RDR.offA.toFixed(0)+"/"+RDR.offB.toFixed(0)+" m, dashed links "+(RDR.links||[]).length+"\nFirst route points: "+RDR.world.slice(0,14).map(p=>"("+Math.round((p[0]-X)*mp)+"E,"+Math.round(-(p[1]-Y)*mp)+"N)").join(" ")+"\n";}
-  const KN=["tar","plant","road","minor","dead","join","bridge","link","recorded"];
-  t+="\nNODES within "+R+" m: id (east,north) piece-size deg classes\n";let k=0;const deg=new Map();
-  for(let e=0;e<g.m;e++){const A=g.ea[e],B=g.eb[e];const ia=Math.abs(g.nx[A]-X)<rr&&Math.abs(g.ny[A]-Y)<rr,ib=Math.abs(g.nx[B]-X)<rr&&Math.abs(g.ny[B]-Y)<rr;if(!ia&&!ib)continue;for(const v of [A,B]){let d=deg.get(v);if(!d){d={n:0,c:new Set()};deg.set(v,d);}d.n++;d.c.add(KN[g.ecl[e]]||g.ecl[e]);}}
-  const ids=[...deg.keys()].filter(i=>Math.hypot(g.nx[i]-X,g.ny[i]-Y)<rr).sort((p,q)=>Math.hypot(g.nx[p]-X,g.ny[p]-Y)-Math.hypot(g.nx[q]-X,g.ny[q]-Y));
-  for(const i of ids){if(k++>=250)break;const d=deg.get(i);t+=i+" "+o(i)+" piece "+(g.sz.get(g.root[i])||0)+(g.root[i]===g.main?" MAIN":"")+" deg "+d.n+" "+[...d.c].join("/")+"\n";}
-  t+="\nEDGES within "+R+" m: from-id to-id class length\n";k=0;
-  for(let e=0;e<g.m;e++){const A=g.ea[e],B=g.eb[e];if(!(Math.hypot(g.nx[A]-X,g.ny[A]-Y)<rr||Math.hypot(g.nx[B]-X,g.ny[B]-Y)<rr))continue;if(k++>=350)break;t+=A+" "+B+" "+(KN[g.ecl[e]]||g.ecl[e])+" "+g.el[e].toFixed(0)+"m\n";}
+  const mp=g.mpu,X=P[0],Y=P[1],o=(x,y)=>"("+Math.round((x-X)*mp)+"E,"+Math.round(-(y-Y)*mp)+"N)",oi=i=>o(g.nx[i],g.ny[i]);
+  const KN=["tar","plant","road","minor","dead","join","bridge","link","recorded"],pc=i=>(g.sz.get(g.root[i])||0);
+  let t="PSC Field Maps road report v3 ("+from+")\nVersion "+(document.body.innerText.match(/v2026[\d.\-]+/)||[""])[0]+"\nMap "+(src&&src.name||"")+"\nNodes "+g.n+", edges "+g.m+", pieces "+g.pieces+", main piece "+g.mainSize+" nodes, gap "+g.gapM+" m\n";
+  const big=[];g.sz.forEach((v,k)=>{if(v>=200)big.push([k,v]);});big.sort((p,q)=>q[1]-p[1]);
+  t+="Big pieces: "+big.map(p=>p[1]+(p[0]===g.main?" (MAIN)":"")).join(", ")+"\n";
+  /* my piece and the closest approach to every other big piece */
+  let me=-1,md=1e18;for(let i=0;i<g.n;i++){if(pc(i)<200)continue;const d=(g.nx[i]-X)**2+(g.ny[i]-Y)**2;if(d<md){md=d;me=i;}}
+  t+="Nearest road node: "+(me>=0?Math.sqrt(md)*mp+" m"+oi(me).replace(/^/,"")+" piece "+pc(me)+(g.root[me]===g.main?" MAIN":" not-main"):"none")+"\n";
+  if(me>=0){const R0=g.root[me],best=new Map();
+   for(let i=0;i<g.n;i++){const r=g.root[i];if(r===R0||pc(i)<200)continue;const d=Math.hypot(g.nx[i]-X,g.ny[i]-Y)*mp,b=best.get(r);if(!b||d<b.d)best.set(r,{d,i});}
+   best.forEach((b,r)=>{t+="Nearest node of piece "+pc(b.i)+(r===g.main?" (MAIN)":"")+": "+Math.round(b.d)+" m "+oi(b.i)+"\n";});
+   /* closest approach between my piece and the main piece */
+   if(R0!==g.main){let bd=1e18,bi=-1,bj=-1;const cell=100/mp,h=new Map(),K=(a,c)=>(a+8192)*16777216+(c+8192);
+    for(let i=0;i<g.n;i++){if(g.root[i]!==g.main)continue;const k=K(Math.floor(g.nx[i]/cell),Math.floor(g.ny[i]/cell));let L=h.get(k);if(!L){L=[];h.set(k,L);}L.push(i);}
+    for(let i=0;i<g.n;i++){if(g.root[i]!==R0)continue;const cx=Math.floor(g.nx[i]/cell),cy=Math.floor(g.ny[i]/cell);for(let ax=cx-3;ax<=cx+3;ax++)for(let ay=cy-3;ay<=cy+3;ay++){const L=h.get(K(ax,ay));if(L)for(const j of L){const d=Math.hypot(g.nx[i]-g.nx[j],g.ny[i]-g.ny[j]);if(d<bd){bd=d;bi=i;bj=j;}}}}
+    t+="Closest approach my piece to MAIN (within 300 m): "+(bi>=0?(bd*mp).toFixed(0)+" m at "+oi(bi)+" and "+oi(bj):"none")+"\n";}
+  }
+  const S=rdNearMany(X,Y);t+="Start candidates: "+S.length+" "+S.slice(0,6).map(q=>q.id+"@"+q.c.toFixed(0)+"m "+oi(q.id)).join(", ")+"\n";
+  if(RDR){t+="\nCURRENT ROUTE: "+RDR.m.toFixed(0)+" m, ends off-road "+RDR.offA.toFixed(0)+"/"+RDR.offB.toFixed(0)+" m, dashed links "+(RDR.links||[]).length+"\nRoute points (every 4th, first 40): "+RDR.world.filter((p,i)=>i%4===0).slice(0,40).map(p=>o(p[0],p[1])).join(" ")+"\nStart "+o(RDR.A[0],RDR.A[1])+" Destination "+o(RDR.B[0],RDR.B[1])+"\n";}
+  else t+="\n(No route was set when this report was made.)\n";
+  const rr=500/mp,inR=i=>Math.abs(g.nx[i]-X)<rr&&Math.abs(g.ny[i]-Y)<rr;
+  const deg=new Int32Array(g.n),cls=new Map();let cc=[0,0,0,0,0,0,0,0,0];
+  for(let e=0;e<g.m;e++){const A=g.ea[e],B=g.eb[e];deg[A]++;deg[B]++;if(inR(A))cc[g.ecl[e]]++;}
+  t+="\nEdges within 500 m by class: "+KN.map((k,i)=>k+" "+cc[i]).join(", ")+"\n";
+  t+="\nLINK EDGES (join/bridge/link) within 500 m: from to class length at\n";let k=0;
+  for(let e=0;e<g.m;e++){const c=g.ecl[e];if(c<5||c===8)continue;const A=g.ea[e];if(!inR(A))continue;if(k++>=120)break;t+=g.ea[e]+" "+g.eb[e]+" "+KN[c]+" "+g.el[e].toFixed(0)+"m "+oi(A)+" piece "+pc(A)+(g.root[A]===g.main?" MAIN":"")+"/"+pc(g.eb[e])+(g.root[g.eb[e]]===g.main?" MAIN":"")+"\n";}
+  t+="\nDEAD ENDS and JUNCTIONS within 500 m: id at degree piece classes\n";k=0;
+  const ids=[];for(let i=0;i<g.n;i++)if(inR(i)&&pc(i)>=200&&deg[i]!==2)ids.push(i);
+  ids.sort((p,q)=>Math.hypot(g.nx[p]-X,g.ny[p]-Y)-Math.hypot(g.nx[q]-X,g.ny[q]-Y));
+  for(const i of ids){if(k++>=200)break;const c=new Set();for(let p=g.off[i];p<g.off[i+1];p++)c.add(KN[g.cl[p]]);t+=i+" "+oi(i)+" deg "+deg[i]+" piece "+pc(i)+(g.root[i]===g.main?" MAIN ":" ")+[...c].join("/")+"\n";}
   st.textContent=await shareText("psc-road-report.txt",t,"text/plain","PSC road report");
  }catch(e){st.textContent="Could not make the report: "+e.message;}
 };
