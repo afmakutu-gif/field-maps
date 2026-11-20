@@ -577,7 +577,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-66<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-67<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -1369,6 +1369,7 @@ $("zoomOut").onclick=()=>zoomAbout(1/1.6,vsize().w/2,vsize().h/2);
 let fitSaved=null;
 $("zoomFit").onclick=()=>{if(!src)return;const b=$("zoomFit");if(fitSaved&&autoFit){view.x=fitSaved.x;view.y=fitSaved.y;view.zoom=fitSaved.zoom;autoFit=false;fitSaved=null;b.textContent="Fit";clampView();changed();}else{fitSaved={x:view.x,y:view.y,zoom:view.zoom};fitView();changed();b.textContent="Previous";}};
 function setFull(on){
+ try{window.__openTray&&window.__openTray(null);}catch(e){}
  const box=$("viewerBox");
  box.classList.toggle("full",on);
  document.body.style.overflow=on?"hidden":"";
@@ -1381,7 +1382,7 @@ function setFull(on){
 }
 window.addEventListener("resize",()=>{if($("viewerBox").classList.contains("full")&&src){const h=window.innerHeight,w=window.innerWidth;viewer.style.height=h+"px";viewer.style.width=w+"px";fitView();scheduleDraw();scheduleRender(60);}else onViewerResize();});
 $("fullBtn").onclick=()=>setFull(!$("viewerBox").classList.contains("full"));
-document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&$("viewerBox").classList.contains("full"))setFull(false);});
+document.addEventListener("fullscreenchange",()=>{try{window.__openTray&&window.__openTray(null);}catch(e){}if(!document.fullscreenElement&&$("viewerBox").classList.contains("full"))setFull(false);});
 
 /* --- my position on the map --- */
 function slightZoom(targetM){
