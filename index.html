@@ -588,7 +588,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-86<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-87<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5394,17 +5394,17 @@ function rdAugment(nx,ny,ea,eb,ec,el,ecl,mpu){
  const L=rdRecList(),n0=nx.length;if(!L.length)return {nx,ny,ea,eb,ec,el,ecl,baseN:n0};
  let addN=0;for(const r of L)addN+=r.p.length/2;
  const NX=new Float32Array(n0+addN),NY=new Float32Array(n0+addN);NX.set(nx);NY.set(ny);
- const EA=[],EB=[];let k=n0;
+ const EA=[],EB=[],EM=[];let k=n0;
  const nearest=(x,y)=>{let b=-1,bd=1e18;for(let i=0;i<n0;i++){const d=(nx[i]-x)*(nx[i]-x)+(ny[i]-y)*(ny[i]-y);if(d<bd){bd=d;b=i;}}return {i:b,m:Math.sqrt(bd)*mpu};};
  for(const r of L){const P=r.p,m=P.length/2,first=k;
-  for(let j=0;j<m;j++){NX[k]=P[2*j];NY[k]=P[2*j+1];if(j>0){EA.push(k-1);EB.push(k);}k++;}
-  const a=nearest(P[0],P[1]);if(a.i>=0&&a.m<=500){EA.push(first);EB.push(a.i);}
-  const b=nearest(P[2*m-2],P[2*m-1]);if(b.i>=0&&b.m<=500){EA.push(k-1);EB.push(b.i);}
-  if(r.drawn)for(let j=1;j<m-1;j++){const c=nearest(P[2*j],P[2*j+1]);if(c.i>=0&&c.m<=25){EA.push(first+j);EB.push(c.i);}}
+  for(let j=0;j<m;j++){NX[k]=P[2*j];NY[k]=P[2*j+1];if(j>0){EA.push(k-1);EB.push(k);EM.push(r.drawn?0.8:1.15);}k++;}
+  const a=nearest(P[0],P[1]);if(a.i>=0&&a.m<=500){EA.push(first);EB.push(a.i);EM.push(r.drawn?0.8:1.15);}
+  const b=nearest(P[2*m-2],P[2*m-1]);if(b.i>=0&&b.m<=500){EA.push(k-1);EB.push(b.i);EM.push(r.drawn?0.8:1.15);}
+  if(r.drawn)for(let j=1;j<m-1;j++){const c=nearest(P[2*j],P[2*j+1]);if(c.i>=0&&c.m<=25){EA.push(first+j);EB.push(c.i);EM.push(r.drawn?0.8:1.15);}}
  }
  const m0=ea.length,k2=EA.length,na=new Int32Array(m0+k2),nb=new Int32Array(m0+k2),nc=new Float32Array(m0+k2),nl=new Float32Array(m0+k2),ncl=new Uint8Array(m0+k2);
  na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
- for(let j=0;j<k2;j++){const a=EA[j],b=EB[j],len=Math.hypot(NX[a]-NX[b],NY[a]-NY[b])*mpu;na[m0+j]=a;nb[m0+j]=b;nl[m0+j]=len;nc[m0+j]=len*RDPROF.best[8];ncl[m0+j]=8;}
+ for(let j=0;j<k2;j++){const a=EA[j],b=EB[j],len=Math.hypot(NX[a]-NX[b],NY[a]-NY[b])*mpu;na[m0+j]=a;nb[m0+j]=b;nl[m0+j]=len;nc[m0+j]=len*EM[j];ncl[m0+j]=8;}
  return {nx:NX,ny:NY,ea:na,eb:nb,ec:nc,el:nl,ecl:ncl,baseN:n0};
 }
 
@@ -5718,7 +5718,8 @@ window.roadSvg=function(sp){
   const inV=e=>{const a=g.ea[e],x=g.nx[a],y=g.ny[a];return !(Math.abs(x-cx)>R||Math.abs(y-cy)>R)&&g.big[a]===1;};
   let cnt=0;for(let e=0;e<g.m;e++){if(g.ecl[e]>=2&&g.ecl[e]!==6&&g.ecl[e]!==8&&inV(e))cnt++;}
   const step=Math.max(1,Math.ceil(cnt/9000)),D=CC.map(()=>"");let ci=0;
-  for(let e=0;e<g.m;e++){if(!inV(e))continue;const c=g.ecl[e];if(c>=2&&c!==6&&c!==8&&(ci++)%step)continue;const a=g.ea[e],b=g.eb[e],p=sp({x:g.nx[a],y:g.ny[a]}),q=sp({x:g.nx[b],y:g.ny[b]});D[c]+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;}
+  for(let e=0;e<g.m;e++){if(!inV(e))continue;const c=g.ecl[e];if(c>=2&&c!==6&&c!==8){if(step>3)continue;if((ci++)%step)continue;}const a=g.ea[e],b=g.eb[e],p=sp({x:g.nx[a],y:g.ny[a]}),q=sp({x:g.nx[b],y:g.ny[b]});D[c]+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;}
+  if(step>3)o+=`<text x="14" y="${(sz.h-64).toFixed(0)}" font-size="14" font-weight="800" fill="#1d3b57" stroke="#fff" stroke-width="4" paint-order="stroke" font-family="sans-serif">Zoom in to see all roads</text>`;
   [2,3,4,5,0,1,6,8].forEach(c=>{if(D[c])o+=`<path d="${D[c]}" fill="none" stroke="${CC[c]}" stroke-width="${CW[c]}" stroke-linecap="round" opacity=".92"/>`;});
  }
  if(RDR2){
