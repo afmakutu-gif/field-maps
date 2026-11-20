@@ -586,7 +586,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-75<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-76<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -2471,8 +2471,22 @@ function autoSwitch(pos,force){
 (function(){
  let cv=$("ovCv"),ox=cv.getContext("2d");const imgs=new Map();let st=null,polys=[],raf=0,prev=false;
  const W=()=>cv.clientWidth,H=()=>cv.clientHeight,uv=(lat,lon)=>llTile(lat,lon,0);
+ const thumbs=new Map();let thBusy=false;
+ function thumbs_go(){
+  if(thBusy)return;thBusy=true;
+  (async()=>{for(const p of polys){const m=p.m;if(thumbs.has(m.mapKey))continue;thumbs.set(m.mapKey,{});
+   try{const key=m.mapKey+"|thumb";let blob=(await idbGetMany("tiles",[key]))[0];let cvs=null;
+    if(blob){const bm=await createImageBitmap(blob);cvs=document.createElement("canvas");cvs.width=bm.width;cvs.height=bm.height;cvs.getContext("2d").drawImage(bm,0,0);}
+    else{const tw=Math.min(640,m.vp.width),sc=tw/m.vp.width,th=Math.max(1,Math.round(m.vp.height*sc));cvs=document.createElement("canvas");cvs.width=tw;cvs.height=th;const c=cvs.getContext("2d");c.fillStyle="#fff";c.fillRect(0,0,tw,th);
+     const svc=tileCacheClear,r=makeTileRender(m);try{await r(c,sc,0,0,tw,th,()=>{});}finally{try{tileCacheClear&&tileCacheClear();}catch(e){}tileCacheClear=svc;try{r.dispose();}catch(e){}}
+     const bl=await new Promise(res=>cvs.toBlob(res,"image/jpeg",0.82));if(bl)try{await idbPutMany("tiles",[[key,bl]]);}catch(e){}}
+    thumbs.set(m.mapKey,{cv:cvs});q();qPrev();
+   }catch(e){thumbs.delete(m.mapKey);}
+  }thBusy=false;})();
+ }
  function build(){
   polys=[];(preparedList||[]).forEach(m=>{const g=geoOfMeta(m);if(!g)return;const c=[[0,0],[m.vp.width,0],[m.vp.width,m.vp.height],[0,m.vp.height]].map(q=>{const l=g.toLL(q[0],q[1]);return uv(l.lat,l.lon);});polys.push({m,c});});
+  thumbs_go();
  }
  function fit(){
   if(!polys.length){st={cu:0.5,cv:0.5,Z:2};return;}
@@ -2492,7 +2506,10 @@ function autoSwitch(pos,force){
    if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;q();qPrev();};e.img.src="https://tile.openstreetmap.org/"+key+".png";imgs.set(key,e);if(imgs.size>300)imgs.delete(imgs.keys().next().value);}
    if(e.ok)ox.drawImage(e.img,sx(x/n),sy(y/n),ts+0.6,ts+0.6);
   }
-  polys.forEach(p=>{ox.beginPath();p.c.forEach((q,i)=>{i?ox.lineTo(sx(q[0]),sy(q[1])):ox.moveTo(sx(q[0]),sy(q[1]));});ox.closePath();ox.fillStyle="rgba(47,158,102,.28)";ox.fill();ox.lineWidth=3;ox.strokeStyle="#1f5fa8";ox.stroke();
+  polys.forEach(p=>{const P=p.c.map(q=>[sx(q[0]),sy(q[1])]);ox.beginPath();P.forEach((q,i)=>{i?ox.lineTo(q[0],q[1]):ox.moveTo(q[0],q[1]);});ox.closePath();
+   const th=thumbs.get(p.m.mapKey);
+   if(th&&th.cv){ox.save();ox.clip();const tw=th.cv.width,thh=th.cv.height;ox.transform((P[1][0]-P[0][0])/tw,(P[1][1]-P[0][1])/tw,(P[3][0]-P[0][0])/thh,(P[3][1]-P[0][1])/thh,P[0][0],P[0][1]);ox.imageSmoothingQuality="high";ox.drawImage(th.cv,0,0);ox.restore();ox.beginPath();P.forEach((q,i)=>{i?ox.lineTo(q[0],q[1]):ox.moveTo(q[0],q[1]);});ox.closePath();}
+   else{ox.fillStyle="rgba(47,158,102,.28)";ox.fill();}ox.lineWidth=3;ox.strokeStyle="#1f5fa8";ox.stroke();
    const lx=sx(Math.min(...p.c.map(q=>q[0])))+6,ly=sy(Math.min(...p.c.map(q=>q[1])))+(prev?12:18),wd=(Math.max(...p.c.map(q=>q[0]))-Math.min(...p.c.map(q=>q[0])))*256*2**st.Z-10,t=p.m.title.replace(/\.pdf.*/i,"").replace(/^Map \d+\s*/i,"");ox.font="800 "+(prev?10:13)+"px sans-serif";ox.textAlign="left";ox.lineWidth=4;ox.strokeStyle="#fff";if(wd>20){ox.strokeText(t,lx,ly,wd);ox.fillStyle="#173f5f";ox.fillText(t,lx,ly,wd);}});
   if(typeof gpsPos!=="undefined"&&gpsPos){const l=uv(gpsPos.lat,gpsPos.lon);ox.beginPath();ox.arc(sx(l[0]),sy(l[1]),9,0,7);ox.fillStyle="#2f9e66";ox.fill();ox.lineWidth=3.5;ox.strokeStyle="#fff";ox.stroke();}
  }
@@ -4073,7 +4090,7 @@ renderNoteLib();
    sessionStorage.setItem("pscSplash","1");
    const sp=$$("splash");$$("splashLogo").innerHTML=logoSvg("s");$$("splashLogo").style.cssText="display:block;width:130px;height:130px";
    sp.style.display="flex";const done=()=>{sp.style.opacity="0";setTimeout(()=>{sp.style.display="none";},500);};
-   sp.onclick=done;setTimeout(done,2300);
+   sp.onclick=done;setTimeout(done,900);
   }
  }catch(e){}
  /* guide */
