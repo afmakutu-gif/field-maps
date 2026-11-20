@@ -302,7 +302,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <div id="prepEmpty" class="emptyBox"><span data-ic="map"></span><b>No prepared maps yet</b><span>Add a PDF below, then prepare it once. It then opens fast and works offline.</span></div>
   <div id="prepList"></div>
   <button type="button" id="ovOpen" class="secondary" style="width:100%;margin-top:10px">Overview map: all my maps on OpenStreetMap</button>
-  <label class="opt"><span class="oi" data-ic="cross"></span><span class="ot"><b>Auto-open the map I am on</b><small>Switches maps by GPS (needs Me on)</small></span><input type="checkbox" id="autoMap"><i class="sw"></i></label>
+  <label class="opt"><span class="oi" data-ic="cross"></span><span class="ot"><b>Offer to open the map I am on</b><small>Asks you to confirm by GPS (needs Me on)</small></span><input type="checkbox" id="autoMap"><i class="sw"></i></label>
  </div>
  <div class="card">
   <h2>Original PDFs</h2>
@@ -584,7 +584,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-73<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-74<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -2439,7 +2439,7 @@ function gpsState(m){
 }
 let autoMap=true;try{autoMap=localStorage.getItem("pscAutoMap")!=="0";}catch(e){}
 $("autoMap").checked=autoMap;$("autoMap").onchange=()=>{autoMap=$("autoMap").checked;try{localStorage.setItem("pscAutoMap",autoMap?"1":"0");}catch(e){}if(gpsPos)autoSwitch(gpsPos,true);};
-let autoAt=0,autoLeft={},toastT=0,toastTarget=null;
+let autoAt=0,autoLeft={},asked={},toastT=0,toastTarget=null;
 function hereToast(txt,target,ms){const b=$("hereToast");b.textContent=txt;b.style.display="block";toastTarget=target||null;b.style.cursor=target?"pointer":"default";clearTimeout(toastT);if(ms)toastT=setTimeout(()=>{b.style.display="none";},ms);}
 $("hereToast").onclick=()=>{const t=toastTarget;$("hereToast").style.display="none";if(t){autoLeft[tileCtx&&tileCtx.mapKey]=Date.now();openPrepared(t,false);}};
 function mapCovers(m,pos){const g=geoOfMeta(m);if(!g)return false;const w=g.toWorld(pos.lat,pos.lon);return w[0]>=0&&w[1]>=0&&w[0]<=m.vp.width&&w[1]<=m.vp.height;}
@@ -2458,12 +2458,9 @@ function autoSwitch(pos,force){
  const area=m=>{const g=geoOfMeta(m);return m.vp.width*m.vp.height*g.mpu*g.mpu;};
  cand.sort((a,b)=>area(a)-area(b));const t=cand[0];
  if(autoMap&&!appBusy()){
-  if(cur)autoLeft[cur.mapKey]=now;
-  const tab=document.querySelector(".panel.active"),onMaps=tab&&tab.id==="maps";
-  openPrepared(t,onMaps);
-  hereToast("Switched to \u201C"+t.title+"\u201D because you are on it.",null,6000);
- }else{
-  hereToast("You are on \u201C"+t.title+"\u201D. Tap to open it.",t,0);
+  if(asked[t.mapKey]&&now-asked[t.mapKey]<90000)return;
+  asked[t.mapKey]=now;
+  hereToast("You are on \u201C"+t.title+"\u201D. Tap here to open it.",t,25000);
  }
 }
 
@@ -3993,7 +3990,7 @@ renderNoteLib();
    <li>Use part of a saved route by choosing a start and end point in the Library.</li>
   </ul></details>
   <details><summary>7. Road navigation (A to B)</summary><ul>
-   <li><b>Overview map</b>: Maps tab, Prepared maps, tap <i>Overview map</i>. All your maps show on OpenStreetMap with a green dot for you. Tap a map to open it. It needs signal for the background; the outlines work offline. With <i>Auto-open the map I am on</i> ticked, the app opens the map you are on when GPS starts and switches when you drive into another map.</li>
+   <li><b>Overview map</b>: Maps tab, Prepared maps, tap <i>Overview map</i>. All your maps show on OpenStreetMap with a green dot for you. Tap a map to open it. It needs signal for the background; the outlines work offline. With <i>Offer to open the map I am on</i> ticked, the app asks you to confirm, by a message at the top of the map, before opening the map you are on or switching when you drive into another map.</li>
    <li><b>Re-centre</b>: when GPS is on and you move the map away from your position, a green Re-centre button appears. Tap it to come back to your dot.</li>
    <li><b>Roads outside the map</b>: while GPS is on, if you drive (over 10 km/h) more than 150 m away from any mapped road, the app records the road automatically (red REC label, voice says so). When you rejoin the mapped roads it saves the road link on this phone for this map. Saved roads join the network, so routes between farms use them instead of dashed links. Turn this on or off, or remove saved roads, in the Road network card (Maps tab). Recorded roads show purple on the network overlay.</li>
    <li><b>One-time set-up for each map:</b> go to <b>Maps</b>, open the map and scan it. The scan reads the Road layer and the green and grey open-area shapes, then builds the road network and saves it with the map. Big maps can take a few minutes. Keep the screen on and close other apps. Scan one map at a time.</li>
