@@ -589,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-90<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-91<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -1544,7 +1544,7 @@ function applyFix(pt){const o=getFix();if(!o||pt.manual)return pt;const q=Object
 function gpsFix(pt){
  speedUpdate(pt);
  pt=applyFix(pt);
- currentPosition=pt;gpsPos=pt;updateDashboard();paintPrepared();fixUI();speedChip();try{autoSwitch(pt);}catch(e){}
+ currentPosition=pt;gpsPos=pt;window.__lastPt=pt;updateDashboard();paintPrepared();fixUI();speedChip();try{autoSwitch(pt);}catch(e){}
  if(src&&src.geo){
   const w=src.geo.toWorld(pt.lat,pt.lon),inside=w[0]>=0&&w[1]>=0&&w[0]<=src.w&&w[1]<=src.h;
   $("geoStatus").textContent=inside?`My position: ${pt.lat.toFixed(6)}, ${pt.lon.toFixed(6)} (±${Math.round(pt.acc)} m)${getFix()?" · fix applied":""}${src.geo.fitError>3?" · map fit ±"+Math.round(src.geo.fitError)+" m":""}${pt.acc>60?" · weak signal, move to open sky":""}`:"You are outside the area of this map.";
@@ -5721,9 +5721,10 @@ window.__rdReport=async function(){
  const st=$("rdStat");
  try{
   const g=await rdEnsure();if(!g){st.textContent="No road network on this map yet.";return;}
-  let P=null,from="my position";try{if(gpsPos&&src&&src.geo)P=src.geo.toWorld(gpsPos.lat,gpsPos.lon);}catch(e){}
+  let P=null,from="my position";try{const q=gpsPos||window.__lastPt;if(q&&src&&src.geo)P=src.geo.toWorld(q.lat,q.lon);}catch(e){}
   if(!P&&RDP&&RDP.A){P=RDP.A;from="route start";}
-  if(!P){st.textContent="Turn GPS on or set a route start first.";return;}
+  if(!P){try{const sz=vsize();P=[view.x+sz.w/2/view.zoom,view.y+sz.h/2/view.zoom];from="centre of the map view";}catch(e){}}
+  if(!P){st.textContent="Open a map first.";return;}
   const R=300,mp=g.mpu,rr=R/mp,X=P[0],Y=P[1],o=i=>"("+Math.round((g.nx[i]-X)*mp)+"E,"+Math.round(-(g.ny[i]-Y)*mp)+"N)";
   let t="PSC Field Maps road report ("+from+")\nVersion "+(document.body.innerText.match(/v2026[\d.\-]+/)||[""])[0]+"\nMap "+(src&&src.name||"")+"\nNodes "+g.n+", edges "+g.m+", pieces "+g.pieces+", main piece "+g.mainSize+" nodes, "+g.km.toFixed(0)+" km, gap "+g.gapM+" m, tol "+g.tolM+" m\n";
   try{t+="Recorded roads: "+rdRecList().length+"\n";}catch(e){}
