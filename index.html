@@ -587,7 +587,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-83<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-84<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -1045,6 +1045,13 @@ window.__ghTrigger=function(f,c,d){
  else ghBar(true,t+" Open Google Maps for the public road? Road recording pauses while Google Maps is in front.",{go});
 };
 window.__ghBack=function(){try{ghBar(false);}catch(e){}};
+/* phones pause GPS while another app is in front; restart the watch when we are back or when fixes stop arriving */
+function gpsRestart(){
+ try{if(locWatch===null||!navigator.geolocation)return;const keep=meLock;navigator.geolocation.clearWatch(locWatch);locWatch=null;$("locateBtn").click();meLock=keep;lockUI();window.__lastFix=Date.now();}catch(e){}
+}
+window.__gpsRestart=gpsRestart;
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&locWatch!==null)setTimeout(gpsRestart,300);});
+setInterval(()=>{const fh=$("followHud");if(!document.hidden&&locWatch!==null&&fh&&fh.style.display==="block"&&(spdKmh||0)>3&&window.__lastFix&&Date.now()-window.__lastFix>20000)gpsRestart();},5000);
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden||!ghAway)return;ghAway=false;
  try{const fh=$("followHud");if(locWatch===null&&fh&&fh.style.display==="block")$("locateBtn").click();}catch(e){}
@@ -1542,7 +1549,7 @@ function gpsFix(pt){
   if(followFirst){followFirst=false;if(inside){slightZoom(700);centerOnMe();}}
   else if(meLock&&inside&&!fixing)centerOnMe();
  }
- scheduleDraw();recFabUI();
+ scheduleDraw();recFabUI();window.__lastFix=Date.now();
  try{if(typeof routeFix==="function")routeFix(pt);}catch(e){}
  try{window.__autoRec&&window.__autoRec(pt);}catch(e){}
 }
