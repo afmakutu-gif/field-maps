@@ -356,6 +356,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <label class="sl" style="display:block;margin-top:8px">Treat points closer than <b id="rdTolV">1.5 m</b><input id="rdTol" type="range" min="0.5" max="10" step="0.5" value="1.5" style="width:100%"></label>
   <label class="sl" style="display:block;margin-top:4px">Join gaps between dashes up to <b id="rdGapV">25 m</b><input id="rdGap" type="range" min="0" max="60" value="25" style="width:100%"></label>
   <button type="button" id="rdBuild" style="width:100%;margin-top:8px" disabled>Build road network</button>
+  <button type="button" id="rdReport" class="secondary" style="width:100%;margin-top:8px">Road report here (share with Claude)</button>
   <button type="button" id="rdShow" class="secondary" style="display:none;width:100%;margin-top:8px">Show separate pieces on the map</button>
   <div style="margin-top:12px;padding-top:10px;border-top:1px solid #dbe6f0"><label style="display:flex;align-items:center;gap:8px;font-weight:700;color:#1d3b57"><input type="checkbox" id="arToggle" checked style="width:20px;height:20px;margin:0"> Record roads I drive outside the map</label>
   <p class="muted" style="margin:6px 0 8px">While GPS is on and you drive away from the mapped roads, the app records the road and saves it on this phone for this map. Saved roads join the network, so routes use them instead of dashed links.</p>
@@ -588,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-89<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-90<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5716,6 +5717,29 @@ async function rdRun(){
  scheduleDraw();
  try{const xs=full.map(p=>p[0]),ys=full.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),sz=vsize(),z=clamp(Math.min(sz.w/(x1-x0+40),sz.h*0.45/(y1-y0+40)),minZoom,maxZoom);autoFit=false;view.zoom=z;view.x=(x0+x1)/2-sz.w/2/z;view.y=(y0+y1)/2-sz.h*0.28/z;clampView();changed();}catch(e){}
 }
+window.__rdReport=async function(){
+ const st=$("rdStat");
+ try{
+  const g=await rdEnsure();if(!g){st.textContent="No road network on this map yet.";return;}
+  let P=null,from="my position";try{if(gpsPos&&src&&src.geo)P=src.geo.toWorld(gpsPos.lat,gpsPos.lon);}catch(e){}
+  if(!P&&RDP&&RDP.A){P=RDP.A;from="route start";}
+  if(!P){st.textContent="Turn GPS on or set a route start first.";return;}
+  const R=300,mp=g.mpu,rr=R/mp,X=P[0],Y=P[1],o=i=>"("+Math.round((g.nx[i]-X)*mp)+"E,"+Math.round(-(g.ny[i]-Y)*mp)+"N)";
+  let t="PSC Field Maps road report ("+from+")\nVersion "+(document.body.innerText.match(/v2026[\d.\-]+/)||[""])[0]+"\nMap "+(src&&src.name||"")+"\nNodes "+g.n+", edges "+g.m+", pieces "+g.pieces+", main piece "+g.mainSize+" nodes, "+g.km.toFixed(0)+" km, gap "+g.gapM+" m, tol "+g.tolM+" m\n";
+  try{t+="Recorded roads: "+rdRecList().length+"\n";}catch(e){}
+  const a=rdNear(X,Y,true);t+="Nearest main-piece node: "+(a.id>=0?a.m.toFixed(0)+" m "+o(a.id):"none")+"\n";
+  const S=rdNearMany(X,Y);t+="Start candidates: "+S.length+" "+S.slice(0,8).map(q=>q.id+"@"+q.c.toFixed(0)+"m").join(", ")+"\n";
+  if(RDR){t+="Current route: "+RDR.m.toFixed(0)+" m, off-road ends "+RDR.offA.toFixed(0)+"/"+RDR.offB.toFixed(0)+" m, dashed links "+(RDR.links||[]).length+"\nFirst route points: "+RDR.world.slice(0,14).map(p=>"("+Math.round((p[0]-X)*mp)+"E,"+Math.round(-(p[1]-Y)*mp)+"N)").join(" ")+"\n";}
+  const KN=["tar","plant","road","minor","dead","join","bridge","link","recorded"];
+  t+="\nNODES within "+R+" m: id (east,north) piece-size deg classes\n";let k=0;const deg=new Map();
+  for(let e=0;e<g.m;e++){const A=g.ea[e],B=g.eb[e];const ia=Math.abs(g.nx[A]-X)<rr&&Math.abs(g.ny[A]-Y)<rr,ib=Math.abs(g.nx[B]-X)<rr&&Math.abs(g.ny[B]-Y)<rr;if(!ia&&!ib)continue;for(const v of [A,B]){let d=deg.get(v);if(!d){d={n:0,c:new Set()};deg.set(v,d);}d.n++;d.c.add(KN[g.ecl[e]]||g.ecl[e]);}}
+  const ids=[...deg.keys()].filter(i=>Math.hypot(g.nx[i]-X,g.ny[i]-Y)<rr).sort((p,q)=>Math.hypot(g.nx[p]-X,g.ny[p]-Y)-Math.hypot(g.nx[q]-X,g.ny[q]-Y));
+  for(const i of ids){if(k++>=250)break;const d=deg.get(i);t+=i+" "+o(i)+" piece "+(g.sz.get(g.root[i])||0)+(g.root[i]===g.main?" MAIN":"")+" deg "+d.n+" "+[...d.c].join("/")+"\n";}
+  t+="\nEDGES within "+R+" m: from-id to-id class length\n";k=0;
+  for(let e=0;e<g.m;e++){const A=g.ea[e],B=g.eb[e];if(!(Math.hypot(g.nx[A]-X,g.ny[A]-Y)<rr||Math.hypot(g.nx[B]-X,g.ny[B]-Y)<rr))continue;if(k++>=350)break;t+=A+" "+B+" "+(KN[g.ecl[e]]||g.ecl[e])+" "+g.el[e].toFixed(0)+"m\n";}
+  st.textContent=await shareText("psc-road-report.txt",t,"text/plain","PSC road report");
+ }catch(e){st.textContent="Could not make the report: "+e.message;}
+};
 function rdPoints(R){
  R=R||RDR;return R?R.world.map(p=>{const l=src.geo.toLL(p[0],p[1]);return {lat:+l.lat.toFixed(6),lon:+l.lon.toFixed(6)};}):[];
 }
@@ -5809,6 +5833,7 @@ window.roadSvg=function(sp){
  window.__arList=()=>{const h=g("arList");if(!h)return;let L=[];try{L=rdKey()?rdRecList():[];}catch(e){}
   h.innerHTML=L.length?L.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #eef3f8"><span style="color:#35506b;font-size:13.5px"><b>${(r.len/1000).toFixed(1)} km</b> &middot; ${new Date(r.id).toLocaleDateString()}</span><button type="button" class="secondary" data-ar="${r.id}" style="margin:0;padding:6px 12px">Remove</button></div>`).join(""):'<p class="muted" style="margin:0">No recorded roads for this map yet.</p>';
   h.querySelectorAll("button[data-ar]").forEach(b=>b.onclick=()=>{rdRecStore(rdRecList().filter(r=>String(r.id)!==b.dataset.ar));RD=null;window.__arList();hereToast("Road link removed",null,3000);});};
+ g("rdReport").onclick=()=>window.__rdReport();
  g("arClear").onclick=()=>{rdRecStore([]);RD=null;window.__arList();};
  window.__arList();
  g("rdTol").oninput=()=>{g("rdTolV").textContent=g("rdTol").value+" m";};
