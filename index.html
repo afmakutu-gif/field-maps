@@ -589,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-104<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-105<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5760,7 +5760,7 @@ async function rdRun(){
    if(i>0){const v=pa[i-1],L=lk&&lk.get(v),isl=!!(L&&L.some(x=>x[0]===u)),d=Math.hypot(g.nx[u]-g.nx[v],g.ny[u]-g.ny[v])*g.mpu;len+=d;if(isl){lm+=d;links.push([[g.nx[v],g.ny[v]],[g.nx[u],g.ny[u]]]);segs.push([]);}else{for(let p=g.off[v];p<g.off[v+1];p++){if(g.to[p]===u&&g.cl[p]===6){gl.push([[g.nx[v],g.ny[v]],[g.nx[u],g.ny[u]]]);break;}}}}
    segs[segs.length-1].push([g.nx[u],g.ny[u]]);}
   let P=[];segs.forEach(sg=>{P=P.concat(rdSimplify(sg,1.5/g.mpu));});
-  const world=[RDP.A].concat(P,[RDP.B]);return {A:RDP.A,B:RDP.B,world,m:len,lm,links,gl,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1],secs:rdSections(world)};};
+  const world=[RDP.A].concat(P,[RDP.B]);return {ids:pa.slice(0,60),A:RDP.A,B:RDP.B,world,m:len,lm,links,gl,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1],secs:rdSections(world)};};
  RDR=mk(path);RDR2=null;
  try{const p2=rdAstar(a.id,b.id,RDPROF.short,lk,S1,T1);if(p2){const r2=mk(p2);if(r2.m<RDR.m*0.88&&r2.key!==RDR.key)RDR2=r2;}}catch(e){}
  const full=RDR.world;
@@ -5809,6 +5809,13 @@ window.__rdReport=async function(){
   const deg=new Int32Array(g.n),cls=new Map();let cc=[0,0,0,0,0,0,0,0,0];
   for(let e=0;e<g.m;e++){const A=g.ea[e],B=g.eb[e];deg[A]++;deg[B]++;if(inR(A))cc[g.ecl[e]]++;}
   t+="\nEdges within 500 m by class: "+KN.map((k,i)=>k+" "+cc[i]).join(", ")+"\n";
+  try{const zm=rdZoneMask();t+="\nAvoid-open-areas active: "+(zm?"YES":"no")+"\n";
+   const rl=rdRecList();t+="Drawn/recorded roads saved: "+rl.length+"\n";
+   rl.forEach((r,ri)=>{const P=r.p,m=P.length/2;t+=" road "+ri+(r.drawn?" drawn ":" recorded ")+Math.round(r.len)+" m, from "+o(P[0],P[1])+" to "+o(P[2*m-2],P[2*m-1])+"\n";});
+   t+="Class-8 (drawn/recorded) edges within 500 m: from to length multiplier-cost at\n";let c8=0;
+   for(let e=0;e<g.m&&c8<60;e++){if(g.ecl[e]!==8)continue;const A=g.ea[e];if(!inR(A))continue;c8++;t+=g.ea[e]+" "+g.eb[e]+" "+g.el[e].toFixed(1)+"m cost "+g.ec[e].toFixed(1)+" "+oi(A)+"\n";}
+   if(RDR&&RDR.ids){t+="\nROUTE STEPS (first 60 nodes): node position edge-class edge-length in-open-area\n";const ids=RDR.ids;for(let i=0;i<ids.length;i++){let cl="-",ln=0;if(i>0){const v=ids[i-1],u=ids[i];for(let p=g.off[v];p<g.off[v+1];p++){if(g.to[p]===u){cl=KN[g.cl[p]]||g.cl[p];ln=g.l[p];break;}}}t+=ids[i]+" "+oi(ids[i])+" "+cl+" "+ln.toFixed(1)+"m"+(zm&&zm[ids[i]]?" ZONE":"")+"\n";}}
+  }catch(e){t+="(extra report failed: "+e.message+")\n";}
   t+="\nLINK EDGES (join/bridge/link) within 500 m: from to class length at\n";let k=0;
   for(let e=0;e<g.m;e++){const c=g.ecl[e];if(c<5||c===8)continue;const A=g.ea[e];if(!inR(A))continue;if(k++>=120)break;t+=g.ea[e]+" "+g.eb[e]+" "+KN[c]+" "+g.el[e].toFixed(0)+"m "+oi(A)+" piece "+pc(A)+(g.root[A]===g.main?" MAIN":"")+"/"+pc(g.eb[e])+(g.root[g.eb[e]]===g.main?" MAIN":"")+"\n";}
   t+="\nDEAD ENDS and JUNCTIONS within 500 m: id at degree piece classes\n";k=0;
