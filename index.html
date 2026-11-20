@@ -589,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-95<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-96<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5638,11 +5638,16 @@ function rdLinks(need){
  return lk;
 }
 function rdNearMany(x,y,main0){
- /* the nearest road nodes around a point (so a start beside parallel road lines can leave in either direction) */
- const g=RD,bm=rdBlkMask(),C=[];let best=1e18;
+ /* the nearest road nodes around a point (so a start beside parallel road lines can leave in either direction).
+    Tar and plantation main road nodes up to 70 m away count as if closer, because a phone fix is often a little off the road you are really on. */
+ const g=RD,bm=rdBlkMask();
+ if(!g.ncl){const q=new Uint8Array(g.n).fill(255);for(let e=0;e<g.m;e++){const c=g.ecl[e];if(c>4)continue;if(c<q[g.ea[e]])q[g.ea[e]]=c;if(c<q[g.eb[e]])q[g.eb[e]]=c;}g.ncl=q;}
+ const C=[];let best=1e18;
  for(let i=0;i<g.n;i++){if(bm&&bm[i])continue;if((g.sz.get(g.root[i])||0)<200)continue;const d=(g.nx[i]-x)*(g.nx[i]-x)+(g.ny[i]-y)*(g.ny[i]-y);if(d<best)best=d;C.push(d);}
- const lim=Math.min(Math.sqrt(best)*g.mpu+45,Math.sqrt(best)*g.mpu*1.6+45,200)/g.mpu,l2=lim*lim,out=[];let k=0;
- for(let i=0;i<g.n;i++){if(bm&&bm[i])continue;if((g.sz.get(g.root[i])||0)<200)continue;const d=C[k++];if(d<=l2)out.push({id:i,c:Math.sqrt(d)*g.mpu*1.0});}
+ const lim=Math.min(Math.sqrt(best)*g.mpu+45,Math.sqrt(best)*g.mpu*1.6+45,200)/g.mpu,l2=lim*lim,tl=70/g.mpu,tl2=tl*tl,out=[];let k=0;
+ for(let i=0;i<g.n;i++){if(bm&&bm[i])continue;if((g.sz.get(g.root[i])||0)<200)continue;const d=C[k++],tar=g.ncl[i]<=1;
+  if(tar&&d<=Math.max(l2,tl2))out.push({id:i,c:Math.sqrt(d)*g.mpu*0.6});
+  else if(d<=l2)out.push({id:i,c:Math.sqrt(d)*g.mpu*1.0});}
  out.sort((a,b)=>a.c-b.c);return out.slice(0,40);
 }
 function rdAstar(s,t,prof,lk,S,T){
