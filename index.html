@@ -476,6 +476,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
      <label class="muted rbChk"><input type="checkbox" id="rbMain"> Main route</label>
      <label class="muted rbChk">Speed for time estimate <input id="rbSpeed" type="number" min="5" max="120" style="width:64px"> km/h</label>
      <div class="row"><button class="small" id="rbSave">Save route</button><button class="small" id="rbFollow">Follow</button><button class="small secondary" id="rbLib">Library</button></div>
+     <div class="row"><button class="small secondary" id="rbRoad">Add this line as a road for routing</button></div>
     </div>
     <div id="rbLibView" hidden><div class="row"><button class="small secondary" id="rbBack">Back to planner</button><button class="small secondary" id="rbExpAll">Export all routes</button><label class="file-label" for="rbImp" style="margin:0">Import routes</label><input id="rbImp" type="file" accept=".json,application/json" style="display:none"></div><div id="rbCmp"></div><div id="rbList"></div></div>
     <p id="rbMsg" class="muted"></p>
@@ -587,7 +588,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-85<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-86<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -3487,6 +3488,15 @@ renderNoteLib();
   await putRecord(rec);plan.id=rec.id;plan.title=title;plan.main=rec.main;plan.created=rec.created;plan.uses=rec.uses;
   return rec;
  }
+ $$("rbRoad").onclick=()=>{
+  try{
+   if(plan.points.length<2){msg("Place at least 2 points on the road first.");return;}
+   if(!src||!src.geo){msg("This map has no location data.");return;}
+   const flat=[];let len=0,pv=null;plan.points.forEach(q=>{const w=src.geo.toWorld(q.lat,q.lon);flat.push(+w[0].toFixed(2),+w[1].toFixed(2));if(pv)len+=Math.hypot(w[0]-pv[0],w[1]-pv[1])*src.geo.mpu;pv=w;});
+   const L=rdRecList();L.push({id:Date.now(),len:Math.round(len),p:flat,drawn:1});rdRecStore(L);RD=null;try{window.__arList&&window.__arList();}catch(e){}
+   msg("Added as a road ("+km(len)+"). Routes now use it. Remove it in Maps > Road network if wrong.");
+  }catch(e){msg("Could not add the road: "+e.message);}
+ };
  $$("rbSave").onclick=async()=>{try{const r=await saveCurrent();if(r){msg("Saved to your route library: "+r.title+" ("+km(r.distance)+").");stats();try{renderRecords();}catch(e){}}}catch(e){msg("Could not save: "+e.message);}};
  /* ---- library ---- */
  async function loadPlans(){try{plans=(await allRecords()).filter(r=>r.kind==="plan");}catch(e){plans=[];}plans.sort((a,b)=>(b.main?1:0)-(a.main?1:0)||(b.uses||0)-(a.uses||0)||(b.updated||b.created)-(a.updated||a.created));return plans;}
@@ -4117,6 +4127,7 @@ renderNoteLib();
    <li>Use part of a saved route by choosing a start and end point in the Library.</li>
   </ul></details>
   <details><summary>7. Road navigation (A to B)</summary><ul>
+   <li><b>Add a missing road</b>: if the automatic route cannot find a real road, open the Route planner (Travel), tap points along the real road, then tap <i>Add this line as a road for routing</i>. Routes then use it. Remove it in Maps &gt; Road network if it is wrong.</li>
    <li><b>Voice reports on a route</b>: open areas beside the road are announced with the side (on your left, on your right, or on both sides) and how far, always as "off the main road". Open areas the route goes through are announced as before. The voice also says when you are joining the tar (public) road and when you are leaving it for plantation roads.</li>
    <li><b>Public roads and Google Maps</b>: in the Start navigation window choose what happens at a tar road: ask to open Google Maps, a split-screen tip (keeps this app beside Google so road recording continues), open Google automatically (the phone may ask you to allow it; if it does not open, tap the button), or stay in the app. Google is given the public-road part up to where the plantation starts. Come back to the app when you reach the plantation. Road recording only runs while this app is in front.</li>
    <li><b>Overview map</b>: Maps tab, Prepared maps, tap <i>Overview map</i>. All your maps show on OpenStreetMap with a green dot for you. Tap a map to open it. It needs signal for the background; the outlines work offline. With <i>Offer to open the map I am on</i> ticked, the app asks you to confirm, by a message at the top of the map, before opening the map you are on or switching when you drive into another map.</li>
@@ -5389,6 +5400,7 @@ function rdAugment(nx,ny,ea,eb,ec,el,ecl,mpu){
   for(let j=0;j<m;j++){NX[k]=P[2*j];NY[k]=P[2*j+1];if(j>0){EA.push(k-1);EB.push(k);}k++;}
   const a=nearest(P[0],P[1]);if(a.i>=0&&a.m<=500){EA.push(first);EB.push(a.i);}
   const b=nearest(P[2*m-2],P[2*m-1]);if(b.i>=0&&b.m<=500){EA.push(k-1);EB.push(b.i);}
+  if(r.drawn)for(let j=1;j<m-1;j++){const c=nearest(P[2*j],P[2*j+1]);if(c.i>=0&&c.m<=25){EA.push(first+j);EB.push(c.i);}}
  }
  const m0=ea.length,k2=EA.length,na=new Int32Array(m0+k2),nb=new Int32Array(m0+k2),nc=new Float32Array(m0+k2),nl=new Float32Array(m0+k2),ncl=new Uint8Array(m0+k2);
  na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
