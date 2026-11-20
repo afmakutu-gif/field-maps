@@ -588,7 +588,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-88<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-89<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5319,6 +5319,21 @@ async function rdBuild(tolM,gapM,stat){
  RD.joined=joined;RD.medGap=medGap;RD.key=rdKey();RD.srcRef=src;
  return RD;
 }
+/* roads that cross or touch (a side road meeting a tar road) become junctions even when no point is shared */
+function rdCross(nx,ny,ea,eb,mpu,maxM){
+ const n=nx.length,m=ea.length,par=new Int32Array(n);for(let i=0;i<n;i++)par[i]=i;
+ const find=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;};
+ for(let e=0;e<m;e++){const r1=find(ea[e]),r2=find(eb[e]);if(r1!==r2)par[r1]=r2;}
+ const cw=maxM/mpu,nxt=new Int32Array(n),h=new Map(),K=(a,b)=>(a+4096)*8388608+(b+4096);
+ for(let i=0;i<n;i++){const k=K(Math.floor(nx[i]/cw),Math.floor(ny[i]/cw)),p=h.get(k);nxt[i]=p===undefined?-1:p;h.set(k,i);}
+ const C=[];
+ for(let i=0;i<n;i++){const cx=Math.floor(nx[i]/cw),cy=Math.floor(ny[i]/cw),ri=find(i);let best=-1,bd=cw;
+  for(let ax=cx-1;ax<=cx+1;ax++)for(let ay=cy-1;ay<=cy+1;ay++){let j=h.get(K(ax,ay));while(j!==undefined&&j>=0){if(j>i&&find(j)!==ri){const d=Math.hypot(nx[j]-nx[i],ny[j]-ny[i]);if(d<bd){bd=d;best=j;}}j=nxt[j];}}
+  if(best>=0)C.push([bd,i,best]);}
+ C.sort((a,b)=>a[0]-b[0]);const A=[],B=[];
+ for(const [d,i,j] of C){const a=find(i),b=find(j);if(a!==b){par[a]=b;A.push(i);B.push(j);}}
+ return {A,B};
+}
 function rdBridge(nx,ny,ea,eb,mpu,maxM,minSize){
  const n=nx.length,m=ea.length,par=new Int32Array(n);for(let i=0;i<n;i++)par[i]=i;
  const find=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;},deg=new Int32Array(n);
@@ -5370,6 +5385,7 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl,doShort){
   na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
   for(let j=0;j<k;j++){const a=Ar[j],b=Br[j],len=Math.hypot(nx[a]-nx[b],ny[a]-ny[b])*mpu;na[m0+j]=a;nb[m0+j]=b;nl[m0+j]=len;nc[m0+j]=len*RDPROF.best[6];ncl[m0+j]=6;}
   ea=na;eb=nb;ec=nc;el=nl;ecl=ncl;};
+ try{const cr=rdCross(nx,ny,ea,eb,mpu,10);const k=cr.A.length;if(k){const m0=ea.length,na=new Int32Array(m0+k),nb=new Int32Array(m0+k),nc=new Float32Array(m0+k),nl=new Float32Array(m0+k),ncl=new Uint8Array(m0+k);na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);for(let j=0;j<k;j++){const a=cr.A[j],b=cr.B[j],len=Math.hypot(nx[a]-nx[b],ny[a]-ny[b])*mpu;na[m0+j]=a;nb[m0+j]=b;nl[m0+j]=len;nc[m0+j]=len*1.2+2;ncl[m0+j]=5;}ea=na;eb=nb;ec=nc;el=nl;ecl=ncl;}}catch(e){}
  try{if(doShort){const sc=rdShortcuts(nx,ny,ea,eb,el,ecl,mpu);addB(sc.A,sc.B);}}catch(e){}
  try{const br=rdBridge(nx,ny,ea,eb,mpu,RDBRIDGE);addB(br.A,br.B);}catch(e){}
  try{const br=rdBridge(nx,ny,ea,eb,mpu,600,300);addB(br.A,br.B);}catch(e){}
