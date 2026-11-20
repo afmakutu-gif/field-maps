@@ -256,7 +256,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 <section id="home" class="panel active">
  <div class="card" id="dashCard">
   <h2>Field dashboard</h2>
-  <div class="hero">
+  <div class="hero" id="heroGo" role="button" tabindex="0" style="cursor:pointer">
    <div class="heroIc" data-ic="map"></div>
    <div class="heroTx"><span class="metric-label">Current map</span><span class="heroVal" id="dashMap">None yet</span></div>
   </div>
@@ -582,7 +582,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-71<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-72<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -657,6 +657,7 @@ function switchTab(id){
  if(id==="measure")[60,400,1200].forEach(t=>setTimeout(fitScreen,t));
 }
 $("nav").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b)switchTab(b.dataset.tab);});
+$("heroGo").onclick=()=>switchTab("measure");
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.go)));
 
 async function updateDashboard(){
@@ -1019,17 +1020,19 @@ function setBg(on){bgOn=on;try{localStorage.setItem("pscBg",on?"1":"0");}catch(e
 function drawBg(){
  const c=$("bgCanvas");if(!c)return;const v=vsize();
  if(!bgOn||!src||!src.geo||!v.w||!v.h){if(c.width>1){c.width=1;c.height=1;}return;}
- if(c.width!==v.w||c.height!==v.h){c.width=v.w;c.height=v.h;}
+ const dpr=Math.min(2,window.devicePixelRatio||1);
+ if(c.width!==Math.round(v.w*dpr)||c.height!==Math.round(v.h*dpr)){c.width=Math.round(v.w*dpr);c.height=Math.round(v.h*dpr);}
+ c.style.width=v.w+"px";c.style.height=v.h+"px";
  const ctx=c.getContext("2d");ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,c.width,c.height);
  const z0=view.zoom,cs=[[0,0],[v.w,0],[0,v.h],[v.w,v.h]].map(q=>src.geo.toLL(view.x+q[0]/z0,view.y+q[1]/z0));
  const la=cs.map(q=>q.lat),lo=cs.map(q=>q.lon),la0=Math.min(...la),la1=Math.max(...la),lo0=Math.min(...lo),lo1=Math.max(...lo);
- const mpp=(src.geo.mpu||1)/z0;let z=Math.round(Math.log2(156543.03*Math.cos((la0+la1)/2*Math.PI/180)/mpp));z=Math.max(3,Math.min(19,z));
+ const mpp=(src.geo.mpu||1)/z0;let z=Math.ceil(Math.log2(156543.03*Math.cos((la0+la1)/2*Math.PI/180)/mpp)+(dpr>1.4?0.5:0));z=Math.max(3,Math.min(19,z));
  let tx0,tx1,ty0,ty1;
- for(;;){const a=llTile(la1,lo0,z),b=llTile(la0,lo1,z);tx0=Math.floor(a[0]);tx1=Math.floor(b[0]);ty0=Math.floor(a[1]);ty1=Math.floor(b[1]);if((tx1-tx0+1)*(ty1-ty0+1)<=40||z<=3)break;z--;}
- const n=2**z,tw=(x,y)=>{const l=tileLL(x,y,z),w=src.geo.toWorld(l.lat,l.lon);return [(w[0]-view.x)*z0,(w[1]-view.y)*z0];};
+ for(;;){const a=llTile(la1,lo0,z),b=llTile(la0,lo1,z);tx0=Math.floor(a[0]);tx1=Math.floor(b[0]);ty0=Math.floor(a[1]);ty1=Math.floor(b[1]);if((tx1-tx0+1)*(ty1-ty0+1)<=60||z<=3)break;z--;}
+ const n=2**z,tw=(x,y)=>{const l=tileLL(x,y,z),w=src.geo.toWorld(l.lat,l.lon);return [(w[0]-view.x)*z0*dpr,(w[1]-view.y)*z0*dpr];};
  for(let x=tx0;x<=tx1;x++)for(let y=ty0;y<=ty1;y++){
   if(y<0||y>=n)continue;const xx=((x%n)+n)%n,key=z+"/"+xx+"/"+y;let e=bgImgs.get(key);
-  if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;scheduleDraw();};e.img.onerror=()=>{e.err=true;};e.img.src="https://tile.openstreetmap.org/"+key+".png";bgImgs.set(key,e);if(bgImgs.size>400){bgImgs.delete(bgImgs.keys().next().value);}}
+  if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;scheduleDraw();};e.img.onerror=()=>{e.err=true;};e.img.src="https://tile.openstreetmap.org/"+key+".png";bgImgs.set(key,e);if(bgImgs.size>600){bgImgs.delete(bgImgs.keys().next().value);}}
   if(!e.ok)continue;
   const p0=tw(x,y),p1=tw(x+1,y),p2=tw(x,y+1);
   ctx.setTransform((p1[0]-p0[0])/256,(p1[1]-p0[1])/256,(p2[0]-p0[0])/256,(p2[1]-p0[1])/256,p0[0],p0[1]);ctx.drawImage(e.img,0,0);
