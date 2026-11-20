@@ -589,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-102<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-103<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5470,10 +5470,10 @@ function rdAugment(nx,ny,ea,eb,ec,el,ecl,mpu){
  const nearestT=(x,y)=>{let b=-1,bd=1e18;for(let i=0;i<n0;i++){if(!tn[i])continue;const d=(nx[i]-x)*(nx[i]-x)+(ny[i]-y)*(ny[i]-y);if(d<bd){bd=d;b=i;}}return {i:b,m:Math.sqrt(bd)*mpu};};
  for(const r of L){const P=r.p,m=P.length/2,first=k;
   for(let j=0;j<m;j++){NX[k]=P[2*j];NY[k]=P[2*j+1];if(j>0){EA.push(k-1);EB.push(k);EM.push(r.drawn?0.8:1.15);}k++;}
-  const a=nearest(P[0],P[1]);if(a.i>=0&&a.m<=500){EA.push(first);EB.push(a.i);EM.push(r.drawn?0.8:1.15);}
-  const b=nearest(P[2*m-2],P[2*m-1]);if(b.i>=0&&b.m<=500){EA.push(k-1);EB.push(b.i);EM.push(r.drawn?0.8:1.15);}
-  if(r.drawn){const t0=nearestT(P[0],P[1]),t1=nearestT(P[2*m-2],P[2*m-1]);if(t0.i>=0&&t0.m<=80&&t0.i!==a.i){EA.push(first);EB.push(t0.i);EM.push(0.8);}if(t1.i>=0&&t1.m<=80&&t1.i!==b.i){EA.push(k-1);EB.push(t1.i);EM.push(0.8);}}
-  if(r.drawn)for(let j=1;j<m-1;j++){const c=nearest(P[2*j],P[2*j+1]);if(c.i>=0&&c.m<=25){EA.push(first+j);EB.push(c.i);EM.push(r.drawn?0.8:1.15);}}
+  const a=nearest(P[0],P[1]);if(a.i>=0&&a.m<=500){EA.push(first);EB.push(a.i);EM.push(r.drawn?(a.m<=15?0.8:4):(a.m<=15?1.15:4));}
+  const b=nearest(P[2*m-2],P[2*m-1]);if(b.i>=0&&b.m<=500){EA.push(k-1);EB.push(b.i);EM.push(r.drawn?(b.m<=15?0.8:4):(b.m<=15?1.15:4));}
+  if(r.drawn){const t0=nearestT(P[0],P[1]),t1=nearestT(P[2*m-2],P[2*m-1]);if(t0.i>=0&&t0.m<=80&&t0.i!==a.i){EA.push(first);EB.push(t0.i);EM.push(t0.m<=15?0.8:4);}if(t1.i>=0&&t1.m<=80&&t1.i!==b.i){EA.push(k-1);EB.push(t1.i);EM.push(t1.m<=15?0.8:4);}}
+  if(r.drawn)for(let j=1;j<m-1;j++){const c=nearest(P[2*j],P[2*j+1]);if(c.i>=0&&c.m<=25){EA.push(first+j);EB.push(c.i);EM.push(c.m<=6?0.8:4);}}
  }
  const m0=ea.length,k2=EA.length,na=new Int32Array(m0+k2),nb=new Int32Array(m0+k2),nc=new Float32Array(m0+k2),nl=new Float32Array(m0+k2),ncl=new Uint8Array(m0+k2);
  na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
