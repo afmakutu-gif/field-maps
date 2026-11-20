@@ -589,7 +589,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-91<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-92<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5381,6 +5381,29 @@ function rdShortcuts(nx,ny,ea,eb,el,ecl,mpu){
  }
  return {A,B};
 }
+function rdJoinPieces(nx,ny,ea,eb,mpu,R,minSize){
+ /* big road pieces that run close to each other but never touch: link them where they pass (any node, not only dead ends) */
+ const n=nx.length,m=ea.length,par=new Int32Array(n);for(let i=0;i<n;i++)par[i]=i;
+ const find=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;};
+ for(let e=0;e<m;e++){const r1=find(ea[e]),r2=find(eb[e]);if(r1!==r2)par[r1]=r2;}
+ const size=new Int32Array(n),rt=new Int32Array(n);for(let i=0;i<n;i++){rt[i]=find(i);size[rt[i]]++;}
+ const cw=R/mpu,h=new Map(),nxt=new Int32Array(n).fill(-1),K=(a,b)=>(a+8192)*16777216+(b+8192);
+ for(let i=0;i<n;i++){if(size[rt[i]]<minSize)continue;const k=K(Math.floor(nx[i]/cw),Math.floor(ny[i]/cw)),p=h.get(k);nxt[i]=p===undefined?-1:p;h.set(k,i);}
+ const C=[];
+ for(let i=0;i<n;i++){
+  if(size[rt[i]]<minSize)continue;const cx=Math.floor(nx[i]/cw),cy=Math.floor(ny[i]/cw);let best=-1,bd=cw;
+  for(let ax=cx-1;ax<=cx+1;ax++)for(let ay=cy-1;ay<=cy+1;ay++){let j=h.get(K(ax,ay));while(j!==undefined&&j>=0){if(rt[j]!==rt[i]){const d=Math.hypot(nx[j]-nx[i],ny[j]-ny[i]);if(d<bd){bd=d;best=j;}}j=nxt[j];}}
+  if(best>=0)C.push([bd,i,best]);
+ }
+ C.sort((a,b)=>a[0]-b[0]);
+ const A=[],B=[],acc=new Map(),sep=100/mpu;
+ for(const [d,i,j] of C){
+  const a=Math.min(rt[i],rt[j]),b=Math.max(rt[i],rt[j]),key=a*4194304+b;let L=acc.get(key);if(!L){L=[];acc.set(key,L);}
+  if(L.length>=40)continue;let ok=true;for(const q of L){if(Math.hypot(nx[q]-nx[i],ny[q]-ny[i])<sep){ok=false;break;}}
+  if(ok){L.push(i);A.push(i);B.push(j);}
+ }
+ return {A,B};
+}
 function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl,doShort){
  const addB=(Ar,Br)=>{if(!Ar.length)return;const k=Ar.length,m0=ea.length,na=new Int32Array(m0+k),nb=new Int32Array(m0+k),nc=new Float32Array(m0+k),nl=new Float32Array(m0+k),ncl=new Uint8Array(m0+k);
   na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
@@ -5390,6 +5413,7 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl,doShort){
  try{if(doShort){const sc=rdShortcuts(nx,ny,ea,eb,el,ecl,mpu);addB(sc.A,sc.B);}}catch(e){}
  try{const br=rdBridge(nx,ny,ea,eb,mpu,RDBRIDGE);addB(br.A,br.B);}catch(e){}
  try{const br=rdBridge(nx,ny,ea,eb,mpu,600,300);addB(br.A,br.B);}catch(e){}
+ try{const jp=rdJoinPieces(nx,ny,ea,eb,mpu,120,300);addB(jp.A,jp.B);}catch(e){}
  const n=nx.length,m=ea.length,off=new Int32Array(n+1);
  for(let e=0;e<m;e++){off[ea[e]+1]++;off[eb[e]+1]++;}
  for(let i=0;i<n;i++)off[i+1]+=off[i];
