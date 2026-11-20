@@ -359,7 +359,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <button type="button" id="rdShow" class="secondary" style="display:none;width:100%;margin-top:8px">Show separate pieces on the map</button>
   <div style="margin-top:12px;padding-top:10px;border-top:1px solid #dbe6f0"><label style="display:flex;align-items:center;gap:8px;font-weight:700;color:#1d3b57"><input type="checkbox" id="arToggle" checked style="width:20px;height:20px;margin:0"> Record roads I drive outside the map</label>
   <p class="muted" style="margin:6px 0 8px">While GPS is on and you drive away from the mapped roads, the app records the road and saves it on this phone for this map. Saved roads join the network, so routes use them instead of dashed links.</p>
-  <div id="arList"></div></div>
+  <div id="arList"></div><button type="button" id="arClear" class="secondary" style="margin-top:8px">Remove all recorded roads on this map</button></div>
   <p id="rdStat" class="status" role="status">Scan a map first (Map lines above). The road network is built from the scan.</p>
  </div>
  <div class="card">
@@ -587,7 +587,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-84<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-85<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5400,6 +5400,17 @@ function rdAugment(nx,ny,ea,eb,ec,el,ecl,mpu){
 let AR_ON=true;try{AR_ON=localStorage.getItem("pscAutoRec")!=="0";}catch(e){}
 const AR={rec:false,buf:[],off:0,inn:0,still:0,loading:false,last:null};
 function arChip(on){const c=$("arChip");if(c)c.style.display=on?"block":"none";}
+/* distance in metres from a point to the nearest road line (not just the nearest road node) */
+function arDist(x,y){
+ const g=RD;if(!g)return 1e9;
+ if(!g.sgrid){const cs=100/g.mpu,G=new Map();
+  for(let e=0;e<g.m;e++){const c=g.ecl[e];if(c===7||c===8||c===5&&0)continue;const a=g.ea[e],b=g.eb[e],ax=g.nx[a],ay=g.ny[a],bx=g.nx[b],by=g.ny[b],L=Math.hypot(bx-ax,by-ay)*g.mpu,st=Math.max(1,Math.ceil(L/40));
+   for(let k=0;k<=st;k++){const px=ax+(bx-ax)*k/st,py=ay+(by-ay)*k/st,key=Math.floor(px/cs)+","+Math.floor(py/cs);let l=G.get(key);if(!l){l=[];G.set(key,l);}l.push(px,py);}}
+  g.sgrid=G;g.scs=cs;}
+ const cs=g.scs,cx=Math.floor(x/cs),cy=Math.floor(y/cs);let bd=1e18;
+ for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const l=g.sgrid.get((cx+i)+","+(cy+j));if(!l)continue;for(let k=0;k<l.length;k+=2){const d=(l[k]-x)**2+(l[k+1]-y)**2;if(d<bd)bd=d;}}
+ return bd>=1e17?1e9:Math.sqrt(bd)*g.mpu;
+}
 function arSimplify(P,tol){ /* P: [[x,y]..] world; Douglas-Peucker */
  if(P.length<3)return P;const keep=new Uint8Array(P.length);keep[0]=keep[P.length-1]=1;const st=[[0,P.length-1]];
  while(st.length){const [a,b]=st.pop();let md=0,mi=-1;const ax=P[a][0],ay=P[a][1],bx=P[b][0],by=P[b][1],dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy||1e-12;
@@ -5429,7 +5440,7 @@ window.__autoRec=pt=>{
   return;
  }
  if((pt.acc||0)>40)return;
- const w=src.geo.toWorld(pt.lat,pt.lon),nr=rdNear(w[0],w[1],false),kmh=spdKmh||0,now=pt.t||Date.now();
+ const w=src.geo.toWorld(pt.lat,pt.lon),nr={m:arDist(w[0],w[1])},kmh=spdKmh||0,now=pt.t||Date.now();
  if(!AR.rec){
   if(kmh>=10&&nr.m>150){AR.off++;AR.buf.push(w);if(AR.off>=3){AR.rec=true;AR.inn=0;AR.still=0;AR.last=now;arChip(true);try{window.__say&&window.__say("Recording road outside the map",true);}catch(e){}}}
   else{AR.off=0;AR.buf.length=0;}
@@ -5754,6 +5765,7 @@ window.roadSvg=function(sp){
  window.__arList=()=>{const h=g("arList");if(!h)return;let L=[];try{L=rdKey()?rdRecList():[];}catch(e){}
   h.innerHTML=L.length?L.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #eef3f8"><span style="color:#35506b;font-size:13.5px"><b>${(r.len/1000).toFixed(1)} km</b> &middot; ${new Date(r.id).toLocaleDateString()}</span><button type="button" class="secondary" data-ar="${r.id}" style="margin:0;padding:6px 12px">Remove</button></div>`).join(""):'<p class="muted" style="margin:0">No recorded roads for this map yet.</p>';
   h.querySelectorAll("button[data-ar]").forEach(b=>b.onclick=()=>{rdRecStore(rdRecList().filter(r=>String(r.id)!==b.dataset.ar));RD=null;window.__arList();hereToast("Road link removed",null,3000);});};
+ g("arClear").onclick=()=>{rdRecStore([]);RD=null;window.__arList();};
  window.__arList();
  g("rdTol").oninput=()=>{g("rdTolV").textContent=g("rdTol").value+" m";};
  g("rdGap").oninput=()=>{g("rdGapV").textContent=g("rdGap").value+" m";};
