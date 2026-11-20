@@ -336,6 +336,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <div class="secLbl">Options</div>
   <label class="opt"><span class="oi" data-ic="archive"></span><span class="ot"><b>Tidy up after preparing</b><small>Remove the PDF from this list once prepared</small></span><input type="checkbox" id="autoDrop"><i class="sw"></i></label>
   <label class="opt"><span class="oi" data-ic="star"></span><span class="ot"><b>Extra-sharp when zooming</b><small>Keeps a copy of the PDF; uses more memory</small></span><input type="checkbox" id="liveOn"><i class="sw"></i></label>
+  <button type="button" id="sharpReset" class="secondary" style="width:100%;margin-top:8px">Restore full sharpness</button>
   <label class="opt"><span class="oi" data-ic="sliders"></span><span class="ot"><b>Keep screen on</b><small>While a map is open</small></span><input type="checkbox" id="awakeOn"><i class="sw"></i></label>
  </div>
 
@@ -586,7 +587,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-78<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-79<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -684,7 +685,10 @@ let measurePoints=[],mode="distance",manualScale=null,lastTap=null;
 let renderId=0,renderTimer=null,rendered=null,curTask=null,drawQueued=false;
 let gpsPos=null,locWatch=null,followFirst=false;
 let pxCap=3600000;
-try{const c=parseInt(sessionStorage.getItem("pscCap")||"",10);if(c)pxCap=c;}catch(e){}
+try{const c=parseInt(sessionStorage.getItem("pscCap")||"",10),t=parseInt(sessionStorage.getItem("pscCapT")||"0",10);
+ /* a lowered detail limit or paused extra-sharp mode only lasts 20 minutes, then full sharpness returns */
+ if(c&&Date.now()-t<20*60000)pxCap=c;else{sessionStorage.removeItem("pscCap");sessionStorage.removeItem("pscCapT");}
+ const nt=parseInt(sessionStorage.getItem("pscNoLiveT")||"0",10);if(sessionStorage.getItem("pscNoLive")==="1"&&Date.now()-nt>=20*60000){sessionStorage.removeItem("pscNoLive");sessionStorage.removeItem("pscNoLiveT");}}catch(e){}
 const viewer=$("viewer"),baseC=$("baseCanvas"),bctx=baseC.getContext("2d"),overlay=$("overlay");
 const workCs=[document.createElement("canvas"),document.createElement("canvas")];let workIdx=0;
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
@@ -3144,7 +3148,7 @@ try{
  if(crashed){
   sessionStorage.removeItem("pscRender");
   const levels=[800000,1400000,2000000,2500000],lower=levels.filter(x=>x<crashed).pop()||levels[0];
-  pxCap=lower;sessionStorage.setItem("pscCap",String(lower));
+  pxCap=lower;sessionStorage.setItem("pscCap",String(lower));sessionStorage.setItem("pscCapT",String(Date.now()));
   switchTab("maps");
   pdfMsg("The map was too heavy for the phone and the browser crashed. Drawing detail is now reduced. Add the map again.");
  }
@@ -3170,8 +3174,9 @@ try{
 }catch(e){}
 openDB().catch(()=>{db=null;$("recordStatus").textContent="Browser storage unavailable; records will be lost when you close this page.";}).finally(()=>{updateDashboard();draftLoad();});
 
+$("sharpReset").onclick=()=>{try{["pscCap","pscCapT","pscNoLive","pscNoLiveT","pscRender","pscLiveRender"].forEach(k=>sessionStorage.removeItem(k));localStorage.setItem("pscLive","1");localStorage.removeItem("pscNoLive");}catch(e){}pxCap=3600000;try{$("liveOn").checked=true;}catch(e){}try{rendered=null;if(src)scheduleRender(50);}catch(e){}try{$("pdfDiagnostics").textContent="Full sharpness restored. Open the map to redraw it.";}catch(e){}};
 try{const lo=$("liveOn");lo.checked=liveEnabled();lo.onchange=()=>{try{localStorage.setItem("pscLive",lo.checked?"1":"0");if(lo.checked){localStorage.removeItem("pscNoLive");sessionStorage.removeItem("pscNoLive");}}catch(e){}};}catch(e){}
-try{if(sessionStorage.getItem("pscLiveRender")==="1"){sessionStorage.removeItem("pscLiveRender");sessionStorage.setItem("pscNoLive","1");setTimeout(()=>{try{$("pdfDiagnostics").textContent="Extra-sharp mode ran out of memory and was paused until you reopen the app. Close other apps for best results.";}catch(e){}},500);}}catch(e){}
+try{if(sessionStorage.getItem("pscLiveRender")==="1"){sessionStorage.removeItem("pscLiveRender");sessionStorage.setItem("pscNoLive","1");sessionStorage.setItem("pscNoLiveT",String(Date.now()));setTimeout(()=>{try{$("pdfDiagnostics").textContent="Extra-sharp mode ran out of memory and was paused until you reopen the app. Close other apps for best results.";}catch(e){}},500);}}catch(e){}
 (async()=>{
  await renderPrepared();
  let key=null;try{key=localStorage.getItem("pscLastMap");}catch(e){}
