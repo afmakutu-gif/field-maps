@@ -77,7 +77,7 @@ input[type=file]{display:none}textarea{min-height:110px;resize:vertical}
 #viewerBox.mOff{--mo:0px;--rh:0px}
 #rotSlot{display:flex;flex:2.3 1 0;gap:3px;min-width:0}#rotSlot .vbtn{flex:1 1 0}#lockBtn{flex:.8 1 0!important}#rotSlot.locked #rotBtn{opacity:.45}
 #viewer{position:relative;width:100%;height:calc(100svh - 96px);min-height:62vh;overflow:hidden;background:#dde4ec;border:1px solid var(--line);border-radius:10px;touch-action:none;-webkit-user-select:none;user-select:none}
-#baseCanvas{position:absolute;left:0;top:0;transform-origin:0 0}#bgCanvas{position:absolute;left:0;top:0;pointer-events:none}#bgAttr{position:absolute;right:48px;bottom:2px;font-size:10px;background:rgba(255,255,255,.85);color:#334;padding:1px 5px;border-radius:6px;display:none;z-index:4;pointer-events:none}
+#baseCanvas{position:absolute;left:0;top:0;transform-origin:0 0}#bgCanvas{position:absolute;left:0;top:0;pointer-events:none}#recFab{position:absolute;left:50%;transform:translateX(-50%);bottom:58px;z-index:6;display:none;align-items:center;gap:7px;padding:10px 18px;border-radius:24px;background:linear-gradient(180deg,#2f9e66,#1f7a50);color:#fff;font-weight:800;font-size:15px;border:2px solid #fff;box-shadow:0 5px 14px rgba(20,60,40,.35);margin:0}#recFab svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4}#arChip{position:absolute;left:50%;transform:translateX(-50%);bottom:104px;z-index:6;background:#c13030;color:#fff;font-weight:700;font-size:12.5px;padding:6px 12px;border-radius:16px;border:2px solid #fff;box-shadow:0 3px 10px rgba(120,20,20,.3);white-space:nowrap;pointer-events:none}#bgAttr{position:absolute;right:48px;bottom:2px;font-size:10px;background:rgba(255,255,255,.85);color:#334;padding:1px 5px;border-radius:6px;display:none;z-index:4;pointer-events:none}
 #overlay{position:absolute;left:0;top:0;pointer-events:none}
 #vpane{position:absolute;left:50%;top:50%;transform-origin:50% 50%}
 #spotBox{display:none;position:absolute;left:8px;right:8px;bottom:8px;max-height:58%;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;z-index:31;box-shadow:0 8px 24px rgba(37,99,184,.18)}
@@ -353,6 +353,9 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <label class="sl" style="display:block;margin-top:4px">Join gaps between dashes up to <b id="rdGapV">25 m</b><input id="rdGap" type="range" min="0" max="60" value="25" style="width:100%"></label>
   <button type="button" id="rdBuild" style="width:100%;margin-top:8px" disabled>Build road network</button>
   <button type="button" id="rdShow" class="secondary" style="display:none;width:100%;margin-top:8px">Show separate pieces on the map</button>
+  <div style="margin-top:12px;padding-top:10px;border-top:1px solid #dbe6f0"><label style="display:flex;align-items:center;gap:8px;font-weight:700;color:#1d3b57"><input type="checkbox" id="arToggle" checked style="width:20px;height:20px;margin:0"> Record roads I drive outside the map</label>
+  <p class="muted" style="margin:6px 0 8px">While GPS is on and you drive away from the mapped roads, the app records the road and saves it on this phone for this map. Saved roads join the network, so routes use them instead of dashed links.</p>
+  <div id="arList"></div></div>
   <p id="rdStat" class="status" role="status">Scan a map first (Map lines above). The road network is built from the scan.</p>
  </div>
  <div class="card">
@@ -372,7 +375,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <div id="viewerBox">
    <div id="viewer"><div id="vpane"><canvas id="bgCanvas" width="1" height="1"></canvas><canvas id="baseCanvas"></canvas><svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
    <button id="hereToast" type="button" style="display:none"></button><div id="spdChip" class="chip" style="display:none"></div><button id="fixPos" class="vbtn" style="display:none">⌖ Fix position</button><button id="fixClr" class="vbtn" style="display:none">Reset fix</button><button id="oriBtn" class="vbtn" style="display:none">⟲ Map flip: Normal</button><button id="ptrBtn" class="vbtn" style="display:none">Pointer</button>
-   <div id="mapPill" style="display:none"></div><div id="bgAttr">© OpenStreetMap contributors</div><button type="button" id="scanOff" style="display:none">Hide highlighted lines ×</button><div id="northTag" title="North"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3 7 17l5-3 5 3z" fill="#2563b8" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg><span>N</span></div>
+   <div id="mapPill" style="display:none"></div><button type="button" id="recFab" style="display:none"></button><div id="arChip" style="display:none">● Recording road outside the map</div><div id="bgAttr">© OpenStreetMap contributors</div><button type="button" id="scanOff" style="display:none">Hide highlighted lines ×</button><div id="northTag" title="North"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3 7 17l5-3 5 3z" fill="#2563b8" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg><span>N</span></div>
    <div id="liveResult" class="chip" style="display:none">No map loaded</div>
    <div id="readBar"><div class="rdLeft"><span id="rdKind">DISTANCE</span><b id="rdVal">No map loaded</b><small id="rdSub"></small></div><div class="rdRight"><div class="seg2 u" id="rdUnits"></div><button type="button" id="rdSave">Save</button></div></div>
    <div id="renderChip" class="chip" style="display:none">Drawing...</div>
@@ -578,7 +581,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
  </div>
 </section>
 </main>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-69<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-70<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -1473,15 +1476,19 @@ function gpsFix(pt){
   if(followFirst){followFirst=false;if(inside){slightZoom(700);centerOnMe();}}
   else if(meLock&&inside&&!fixing)centerOnMe();
  }
- scheduleDraw();
+ scheduleDraw();recFabUI();
  try{if(typeof routeFix==="function")routeFix(pt);}catch(e){}
+ try{window.__autoRec&&window.__autoRec(pt);}catch(e){}
 }
 function stopLocate(){setTimeout(()=>{try{fixUI();}catch(e){}},0);
  if(locWatch!==null){navigator.geolocation.clearWatch(locWatch);locWatch=null;}
- gpsPos=null;followFirst=false;meLock=true;spdKmh=null;spdLast=null;lastHd=null;speedChip();
+ try{window.__autoRecEnd&&window.__autoRecEnd();}catch(e){}
+ gpsPos=null;followFirst=false;meLock=true;spdKmh=null;spdLast=null;lastHd=null;speedChip();recFabUI();
  $("locateBtn").classList.remove("on");$("locateBtn").textContent="◎ Me";$("stopLoc").style.display="none";scheduleDraw();
 }
-function lockUI(){$("locateBtn").textContent=(locWatch!==null&&!meLock)?"◎ Re-centre":"◎ Me";}
+function recFabUI(){const b=$("recFab");if(!b)return;const on=locWatch!==null&&!meLock&&!!gpsPos&&!!src&&!!src.geo&&!$("viewerBox").classList.contains("drawing");b.style.display=on?"flex":"none";if(on&&!b.firstChild&&window.ico)b.innerHTML=window.ico("cross")+"<span>Re-centre</span>";}
+function lockUI(){$("locateBtn").textContent=(locWatch!==null&&!meLock)?"◎ Re-centre":"◎ Me";recFabUI();}
+$("recFab").onclick=()=>{$("locateBtn").click();};
 viewer.addEventListener("pointerdown",()=>{if(locWatch!==null&&meLock){meLock=false;lockUI();}},true);
 $("locateBtn").onclick=()=>{
  if(!navigator.geolocation){$("geoStatus").textContent="GPS is not supported in this browser.";return;}
@@ -3455,6 +3462,7 @@ renderNoteLib();
   if(!voiceOn||!canSpeak())return;
   try{const ss=window.speechSynthesis;if(urgent)ss.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-ZA";u.rate=0.95;ss.speak(u);}catch(e){}
  }
+ window.__say=say;
  const sayDist=m=>m>=1000?(m/1000).toFixed(1).replace(/\.0$/,"")+" kilometres":(Math.round(m/10)*10)+" metres";
  function setVoiceBtn(){const b=$$("fhVoice");b.textContent=voiceOn?"Voice on":"Voice off";b.classList.toggle("on",voiceOn);if(!canSpeak())b.style.display="none";}
  $$("fhVoice").onclick=()=>{voiceOn=!voiceOn;try{localStorage.setItem("pscVoice",voiceOn?"1":"0");}catch(e){}if(!voiceOn&&canSpeak())speechSynthesis.cancel();setVoiceBtn();if(voiceOn)say("Voice guidance on",true);};
@@ -3921,6 +3929,8 @@ renderNoteLib();
    <li>Use part of a saved route by choosing a start and end point in the Library.</li>
   </ul></details>
   <details><summary>7. Road navigation (A to B)</summary><ul>
+   <li><b>Re-centre</b>: when GPS is on and you move the map away from your position, a green Re-centre button appears. Tap it to come back to your dot.</li>
+   <li><b>Roads outside the map</b>: while GPS is on, if you drive (over 10 km/h) more than 150 m away from any mapped road, the app records the road automatically (red REC label, voice says so). When you rejoin the mapped roads it saves the road link on this phone for this map. Saved roads join the network, so routes between farms use them instead of dashed links. Turn this on or off, or remove saved roads, in the Road network card (Maps tab). Recorded roads show purple on the network overlay.</li>
    <li><b>One-time set-up for each map:</b> go to <b>Maps</b>, open the map and scan it. The scan reads the Road layer and the green and grey open-area shapes, then builds the road network and saves it with the map. Big maps can take a few minutes. Keep the screen on and close other apps. Scan one map at a time.</li>
    <li>If a map was scanned in an older version, scan it again to get the latest road types and fixes.</li>
    <li><b>Navigate:</b> tap <b>Travel</b>, then <b>Navigate</b> on the map. Step 1: where are you? Use <b>My position</b> or <b>Tap on map</b>. Step 2: where are you going? Use <b>Find compartment</b> or <b>Tap on map</b>. <b>Clear</b> starts again.</li>
@@ -5019,7 +5029,7 @@ function pzPt(e){const r=$("pzCv").getBoundingClientRect();return {x:(e.clientX-
 /* ===== v38: road network from the Road layer + A to B navigation ===== */
 const RDK=["tar","plant","road","minor","dead"],RDJ=5;
 const RDT={tar:{n:"Tar road (public)",m:0.5},plant:{n:"Plantation main road",m:0.75},road:{n:"Compartment / plantation road",m:1},minor:{n:"Minor track",m:1.3},dead:{n:"Dead end",m:3},skip:{n:"Do not use",m:0}};
-const RDPROF={best:[0.5,0.75,1,1.3,3,1.2,4,3],short:[1,1,0.95,1.1,3,1.2,4,3]};
+const RDPROF={best:[0.5,0.75,1,1.3,3,1.2,4,3,0.8],short:[1,1,0.95,1.1,3,1.2,4,3,0.9]};
 const RDBRIDGE=150;
 const rdCostOf=(cid,len)=>len*RDPROF.best[cid];
 let RD=null,RDR=null,RDR2=null,RDCFG={};const RDP={pick:null,A:null,B:null};
@@ -5099,7 +5109,8 @@ async function rdBuild(tolM,gapM,stat){
   await pass(gW*0.3,false,false);    /* anything else that is very close */
  }
  jd.sort((a,b)=>a-b);const medGap=jd.length?jd[jd.length>>1]:0;
- RD=rdFinish(nx.slice(0,n),ny.slice(0,n),Int32Array.from(ea),Int32Array.from(eb),Float32Array.from(ec),Float32Array.from(el),mpu,tolM,gapM,Uint8Array.from(ecl),true);
+ const AU=rdAugment(nx.slice(0,n),ny.slice(0,n),Int32Array.from(ea),Int32Array.from(eb),Float32Array.from(ec),Float32Array.from(el),Uint8Array.from(ecl),mpu);
+ RD=rdFinish(AU.nx,AU.ny,AU.ea,AU.eb,AU.ec,AU.el,mpu,tolM,gapM,AU.ecl,true);RD.baseN=AU.baseN;
  RD.joined=joined;RD.medGap=medGap;RD.key=rdKey();RD.srcRef=src;
  return RD;
 }
@@ -5171,10 +5182,74 @@ function rdFinish(nx,ny,ea,eb,ec,el,mpu,tolM,gapM,ecl,doShort){
  let km=0;for(let e=0;e<m;e++)km+=el[e];km/=1000;
  return {n,m,nx,ny,ea,eb,ec,el,ecl,off,to,w,l,cl,root,sz:size,main,mainSize:ms,pieces:size.size,km,mpu,tolM,gapM,joined:0};
 }
+function rdRecList(){try{return JSON.parse(localStorage.getItem("pscRoad|"+rdKey())||"[]");}catch(e){return [];}}
+function rdRecStore(l){try{localStorage.setItem("pscRoad|"+rdKey(),JSON.stringify(l));}catch(e){}}
+/* roads the driver recorded outside the map become part of the network (class 8) */
+function rdAugment(nx,ny,ea,eb,ec,el,ecl,mpu){
+ const L=rdRecList(),n0=nx.length;if(!L.length)return {nx,ny,ea,eb,ec,el,ecl,baseN:n0};
+ let addN=0;for(const r of L)addN+=r.p.length/2;
+ const NX=new Float32Array(n0+addN),NY=new Float32Array(n0+addN);NX.set(nx);NY.set(ny);
+ const EA=[],EB=[];let k=n0;
+ const nearest=(x,y)=>{let b=-1,bd=1e18;for(let i=0;i<n0;i++){const d=(nx[i]-x)*(nx[i]-x)+(ny[i]-y)*(ny[i]-y);if(d<bd){bd=d;b=i;}}return {i:b,m:Math.sqrt(bd)*mpu};};
+ for(const r of L){const P=r.p,m=P.length/2,first=k;
+  for(let j=0;j<m;j++){NX[k]=P[2*j];NY[k]=P[2*j+1];if(j>0){EA.push(k-1);EB.push(k);}k++;}
+  const a=nearest(P[0],P[1]);if(a.i>=0&&a.m<=500){EA.push(first);EB.push(a.i);}
+  const b=nearest(P[2*m-2],P[2*m-1]);if(b.i>=0&&b.m<=500){EA.push(k-1);EB.push(b.i);}
+ }
+ const m0=ea.length,k2=EA.length,na=new Int32Array(m0+k2),nb=new Int32Array(m0+k2),nc=new Float32Array(m0+k2),nl=new Float32Array(m0+k2),ncl=new Uint8Array(m0+k2);
+ na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
+ for(let j=0;j<k2;j++){const a=EA[j],b=EB[j],len=Math.hypot(NX[a]-NX[b],NY[a]-NY[b])*mpu;na[m0+j]=a;nb[m0+j]=b;nl[m0+j]=len;nc[m0+j]=len*RDPROF.best[8];ncl[m0+j]=8;}
+ return {nx:NX,ny:NY,ea:na,eb:nb,ec:nc,el:nl,ecl:ncl,baseN:n0};
+}
+
+/* ---- automatic recording of roads driven outside the mapped network ---- */
+let AR_ON=true;try{AR_ON=localStorage.getItem("pscAutoRec")!=="0";}catch(e){}
+const AR={rec:false,buf:[],off:0,inn:0,still:0,loading:false,last:null};
+function arChip(on){const c=$("arChip");if(c)c.style.display=on?"block":"none";}
+function arSimplify(P,tol){ /* P: [[x,y]..] world; Douglas-Peucker */
+ if(P.length<3)return P;const keep=new Uint8Array(P.length);keep[0]=keep[P.length-1]=1;const st=[[0,P.length-1]];
+ while(st.length){const [a,b]=st.pop();let md=0,mi=-1;const ax=P[a][0],ay=P[a][1],bx=P[b][0],by=P[b][1],dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy||1e-12;
+  for(let i=a+1;i<b;i++){let t=((P[i][0]-ax)*dx+(P[i][1]-ay)*dy)/l2;t=Math.max(0,Math.min(1,t));const d=Math.hypot(P[i][0]-ax-t*dx,P[i][1]-ay-t*dy);if(d>md){md=d;mi=i;}}
+  if(md>tol&&mi>0){keep[mi]=1;st.push([a,mi],[mi,b]);}}
+ return P.filter((_,i)=>keep[i]);
+}
+function arSave(){
+ const buf=AR.buf;AR.buf=[];AR.rec=false;arChip(false);if(!src||!src.geo||buf.length<2)return false;
+ const mpu=src.geo.mpu;let len=0;for(let i=1;i<buf.length;i++)len+=Math.hypot(buf[i][0]-buf[i-1][0],buf[i][1]-buf[i-1][1])*mpu;
+ if(len<150)return false;
+ const P=arSimplify(buf,5/mpu),flat=[];P.forEach(q=>{flat.push(+q[0].toFixed(2),+q[1].toFixed(2));});
+ const L=rdRecList();L.push({id:Date.now(),len:Math.round(len),p:flat});rdRecStore(L);
+ RD=null; /* reload next time so the network includes the new road */
+ try{hereToast("Saved road link "+(len/1000).toFixed(1)+" km",null,5000);}catch(e){}
+ try{window.__say&&window.__say("Road link saved",false);}catch(e){}
+ try{window.__arList&&window.__arList();}catch(e){}
+ return true;
+}
+window.__autoRecEnd=()=>{if(AR.rec)arSave();AR.buf=[];AR.off=AR.inn=AR.still=0;AR.last=null;};
+window.__autoRec=pt=>{
+ if(!AR_ON||pt.manual||!src||!src.geo||!rdKey())return;
+ if(!RD||RD.key!==rdKey()){ /* load the network quietly (also needed to know where roads are) */
+  if(!AR.loading){AR.loading=true;rdEnsure().catch(()=>{}).then(()=>{AR.loading=false;});}
+  return;
+ }
+ if((pt.acc||0)>40)return;
+ const w=src.geo.toWorld(pt.lat,pt.lon),nr=rdNear(w[0],w[1],false),kmh=spdKmh||0,now=pt.t||Date.now();
+ if(!AR.rec){
+  if(kmh>=10&&nr.m>150){AR.off++;AR.buf.push(w);if(AR.off>=3){AR.rec=true;AR.inn=0;AR.still=0;AR.last=now;arChip(true);try{window.__say&&window.__say("Recording road outside the map",true);}catch(e){}}}
+  else{AR.off=0;AR.buf.length=0;}
+  return;
+ }
+ AR.buf.push(w);
+ if(kmh>=5)AR.last=now;
+ AR.inn=nr.m<60?AR.inn+1:0;
+ if(AR.inn>=3||now-AR.last>120000){AR.off=0;AR.inn=0;arSave();}
+};
 async function rdSave(){
  const key=RD&&RD.key;if(!key)return false;
- const hdr=new Float64Array([5,RD.n,RD.m,RD.mpu,RD.tolM,RD.gapM]);
- const blob=new Blob([hdr,RD.nx,RD.ny,RD.ea,RD.eb,RD.el,RD.ecl]);
+ const baseN=RD.baseN!=null?RD.baseN:RD.n;let sea=RD.ea,seb=RD.eb,sel=RD.el,secl=RD.ecl;
+ if(baseN<RD.n){const kp=[];for(let e=0;e<RD.m;e++)if(RD.ea[e]<baseN&&RD.eb[e]<baseN&&RD.ecl[e]!==8)kp.push(e);sea=Int32Array.from(kp,i=>RD.ea[i]);seb=Int32Array.from(kp,i=>RD.eb[i]);sel=Float32Array.from(kp,i=>RD.el[i]);secl=Uint8Array.from(kp,i=>RD.ecl[i]);}
+ const hdr=new Float64Array([5,baseN,sea.length,RD.mpu,RD.tolM,RD.gapM]);
+ const blob=new Blob([hdr,RD.nx.subarray(0,baseN),RD.ny.subarray(0,baseN),sea,seb,sel,secl]);
  try{await idbPutMany("tiles",[[key+"|roads",blob]]);return true;}catch(e){return false;}
 }
 async function rdLoad(key){
@@ -5184,7 +5259,8 @@ async function rdLoad(key){
   const f32=c=>{const a=new Float32Array(buf,o,c);o+=4*c;return a;},i32=c=>{const a=new Int32Array(buf,o,c);o+=4*c;return a;};
   const nx=f32(n),ny=f32(n),ea=i32(m),eb=i32(m),el=f32(m),ecl=new Uint8Array(buf,o,m);
   const ec=new Float32Array(m);for(let e=0;e<m;e++)ec[e]=rdCostOf(ecl[e],el[e]);
-  const g=rdFinish(nx,ny,ea,eb,ec,el,h[3],h[4],h[5],ecl,h[0]<5);g.resave=h[0]<5;g.key=key;g.srcRef=src;return g;
+  const AU=rdAugment(nx,ny,ea,eb,ec,el,ecl,h[3]);
+  const g=rdFinish(AU.nx,AU.ny,AU.ea,AU.eb,AU.ec,AU.el,h[3],h[4],h[5],AU.ecl,h[0]<5);g.baseN=AU.baseN;g.resave=h[0]<5;g.key=key;g.srcRef=src;return g;
  }catch(e){return null;}
 }
 async function rdEnsure(){
@@ -5385,13 +5461,13 @@ window.roadSvg=function(sp){
  }
  if(RD&&RD.net&&src){
   const g=RD,sz=vsize(),R=Math.hypot(sz.w,sz.h)/2/view.zoom*1.05,cx=view.x+sz.w/2/view.zoom,cy=view.y+sz.h/2/view.zoom;
-  const CC=["#ffb300","#0b3d91","#ff2bd6","#8e8e8e","#e53935","#ff2bd6","#00e5ff"],CW=[4,4,2.5,2.5,2.5,2.5,4];
+  const CC=["#ffb300","#0b3d91","#ff2bd6","#8e8e8e","#e53935","#ff2bd6","#00e5ff","#00e5ff","#8e24aa"],CW=[4,4,2.5,2.5,2.5,2.5,4,4,4.5];
   if(!g.big){g.big=new Uint8Array(g.n);for(let i=0;i<g.n;i++)g.big[i]=(g.sz.get(g.root[i])||0)>=200?1:0;}
   const inV=e=>{const a=g.ea[e],x=g.nx[a],y=g.ny[a];return !(Math.abs(x-cx)>R||Math.abs(y-cy)>R)&&g.big[a]===1;};
-  let cnt=0;for(let e=0;e<g.m;e++){if(g.ecl[e]>=2&&g.ecl[e]!==6&&inV(e))cnt++;}
+  let cnt=0;for(let e=0;e<g.m;e++){if(g.ecl[e]>=2&&g.ecl[e]!==6&&g.ecl[e]!==8&&inV(e))cnt++;}
   const step=Math.max(1,Math.ceil(cnt/9000)),D=CC.map(()=>"");let ci=0;
-  for(let e=0;e<g.m;e++){if(!inV(e))continue;const c=g.ecl[e];if(c>=2&&c!==6&&(ci++)%step)continue;const a=g.ea[e],b=g.eb[e],p=sp({x:g.nx[a],y:g.ny[a]}),q=sp({x:g.nx[b],y:g.ny[b]});D[c]+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;}
-  [2,3,4,5,0,1,6].forEach(c=>{if(D[c])o+=`<path d="${D[c]}" fill="none" stroke="${CC[c]}" stroke-width="${CW[c]}" stroke-linecap="round" opacity=".92"/>`;});
+  for(let e=0;e<g.m;e++){if(!inV(e))continue;const c=g.ecl[e];if(c>=2&&c!==6&&c!==8&&(ci++)%step)continue;const a=g.ea[e],b=g.eb[e],p=sp({x:g.nx[a],y:g.ny[a]}),q=sp({x:g.nx[b],y:g.ny[b]});D[c]+=`M${p.x.toFixed(0)} ${p.y.toFixed(0)}L${q.x.toFixed(0)} ${q.y.toFixed(0)}`;}
+  [2,3,4,5,0,1,6,8].forEach(c=>{if(D[c])o+=`<path d="${D[c]}" fill="none" stroke="${CC[c]}" stroke-width="${CW[c]}" stroke-linecap="round" opacity=".92"/>`;});
  }
  if(RDR2){
   const pts=RDR2.world.map(p=>sp({x:p[0],y:p[1]}));
@@ -5421,6 +5497,7 @@ window.roadSvg=function(sp){
   return `Road network: ${RD.km.toFixed(0)} km of road in ${RD.pieces} piece${RD.pieces>1?"s":""}. The main network holds ${pc}% of the road points. ${RD.joined} gap${RD.joined===1?" was":"s were"} joined`+(RD.medGap?` (typical gap ${RD.medGap.toFixed(1)} m)`:"")+"."+(pc<60?" The roads are still broken into many pieces: make the gap distance bigger and tap Build again.":"");
  }
  window.__rdRender=()=>{
+  try{window.__arList&&window.__arList();}catch(e){}
   const host=g("rdStyles");if(!host)return;
   const L=rdRoadStyles();
   if(!scanData){host.innerHTML="";if(!RD)stat.textContent="Scan a map first (Map lines above). The road network is built from the scan.";g("rdBuild").disabled=true;return;}
@@ -5443,6 +5520,12 @@ window.roadSvg=function(sp){
  }
  window.__rdAuto=()=>{try{window.__rdRender();if(rdRoadStyles().length)build(true);}catch(e){}};
  g("rdBuild").onclick=()=>build(false);
+ g("arToggle").checked=AR_ON;
+ g("arToggle").onchange=()=>{AR_ON=g("arToggle").checked;try{localStorage.setItem("pscAutoRec",AR_ON?"1":"0");}catch(e){}if(!AR_ON){AR.rec=false;AR.buf=[];AR.off=0;arChip(false);}};
+ window.__arList=()=>{const h=g("arList");if(!h)return;let L=[];try{L=rdKey()?rdRecList():[];}catch(e){}
+  h.innerHTML=L.length?L.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #eef3f8"><span style="color:#35506b;font-size:13.5px"><b>${(r.len/1000).toFixed(1)} km</b> &middot; ${new Date(r.id).toLocaleDateString()}</span><button type="button" class="secondary" data-ar="${r.id}" style="margin:0;padding:6px 12px">Remove</button></div>`).join(""):'<p class="muted" style="margin:0">No recorded roads for this map yet.</p>';
+  h.querySelectorAll("button[data-ar]").forEach(b=>b.onclick=()=>{rdRecStore(rdRecList().filter(r=>String(r.id)!==b.dataset.ar));RD=null;window.__arList();hereToast("Road link removed",null,3000);});};
+ window.__arList();
  g("rdTol").oninput=()=>{g("rdTolV").textContent=g("rdTol").value+" m";};
  g("rdGap").oninput=()=>{g("rdGapV").textContent=g("rdGap").value+" m";};
  g("rdShow").onclick=()=>{if(!RD)return;RD.show=!RD.show;g("rdShow").textContent=RD.show?"Hide separate pieces":"Show separate pieces on the map";if(RD.show)switchTab("measure");scheduleDraw();};
