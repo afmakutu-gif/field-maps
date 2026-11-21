@@ -596,7 +596,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-114<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-115<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5912,6 +5912,17 @@ window.__rdReport=async function(){
    if(!gap.size)t+="No gaps under ~600 m between the big public pieces.\n";
    const near=(P2,lab)=>{let bi=-1,bd=1e18;for(let i=0;i<g.n;i++){if(!isP[i])continue;const d=(g.nx[i]-P2[0])**2+(g.ny[i]-P2[1])**2;if(d<bd){bd=d;bi=i;}}t+=lab+": nearest public road node "+(bi>=0?(Math.sqrt(bd)*mp).toFixed(0)+" m at "+oi(bi)+", in "+nm(fd(bi))+(fd(bi)===L[0][0]?" (BIGGEST)":""):"none")+"\n";};
    if(RDR){near(RDR.A,"Route start");near(RDR.B,"Route destination");}
+   /* v115: follow ONLY public road from the start and see how far toward the destination it gets */
+   if(RDR){const lim=150/mp,sd=new Float64Array(g.n).fill(Infinity),dn=new Uint8Array(g.n),hk=[],hv=[];
+    const push=(k,v)=>{let i=hk.length;hk.push(k);hv.push(v);while(i>0){const q=(i-1)>>1;if(hk[q]<=k)break;hk[i]=hk[q];hv[i]=hv[q];i=q;}hk[i]=k;hv[i]=v;};
+    const pop=()=>{const rv=hv[0],lk=hk.pop(),lv=hv.pop();if(hk.length){let i=0;const Ln=hk.length;for(;;){let c=2*i+1;if(c>=Ln)break;if(c+1<Ln&&hk[c+1]<hk[c])c++;if(hk[c]>=lk)break;hk[i]=hk[c];hv[i]=hv[c];i=c;}hk[i]=lk;hv[i]=lv;}return rv;};
+    let ns=0;for(let i=0;i<g.n;i++){if(!isP[i])continue;const d=Math.hypot(g.nx[i]-RDR.A[0],g.ny[i]-RDR.A[1]);if(d<lim){sd[i]=d*mp;push(sd[i],i);ns++;}}
+    if(!ns){let bi=-1,bd=1e18;for(let i=0;i<g.n;i++){if(!isP[i])continue;const d=Math.hypot(g.nx[i]-RDR.A[0],g.ny[i]-RDR.A[1]);if(d<bd){bd=d;bi=i;}}if(bi>=0){sd[bi]=bd*mp;push(sd[bi],bi);ns=1;}}
+    while(hk.length){const u=pop();if(dn[u])continue;dn[u]=1;for(let p=g.off[u];p<g.off[u+1];p++){const v=g.to[p],c=g.cl[p];if(!(c===0||(c<=1&&(u>=bN||v>=bN))||((c===5||c===6||c===7)&&isP[u]&&isP[v])))continue;const nd=sd[u]+g.l[p];if(nd<sd[v]){sd[v]=nd;push(nd,v);}}}
+    let rb=-1,rd2=1e18,ub=-1,ud=1e18,rc=0;for(let i=0;i<g.n;i++){if(!isP[i])continue;const d=Math.hypot(g.nx[i]-RDR.B[0],g.ny[i]-RDR.B[1])*mp;if(dn[i]){rc++;if(d<rd2){rd2=d;rb=i;}}else if(d<ud){ud=d;ub=i;}}
+    t+="PUBLIC-ONLY TRACE from the start: reaches "+rc+" public road points. Closest it gets to the destination: "+(rb>=0?rd2.toFixed(0)+" m (after "+(sd[rb]/1000).toFixed(1)+" km of public road) at "+oi(rb):"none")+"\n";
+    t+="Closest public road point NOT reached: "+(ub>=0?ud.toFixed(0)+" m from the destination at "+oi(ub):"none")+"\n";
+    t+="Route chosen by the app: "+(RDR.m/1000).toFixed(1)+" km\n";}
   }catch(e){t+="Public road analysis failed: "+e.message+"\n";}
   const rr=500/mp,inR=i=>Math.abs(g.nx[i]-X)<rr&&Math.abs(g.ny[i]-Y)<rr;
   const deg=new Int32Array(g.n),cls=new Map();let cc=[0,0,0,0,0,0,0,0,0];
