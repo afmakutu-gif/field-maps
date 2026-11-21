@@ -596,7 +596,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-113<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-114<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5552,10 +5552,23 @@ function rdAugment(nx,ny,ea,eb,ec,el,ecl,mpu){
   if(r.drawn){const t0=nearestT(P[0],P[1]),t1=nearestT(P[2*m-2],P[2*m-1]);if(t0.i>=0&&t0.m<=80&&t0.i!==a.i){EA.push(first);EB.push(t0.i);EM.push(t0.m<=15?0.8:4);}if(t1.i>=0&&t1.m<=80&&t1.i!==b.i){EA.push(k-1);EB.push(t1.i);EM.push(t1.m<=15?0.8:4);}}
   if(r.drawn)for(let j=1;j<m-1;j++){const c=nearest(P[2*j],P[2*j+1]);if(c.i>=0&&c.m<=25){EA.push(first+j);EB.push(c.i);EM.push(c.m<=6?0.8:4);}}
  }
- const m0=ea.length,k2=EA.length,na=new Int32Array(m0+k2+oE),nb=new Int32Array(m0+k2+oE),nc=new Float32Array(m0+k2+oE),nl=new Float32Array(m0+k2+oE),ncl=new Uint8Array(m0+k2+oE);
+ /* v114: join separate pieces of PUBLIC road (tar + downloaded roads) when they are less than 400 m apart, so the route can follow the public road end to end */
+ const PJA=[],PJB=[];
+ try{if(OS){const T=n0+addN+oN,par=new Int32Array(T),isP=new Uint8Array(T);for(let i=0;i<T;i++)par[i]=i;const fd=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;};
+  for(let e=0;e<ea.length;e++)if(ecl[e]===0){isP[ea[e]]=isP[eb[e]]=1;par[fd(ea[e])]=fd(eb[e]);}
+  for(let j=0;j<oE;j++){const a=n0+addN+OS.oa[j],b=n0+addN+OS.ob[j];isP[a]=isP[b]=1;par[fd(a)]=fd(b);}
+  const cell=400/mpu,K=(a,c)=>(a+8192)*16777216+(c+8192),H=new Map();
+  for(let i=0;i<T;i++){if(!isP[i])continue;const k=K(Math.floor(NX[i]/cell),Math.floor(NY[i]/cell));let a=H.get(k);if(!a){a=[];H.set(k,a);}a.push(i);}
+  const best=new Map();
+  for(const [k,a] of H){const cx=Math.floor(k/16777216)-8192,cy=k%16777216-8192;
+   for(const i of a){const ri=fd(i);for(let ax=cx-1;ax<=cx+1;ax++)for(let ay=cy-1;ay<=cy+1;ay++){const b=H.get(K(ax,ay));if(!b)continue;for(const j of b){if(j<=i)continue;const rj=fd(j);if(rj===ri)continue;const d=Math.hypot(NX[i]-NX[j],NY[i]-NY[j])*mpu;if(d>400)continue;const key=ri<rj?ri+"-"+rj:rj+"-"+ri,o=best.get(key);if(!o||d<o.d)best.set(key,{d,i,j});}}}}
+  best.forEach(v=>{PJA.push(v.i);PJB.push(v.j);});
+ }}catch(e){}
+ const m0=ea.length,k2=EA.length,na=new Int32Array(m0+k2+oE+PJA.length),nb=new Int32Array(m0+k2+oE+PJA.length),nc=new Float32Array(m0+k2+oE+PJA.length),nl=new Float32Array(m0+k2+oE+PJA.length),ncl=new Uint8Array(m0+k2+oE+PJA.length);
  na.set(ea);nb.set(eb);nc.set(ec);nl.set(el);ncl.set(ecl);
  for(let j=0;j<k2;j++){const a=EA[j],b=EB[j],len=Math.hypot(NX[a]-NX[b],NY[a]-NY[b])*mpu;na[m0+j]=a;nb[m0+j]=b;nl[m0+j]=len;nc[m0+j]=len*EM[j];ncl[m0+j]=8;}
  for(let j=0;j<oE;j++){const a=n0+addN+OS.oa[j],b=n0+addN+OS.ob[j],len=Math.hypot(NX[a]-NX[b],NY[a]-NY[b])*mpu,q=m0+k2+j;na[q]=a;nb[q]=b;nl[q]=len;ncl[q]=OS.ok[j];nc[q]=rdCostOf(OS.ok[j],len);}
+ for(let j=0;j<PJA.length;j++){const a=PJA[j],b=PJB[j],len=Math.hypot(NX[a]-NX[b],NY[a]-NY[b])*mpu,q=m0+k2+oE+j;na[q]=a;nb[q]=b;nl[q]=len;ncl[q]=6;nc[q]=len*RDPROF.best[6];}
  return {nx:NX,ny:NY,ea:na,eb:nb,ec:nc,el:nl,ecl:ncl,baseN:n0};
 }
 
