@@ -359,6 +359,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <p class="muted" style="margin:4px 0 0">Far from the destination the route keeps to public (tar) road, then main road, then compartment road near the block.</p>
   <div style="margin-top:12px;padding-top:10px;border-top:1px solid #dbe6f0"><b style="color:#1d3b57">Roads outside the map</b>
   <p class="muted" style="margin:6px 0 8px">Downloads the public roads around this map from OpenStreetMap once, keeps them on this phone and joins them to the map's roads, so routes between farms follow real roads. Needs a signal once. &copy; OpenStreetMap contributors.</p>
+  <label style="display:flex;align-items:center;gap:8px;margin:0 0 8px;color:#1d3b57"><input type="checkbox" id="rdOsmShow" checked style="width:20px;height:20px;margin:0"> Show these roads on the map (amber = public tar, grey = public gravel)</label>
   <div class="row"><button type="button" id="rdOsm" class="small">Download surrounding roads</button><button type="button" id="rdOsmClr" class="small secondary">Remove them</button></div>
   <p id="rdOsmStat" class="status" role="status"></p></div>
   <button type="button" id="rdBuild" style="width:100%;margin-top:8px" disabled>Build road network</button>
@@ -595,7 +596,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-110<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-111<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5531,7 +5532,7 @@ async function rdOsmDownload(stat){
   await sl(500);
  }
  try{await idbPutMany("tiles",[[key+"|osm",new Blob([JSON.stringify(ways)],{type:"application/json"})],[key+"|osmp",new Blob(["{}"])]]);}catch(e){stat("Could not save the roads on this phone.");return false;}
- window.__osm={key,ways};RD=null;
+ window.__osm={key,ways};RD=null;try{scheduleDraw();}catch(e){}
  stat("Saved "+ways.length+" public roads around this map. © OpenStreetMap contributors.");return true;
 }
 window.__rdOsmDownload=rdOsmDownload;
@@ -5924,6 +5925,17 @@ window.__rdTap=function(cx,cy){
 };
 window.roadSvg=function(sp){
  let o="";
+ try{ /* public roads downloaded from OpenStreetMap, drawn outside and between the maps */
+  if(src&&src.geo&&window.__osm&&window.__osm.ways.length&&window.__osm.key===rdKey()&&localStorage.getItem("pscOsmShow")!=="0"){
+   const O=window.__osm;if(!O.W||O.srcRef!==src){O.srcRef=src;O.W=O.ways.map(w=>{const P=w[1],a=new Float32Array(P.length);let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;for(let i=0;i+1<P.length;i+=2){const q=src.geo.toWorld(P[i],P[i+1]);a[i]=q[0];a[i+1]=q[1];if(q[0]<x0)x0=q[0];if(q[0]>x1)x1=q[0];if(q[1]<y0)y0=q[1];if(q[1]>y1)y1=q[1];}return {c:w[0],a,b:[x0,y0,x1,y1]};});}
+   const sz=vsize(),vx0=view.x,vy0=view.y,vx1=view.x+sz.w/view.zoom,vy1=view.y+sz.h/view.zoom,minD=3/view.zoom;let d0="",d1="";
+   for(const w of O.W){const b=w.b;if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1)continue;let s2="",lx=null,ly=null;const a=w.a;
+    for(let i=0;i+1<a.length;i+=2){const x=a[i],y=a[i+1];if(lx!==null&&i<a.length-2&&Math.abs(x-lx)<minD&&Math.abs(y-ly)<minD)continue;const q=sp({x,y});s2+=(s2?"L":"M")+q.x.toFixed(0)+" "+q.y.toFixed(0);lx=x;ly=y;}
+    if(w.c===0)d0+=s2;else d1+=s2;}
+   if(d1)o+=`<path d="${d1}" fill="none" stroke="#fff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/><path d="${d1}" fill="none" stroke="#9aa5b1" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+   if(d0)o+=`<path d="${d0}" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><path d="${d0}" fill="none" stroke="#f2a900" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+ }catch(e){}
  try{ /* roads you drew or recorded stay visible on the map */
   if(src){const raw=localStorage.getItem("pscRoad|"+rdKey())||"[]";if(window.__recRaw!==raw){window.__recRaw=raw;try{window.__recL=JSON.parse(raw);}catch(e){window.__recL=[];}}
    let d="";(window.__recL||[]).forEach(r=>{const p=r.p||[];for(let i=0;i+1<p.length;i+=2){const q=sp({x:p[i],y:p[i+1]});d+=(i?"L":"M")+q.x.toFixed(1)+" "+q.y.toFixed(1);}});
@@ -6008,6 +6020,7 @@ window.roadSvg=function(sp){
  window.__arList();
  g("rdTol").oninput=()=>{g("rdTolV").textContent=g("rdTol").value+" m";};
  try{g("rdFarmSel").value=rdFarm();g("rdFarmSel").onchange=()=>{try{localStorage.setItem("pscFarm",g("rdFarmSel").value);}catch(e){}};}catch(e){}
+ try{g("rdOsmShow").checked=localStorage.getItem("pscOsmShow")!=="0";g("rdOsmShow").onchange=()=>{try{localStorage.setItem("pscOsmShow",g("rdOsmShow").checked?"1":"0");}catch(e){}try{scheduleDraw();}catch(e){}};}catch(e){}
  g("rdOsm").onclick=async()=>{const st=g("rdOsmStat"),b=g("rdOsm");b.disabled=true;try{await rdOsmDownload(t=>{st.textContent=t;});}catch(e){st.textContent="Could not download: "+e.message;}b.disabled=false;};
  g("rdOsmClr").onclick=async()=>{const k=rdKey();try{if(k)await idbPutMany("tiles",[[k+"|osm",new Blob(["[]"])]]);window.__osm={key:k,ways:[]};RD=null;g("rdOsmStat").textContent="Removed the downloaded roads.";}catch(e){g("rdOsmStat").textContent="Could not remove: "+e.message;}};
  g("rdGap").oninput=()=>{g("rdGapV").textContent=g("rdGap").value+" m";};
