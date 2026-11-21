@@ -596,7 +596,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-116<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-117<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -3439,6 +3439,7 @@ renderNoteLib();
  const toW=p=>src.geo.toWorld(p.lat,p.lon);
  const msg=t=>{$$("rbMsg").textContent=t||"";};
  function stats(){
+  if(plan.points.length>1)window.__lastPlanPts=plan.points.map(p=>({lat:p.lat,lon:p.lon}));
   const d=dist(plan.points);
   $$("rbStats").innerHTML=plan.points.length?`<b>${km(d)}</b> · about ${mins(d)} at ${speed} km/h · ${plan.points.length} points`:"Tap the map to add the first point.";
   $$("rbDelPt").disabled=sel<0;$$("rbMovePt").disabled=sel<0;$$("rbMovePt").classList.toggle("on",moveArmed);
@@ -5913,7 +5914,7 @@ window.__rdReport=async function(){
    const near=(P2,lab)=>{let bi=-1,bd=1e18;for(let i=0;i<g.n;i++){if(!isP[i])continue;const d=(g.nx[i]-P2[0])**2+(g.ny[i]-P2[1])**2;if(d<bd){bd=d;bi=i;}}t+=lab+": nearest public road node "+(bi>=0?(Math.sqrt(bd)*mp).toFixed(0)+" m at "+oi(bi)+", in "+nm(fd(bi))+(fd(bi)===L[0][0]?" (BIGGEST)":""):"none")+"\n";};
    if(RDR){near(RDR.A,"Route start");near(RDR.B,"Route destination");}
    /* v116: check the planner line you drew: where is it not joined to the road network? */
-   try{const pl=window.__routeApi&&window.__routeApi.getPlan?window.__routeApi.getPlan():[];
+   try{let pl=window.__routeApi&&window.__routeApi.getPlan?window.__routeApi.getPlan():[];if(pl.length<2&&window.__lastPlanPts)pl=window.__lastPlanPts;if(pl.length<2)t+="\nPLANNER LINE CHECK: no line found. Draw your line in Travel > Route first, then share the report.\n";
     if(pl.length>1&&src&&src.geo){const W=pl.map(p=>{const w=src.geo.toWorld(p.lat,p.lon);return [w[0],w[1]];}),sm=[];
      for(let i=0;i+1<W.length;i++){const dx=W[i+1][0]-W[i][0],dy=W[i+1][1]-W[i][1],L=Math.hypot(dx,dy)*mp,k=Math.max(1,Math.ceil(L/250));for(let j=0;j<k;j++)sm.push([W[i][0]+dx*j/k,W[i][1]+dy*j/k]);}
      sm.push(W[W.length-1]);
