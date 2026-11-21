@@ -595,7 +595,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-109<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-110<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5500,22 +5500,37 @@ async function rdOsmDownload(stat){
  const g=src.geo,cs=[[0,0],[src.w,0],[0,src.h],[src.w,src.h]].map(p=>g.toLL(p[0],p[1])),mg=0.03;
  const s0=Math.min(...cs.map(c=>c.lat))-mg,n0=Math.max(...cs.map(c=>c.lat))+mg,w0=Math.min(...cs.map(c=>c.lon))-mg,e0=Math.max(...cs.map(c=>c.lon))+mg;
  const T=0.15,tiles=[];for(let a=s0;a<n0;a+=T)for(let b=w0;b<e0;b+=T)tiles.push([a,b,Math.min(a+T,n0),Math.min(b+T,e0)]);
- const EP=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter"],seen=new Set(),ways=[],errs=[],sl=ms=>new Promise(r=>setTimeout(r,ms));let done=0;
- for(const t of tiles){
-  const q='[out:json][timeout:60];way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential)(_link)?$"]('+t.map(v=>v.toFixed(5)).join(",")+');out geom;';
-  let js=null;
+ const sig=tiles.length+"|"+s0.toFixed(3)+"|"+w0.toFixed(3);
+ const EP=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter"],seen=new Set(),ways=[],errs=[],sl=ms=>new Promise(r=>setTimeout(r,ms));
+ let doneIdx=new Set();
+ try{const pb=(await idbGetMany("tiles",[key+"|osmp"]))[0];if(pb){const pj=JSON.parse(await pb.text());if(pj&&pj.sig===sig){doneIdx=new Set(pj.done);for(const w of pj.ways)ways.push(w);}}}catch(e){}
+ const idsSeen=new Set();ways.forEach(w=>{if(w[2])idsSeen.add(w[2]);});
+ const addJs=js=>{let n=0;for(const el of js.elements||[]){if(el.type!=="way"||idsSeen.has(el.id)||!el.geometry||el.geometry.length<2)continue;idsSeen.add(el.id);const c=OSM_CLS[(el.tags&&el.tags.highway)||""];if(c===undefined)continue;const P=[];for(const p of el.geometry){P.push(+p.lat.toFixed(5),+p.lon.toFixed(5));}ways.push([c,P,el.id]);n++;}return n;};
+ /* one request for one box: try each server; if all fail, split the box in four and try again (dense areas are heavy) */
+ const getBox=async(bx,depth)=>{
+  const q='[out:json][timeout:40];way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified)(_link)?$"]('+bx.map(v=>v.toFixed(5)).join(",")+');out geom qt;';
   for(const ep of EP){const host=ep.split("/")[2];
-   for(let tr=0;tr<2&&!js;tr++){try{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),90000);const r=await fetch(ep,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q),signal:ac.signal});clearTimeout(to);
-    if(r.ok){js=await r.json();break;}
-    errs.push(host+": HTTP "+r.status);if(r.status===429||r.status===504){await sl(6000);}else break;
-   }catch(e){errs.push(host+": "+(e&&e.name==="AbortError"?"timed out":(e&&e.message)||"failed"));break;}}
-   if(js)break;}
-  if(!js){stat("Could not get the roads. "+errs.slice(-4).join("; ")+". Check your signal and try again.");return false;}
-  await sl(700);
-  for(const el of js.elements||[]){if(el.type!=="way"||seen.has(el.id)||!el.geometry||el.geometry.length<2)continue;seen.add(el.id);const c=OSM_CLS[(el.tags&&el.tags.highway)||""];if(c===undefined)continue;const P=[];for(const p of el.geometry){P.push(+p.lat.toFixed(5),+p.lon.toFixed(5));}ways.push([c,P]);}
-  done++;stat("Downloading roads... "+done+" of "+tiles.length);
+   try{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),45000);const r=await fetch(ep,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q),signal:ac.signal});clearTimeout(to);
+    if(r.ok){return await r.json();}
+    errs.push(host+": HTTP "+r.status);if(r.status===429)await sl(5000);
+   }catch(e){errs.push(host+": "+(e&&e.name==="AbortError"?"timed out":(e&&e.message)||"failed"));}}
+  if(depth>=2)return null;
+  const my=(bx[0]+bx[2])/2,mx=(bx[1]+bx[3])/2,out={elements:[]};
+  for(const sub of [[bx[0],bx[1],my,mx],[bx[0],mx,my,bx[3]],[my,bx[1],bx[2],mx],[my,mx,bx[2],bx[3]]]){const r=await getBox(sub,depth+1);if(!r)return null;out.elements.push(...(r.elements||[]));await sl(500);}
+  return out;
+ };
+ for(let i=0;i<tiles.length;i++){
+  if(doneIdx.has(i))continue;
+  stat("Downloading roads... "+(doneIdx.size+1)+" of "+tiles.length+" (keep the app open)");
+  const js=await getBox(tiles[i],0);
+  if(!js){
+   try{await idbPutMany("tiles",[[key+"|osmp",new Blob([JSON.stringify({sig,done:[...doneIdx],ways})],{type:"application/json"})]]);}catch(e){}
+   stat("Stopped at "+doneIdx.size+" of "+tiles.length+". Tap Download again to carry on from there. "+errs.slice(-3).join("; "));return false;}
+  addJs(js);doneIdx.add(i);
+  try{await idbPutMany("tiles",[[key+"|osmp",new Blob([JSON.stringify({sig,done:[...doneIdx],ways})],{type:"application/json"})]]);}catch(e){}
+  await sl(500);
  }
- try{await idbPutMany("tiles",[[key+"|osm",new Blob([JSON.stringify(ways)],{type:"application/json"})]]);}catch(e){stat("Could not save the roads on this phone.");return false;}
+ try{await idbPutMany("tiles",[[key+"|osm",new Blob([JSON.stringify(ways)],{type:"application/json"})],[key+"|osmp",new Blob(["{}"])]]);}catch(e){stat("Could not save the roads on this phone.");return false;}
  window.__osm={key,ways};RD=null;
  stat("Saved "+ways.length+" public roads around this map. © OpenStreetMap contributors.");return true;
 }
