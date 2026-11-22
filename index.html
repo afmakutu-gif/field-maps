@@ -468,6 +468,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <div class="row"><button class="small" id="rdAMe">My position</button><button class="small" id="rdA">Tap on map</button></div>
     <div class="nvStep">2. Where are you going?</div>
     <div class="row"><button class="small" id="rdBFind">Find compartment</button><button class="small" id="rdB">Tap on map</button><button class="small secondary" id="rdClr">Clear</button></div>
+    <div class="row"><button class="small secondary" id="rdV">Via a road (optional)</button><button class="small secondary" id="rdVClr">Remove via</button></div>
     <div class="row"><button class="small secondary" id="rdNet">Show road network on the map</button></div>
     <div class="row"><button class="small secondary" id="rdGm">Directions to B in Google Maps</button></div>
     <div class="row"><button class="small secondary" id="rdBlk">Mark blocked road</button><button class="small secondary" id="rdBlkClr">Clear blocked</button></div>
@@ -596,7 +597,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-117<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-118<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5847,8 +5848,11 @@ async function rdRun(){
  if(a.id<0||b.id<0){rdMsg("The road network is empty.");return;}
  if(a.m>6000||b.m>6000){rdMsg("The "+(a.m>6000?"start":"destination")+" is "+rdKm(Math.max(a.m,b.m))+" from the nearest road in the main network."+(g.mainSize/g.n<0.6?" The roads are broken into many pieces: in Maps, Road network, make the gap distance bigger and tap Build again.":" Pick a point nearer a road."));return;}
  const S1=rdNearMany(RDP.A[0],RDP.A[1]),T1=rdNearMany(RDP.B[0],RDP.B[1]);
- const bd=rdBand();let lk=null,path=rdAstar(a.id,b.id,RDPROF.best,null,S1,T1,bd);
- if(!path){lk=rdLinks([a.id,b.id]);path=rdAstar(a.id,b.id,RDPROF.best,lk,S1,T1,bd);}
+ const bd=rdBand();
+ const vn=RDP.V?rdNear(RDP.V[0],RDP.V[1],true):null,hasV=!!(vn&&vn.id>=0);
+ const go=(prof,lk,bd2)=>{if(!hasV)return rdAstar(a.id,b.id,prof,lk,S1,T1,bd2);const p1=rdAstar(a.id,vn.id,prof,lk,S1,null,bd2),p2=p1&&rdAstar(vn.id,b.id,prof,lk,null,T1,bd2);return p1&&p2?p1.concat(p2.slice(1)):null;};
+ let lk=null,path=go(RDPROF.best,null,bd);
+ if(!path){lk=rdLinks(hasV?[a.id,b.id,vn.id]:[a.id,b.id]);path=go(RDPROF.best,lk,bd);}
  if(!path){rdMsg("No road connection found between these points. They may be on different farms with no road drawn between them, or a road may have a gap. Turn on Show road network on the map to see which roads are joined.");RDR=null;RDR2=null;scheduleDraw();return;}
  const mk=pa=>{const segs=[[]],links=[],gl=[],cm=[0,0,0,0,0,0,0,0,0];let len=0,lm=0,tmin=0;
   for(let i=0;i<pa.length;i++){const u=pa[i];
@@ -5857,7 +5861,7 @@ async function rdRun(){
   let P=[];segs.forEach(sg=>{P=P.concat(rdSimplify(sg,1.5/g.mpu));});
   const world=[RDP.A].concat(P,[RDP.B]);return {cm,t:tmin+(a.m+b.m)/1000/20*60,ids:pa.slice(0,60),A:RDP.A,B:RDP.B,world,m:len,lm,links,gl,offA:a.m,offB:b.m,key:pa.length+"|"+pa[pa.length>>1],secs:rdSections(world)};};
  RDR=mk(path);RDR2=null;
- try{const p2=rdAstar(a.id,b.id,RDPROF.short,lk,S1,T1);if(p2){const r2=mk(p2);if(r2.m<RDR.m*0.9&&r2.key!==RDR.key)RDR2=r2;}}catch(e){}
+ try{const p2=go(RDPROF.short,lk,null);if(p2){const r2=mk(p2);if(r2.m<RDR.m*0.9&&r2.key!==RDR.key)RDR2=r2;}}catch(e){}
  const full=RDR.world;
  let sp=30;try{sp=parseFloat(localStorage.getItem("pscSpeed"))||30;}catch(e){}
  const tm=r=>{const mins=Math.round(r.t);return mins<60?mins+" min":Math.floor(mins/60)+" h "+String(mins%60).padStart(2,"0")+" min";};
@@ -5970,7 +5974,7 @@ function rdSet(which,w){
  const e=document.getElementById(which==="A"?"rdAMsg":"rdBMsg");
  const lbl=document.getElementById("rdLbl");if(lbl)lbl.textContent=(RDP.A?"Start set. ":"")+(RDP.B?"Destination set.":"");
  scheduleDraw();
- if(RDP.A&&RDP.B)rdRun();else rdMsg(which==="A"?"Start set. Now set the destination.":"Destination set. Now set the start (or use my position).");
+ if(RDP.A&&RDP.B)rdRun();else rdMsg(which==="V"?"Via point set. Now set the start and the destination.":which==="A"?"Start set. Now set the destination.":"Destination set. Now set the start (or use my position).");
 }
 window.__rdTap=function(cx,cy){
  if(!RDP.pick||!src)return false;
@@ -6031,7 +6035,7 @@ window.roadSvg=function(sp){
  try{if(RDR&&RDR.secs)RDR.secs.forEach(c=>{if(c.pts.length<1)return;const pp=c.pts.map(p=>sp({x:p[0],y:p[1]}));const dd="M"+pp.map(q=>q.x.toFixed(1)+" "+q.y.toFixed(1)).join("L");const m=pp[pp.length>>1];
   o+=`<path d="${dd}" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity=".95"/><g><circle cx="${m.x.toFixed(1)}" cy="${m.y.toFixed(1)}" r="11" fill="#f59e0b" stroke="#fff" stroke-width="3"/><text x="${m.x.toFixed(1)}" y="${(m.y+4.5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">${c.n}</text></g>`;});}catch(e){}
  try{rdBlList().forEach(p=>{const q=sp({x:p[0],y:p[1]}),x=q.x.toFixed(1),y=q.y.toFixed(1);o+=`<g><circle cx="${x}" cy="${y}" r="12" fill="#d64545" stroke="#fff" stroke-width="3"/><path d="M${(q.x-5).toFixed(1)} ${(q.y-5).toFixed(1)}L${(q.x+5).toFixed(1)} ${(q.y+5).toFixed(1)}M${(q.x+5).toFixed(1)} ${(q.y-5).toFixed(1)}L${(q.x-5).toFixed(1)} ${(q.y+5).toFixed(1)}" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>`;});}catch(e){}
- [["A","#2f9e66",RDP.A],["B","#d64545",RDP.B]].forEach(([l,c,w])=>{if(!w)return;const q=sp({x:w[0],y:w[1]});o+=`<g><circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="13" fill="${c}" stroke="#fff" stroke-width="3"/><text x="${q.x.toFixed(1)}" y="${(q.y+4.5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">${l}</text></g>`;});
+ [["A","#2f9e66",RDP.A],["B","#d64545",RDP.B],["V","#8e24aa",RDP.V]].forEach(([l,c,w])=>{if(!w)return;const q=sp({x:w[0],y:w[1]});o+=`<g><circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="13" fill="${c}" stroke="#fff" stroke-width="3"/><text x="${q.x.toFixed(1)}" y="${(q.y+4.5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">${l}</text></g>`;});
  return o;
 };
 /* Road network card (Maps tab) */
@@ -6086,12 +6090,14 @@ window.roadSvg=function(sp){
  /* route box: A to B */
  const rm=id=>g(id);
  rm("rdA").onclick=()=>{RDP.pick="A";rdMsg("Tap the start on the map.");};
+ rm("rdV").onclick=()=>{RDP.pick="V";rdMsg("Tap a point on the road you want the route to use, for example on the Hazyview to Sabie road. The route is forced through it.");};
+ rm("rdVClr").onclick=()=>{RDP.V=null;RDP.pick=null;scheduleDraw();rdMsg("Via point removed.");if(RDP.A&&RDP.B)rdRun();};
  rm("rdB").onclick=()=>{RDP.pick="B";rdMsg("Tap the destination on the map.");};
  rm("rdAMe").onclick=()=>{if(!src||!src.geo){rdMsg("Open a map with location data first.");return;}if(typeof gpsPos==="undefined"||!gpsPos){rdMsg("Turn on Me first so the app knows where you are.");return;}const w=src.geo.toWorld(gpsPos.lat,gpsPos.lon);rdSet("A",[w[0],w[1]]);};
  rm("rdBFind").onclick=()=>{window.__rdWantB=it=>rdSet("B",[it[1],it[2]]);const b=g("findBox");b.style.display="block";try{g("findInput").focus();}catch(e){}rdMsg("Type the compartment name, then tap it in the list.");};
  rm("rdBlk").onclick=()=>{RDP.pick="BLK";rdMsg("Tap the road where it is blocked, for example a stream crossing. Tap a red mark again to remove it.");};
  rm("rdBlkClr").onclick=()=>{rdBlList().length=0;rdBlSave();scheduleDraw();rdMsg("Blocked places cleared.");if(RDP.A&&RDP.B)rdRun();};
- rm("rdClr").onclick=()=>{RDP.A=RDP.B=null;RDP.pick=null;RDR=null;RDR2=null;rdZReset();rdMsg("");scheduleDraw();};
+ rm("rdClr").onclick=()=>{RDP.A=RDP.B=RDP.V=null;RDP.pick=null;RDR=null;RDR2=null;rdZReset();rdMsg("");scheduleDraw();};
  g("rdGm").onclick=()=>{if(!RDP.A||!RDP.B||!src||!src.geo){rdMsg("Set the start and the destination first.");return;}const a=src.geo.toLL(RDP.A[0],RDP.A[1]),b=src.geo.toLL(RDP.B[0],RDP.B[1]);window.__openGoogle(a,b);};
  g("rdMsg").addEventListener("click",e=>{
   const id=e.target.id;
