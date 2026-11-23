@@ -371,6 +371,10 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <button type="button" id="rdShow" class="secondary" style="display:none;width:100%;margin-top:8px">Show separate pieces on the map</button>
   <div style="margin-top:12px;padding-top:10px;border-top:1px solid #dbe6f0"><label style="display:flex;align-items:center;gap:8px;font-weight:700;color:#1d3b57"><input type="checkbox" id="arToggle" checked style="width:20px;height:20px;margin:0"> Record roads I drive outside the map</label>
   <p class="muted" style="margin:6px 0 8px">While GPS is on and you drive away from the mapped roads, the app records the road and saves it on this phone for this map. Saved roads join the network, so routes use them instead of dashed links.</p>
+  <div class="row" style="margin-top:6px"><button type="button" id="unmScan" class="small">Scan for unmapped areas</button></div>
+  <label style="display:flex;align-items:center;gap:8px;margin:6px 0 0;color:#1d3b57"><input type="checkbox" id="unmShow" checked style="width:20px;height:20px;margin:0"> Show areas still to record (light red)</label>
+  <p class="muted" style="margin:4px 0 0">The app measures how far apart roads normally are on this map and shades the large areas with no roads. It records only in or near those areas, and never when you are far from the map.</p>
+  <p id="unmStat" class="status" role="status"></p>
   <div id="arList"></div><button type="button" id="arClear" class="secondary" style="margin-top:8px">Remove all recorded roads on this map</button></div>
   <p id="rdStat" class="status" role="status">Scan a map first (Map lines above). The road network is built from the scan.</p>
  </div>
@@ -603,7 +607,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-120<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-121<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5682,6 +5686,35 @@ function arSave(){
  try{window.__arList&&window.__arList();}catch(e){}
  return true;
 }
+/* v121: scan the map for areas with no roads. "No roads" is judged from this map's own road spacing, not a fixed distance. */
+function unmScan(){
+ const g=RD;if(!g||!src||!src.w)return null;
+ const mpu=g.mpu;let cm=150;while((src.w*mpu/cm)*(src.h*mpu/cm)>450000)cm*=1.5;
+ const cs=cm/mpu,W=Math.ceil(src.w/cs)+1,H=Math.ceil(src.h/cs)+1,INF=1e6,d=new Float32Array(W*H).fill(INF);
+ const mark=(x,y)=>{const i=Math.floor(x/cs),j=Math.floor(y/cs);if(i>=0&&j>=0&&i<W&&j<H)d[j*W+i]=0;};
+ for(let e=0;e<g.m;e++){if(g.ecl[e]===7)continue;const a=g.ea[e],b=g.eb[e],ax=g.nx[a],ay=g.ny[a],bx=g.nx[b],by=g.ny[b],st=Math.max(1,Math.ceil(Math.hypot(bx-ax,by-ay)/(cs*0.5)));for(let k=0;k<=st;k++)mark(ax+(bx-ax)*k/st,ay+(by-ay)*k/st);}
+ const R2=1.4142;
+ for(let j=0;j<H;j++)for(let i=0;i<W;i++){const k=j*W+i;let v=d[k];if(i>0&&d[k-1]+1<v)v=d[k-1]+1;if(j>0){if(d[k-W]+1<v)v=d[k-W]+1;if(i>0&&d[k-W-1]+R2<v)v=d[k-W-1]+R2;if(i<W-1&&d[k-W+1]+R2<v)v=d[k-W+1]+R2;}d[k]=v;}
+ for(let j=H-1;j>=0;j--)for(let i=W-1;i>=0;i--){const k=j*W+i;let v=d[k];if(i<W-1&&d[k+1]+1<v)v=d[k+1]+1;if(j<H-1){if(d[k+W]+1<v)v=d[k+W]+1;if(i<W-1&&d[k+W+1]+R2<v)v=d[k+W+1]+R2;if(i>0&&d[k+W-1]+R2<v)v=d[k+W-1]+R2;}d[k]=v;}
+ const near=[];for(let k=0;k<d.length;k++){const m=d[k]*cm;if(m>0&&m<=600)near.push(m);}
+ near.sort((p,q)=>p-q);const p90=near.length>200?near[Math.floor(near.length*0.9)]:200,T=Math.max(300,Math.min(800,2.5*p90));
+ const cand=new Uint8Array(W*H);for(let k=0;k<cand.length;k++)if(d[k]*cm>T)cand[k]=1;
+ const out=new Uint8Array(W*H),seen=new Uint8Array(W*H),minC=Math.max(8,Math.ceil((2*T/cm)**2*0.7));let comps=0,cells=0;const q=[];
+ for(let k0=0;k0<cand.length;k0++){if(!cand[k0]||seen[k0])continue;q.length=0;q.push(k0);seen[k0]=1;let h=0;while(h<q.length){const k=q[h++],i=k%W,j=(k-i)/W;
+   if(i>0&&cand[k-1]&&!seen[k-1]){seen[k-1]=1;q.push(k-1);}if(i<W-1&&cand[k+1]&&!seen[k+1]){seen[k+1]=1;q.push(k+1);}if(j>0&&cand[k-W]&&!seen[k-W]){seen[k-W]=1;q.push(k-W);}if(j<H-1&&cand[k+W]&&!seen[k+W]){seen[k+W]=1;q.push(k+W);}}
+  if(q.length>=minC){comps++;cells+=q.length;for(const k of q)out[k]=1;}}
+ window.__unm={rd:RD,cs,cm,W,H,T,p90,comps,km2:cells*cm*cm/1e6,v:out};return window.__unm;
+}
+window.__unmScan=unmScan;
+function arAllowed(w){
+ if(!src||!src.w)return false;const mpu=src.geo.mpu,mg=2000/mpu;
+ if(w[0]<-mg||w[1]<-mg||w[0]>src.w+mg||w[1]>src.h+mg)return false;
+ let U=window.__unm;if(!U||U.rd!==RD){try{U=unmScan();}catch(e){U=null;}}
+ if(!U||!U.comps)return true;
+ const ci=Math.floor(w[0]/U.cs),cj=Math.floor(w[1]/U.cs),r=Math.ceil(700/U.cm);
+ for(let j=Math.max(0,cj-r);j<=Math.min(U.H-1,cj+r);j++)for(let i=Math.max(0,ci-r);i<=Math.min(U.W-1,ci+r);i++)if(U.v[j*U.W+i])return true;
+ return false;
+}
 window.__autoRecEnd=()=>{if(AR.rec)arSave();AR.buf=[];AR.off=AR.inn=AR.still=0;AR.last=null;};
 window.__autoRec=pt=>{
  if(!AR_ON||pt.manual||!src||!src.geo||!rdKey())return;
@@ -5694,7 +5727,7 @@ window.__autoRec=pt=>{
  if((pt.acc||0)>40)return;
  const w=src.geo.toWorld(pt.lat,pt.lon),nr={m:arDist(w[0],w[1])},kmh=spdKmh||0,now=pt.t||Date.now();
  if(!AR.rec){
-  if(kmh>=10&&nr.m>150){AR.off++;AR.buf.push(w);if(AR.off>=3){AR.rec=true;AR.inn=0;AR.still=0;AR.last=now;arChip(true);try{window.__say&&window.__say("Recording road outside the map",true);}catch(e){}}}
+  if(kmh>=10&&nr.m>150&&arAllowed(w)){AR.off++;AR.buf.push(w);if(AR.off>=3){AR.rec=true;AR.inn=0;AR.still=0;AR.last=now;arChip(true);try{window.__say&&window.__say("Recording road outside the map",true);}catch(e){}}}
   else{AR.off=0;AR.buf.length=0;}
   return;
  }
@@ -6072,6 +6105,13 @@ window.roadSvg=function(sp){
    if(d0)o+=`<path d="${d0}" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><path d="${d0}" fill="none" stroke="#f2a900" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
   }
  }catch(e){}
+ try{ /* areas still to record */
+  const U=window.__unm;if(U&&U.rd===RD&&U.comps&&localStorage.getItem("pscUnmShow")!=="0"&&src){
+   const sz=vsize(),i0=Math.max(0,Math.floor(view.x/U.cs)),i1=Math.min(U.W-1,Math.ceil((view.x+sz.w/view.zoom)/U.cs)),j0=Math.max(0,Math.floor(view.y/U.cs)),j1=Math.min(U.H-1,Math.ceil((view.y+sz.h/view.zoom)/U.cs));let dd="",runs=0;
+   for(let j=j0;j<=j1&&runs<3500;j++){let i=i0;while(i<=i1){if(!U.v[j*U.W+i]){i++;continue;}let e=i;while(e+1<=i1&&U.v[j*U.W+e+1])e++;const a=sp({x:i*U.cs,y:j*U.cs}),b=sp({x:(e+1)*U.cs,y:(j+1)*U.cs});dd+=`M${a.x.toFixed(1)} ${a.y.toFixed(1)}H${b.x.toFixed(1)}V${b.y.toFixed(1)}H${a.x.toFixed(1)}Z`;runs++;i=e+1;}}
+   if(dd)o+=`<path d="${dd}" fill="#d64545" fill-opacity=".2" stroke="none"/>`;
+  }
+ }catch(e){}
  try{ /* named places */
   if(src&&src.geo&&window.__places&&window.__places.list.length&&window.__places.key===rdKey()&&localStorage.getItem("pscPlaceShow")!=="0"){
    const PL=window.__places;if(!PL.W||PL.srcRef!==src){PL.srcRef=src;PL.W=PL.list.map(p=>{const q=src.geo.toWorld(p[2],p[3]);return {t:p[0],n:p[1],x:q[0],y:q[1]};});}
@@ -6155,6 +6195,9 @@ window.roadSvg=function(sp){
  }
  window.__rdAuto=()=>{try{window.__rdRender();if(rdRoadStyles().length)build(true);}catch(e){}};
  g("rdBuild").onclick=()=>build(false);
+ try{g("unmShow").checked=localStorage.getItem("pscUnmShow")!=="0";g("unmShow").onchange=()=>{try{localStorage.setItem("pscUnmShow",g("unmShow").checked?"1":"0");}catch(e){}try{scheduleDraw();}catch(e){}};}catch(e){}
+ g("unmScan").onclick=async()=>{const st=g("unmStat");st.textContent="Scanning...";try{await rdEnsure();const U=unmScan();if(!U){st.textContent="Open a map and build its road network first.";return;}
+  st.textContent=U.comps?("Found "+U.comps+" unmapped "+(U.comps>1?"areas":"area")+", about "+U.km2.toFixed(0)+" km². Roads on this map are normally less than "+Math.round(U.p90)+" m apart, so an area counts as unmapped when it is more than "+Math.round(U.T)+" m from any road."):"No large unmapped areas found on this map.";scheduleDraw();}catch(e){st.textContent="Could not scan: "+e.message;}};
  g("arToggle").checked=AR_ON;
  g("arToggle").onchange=()=>{AR_ON=g("arToggle").checked;try{localStorage.setItem("pscAutoRec",AR_ON?"1":"0");}catch(e){}if(!AR_ON){AR.rec=false;AR.buf=[];AR.off=0;arChip(false);}};
  window.__arList=()=>{const h=g("arList");if(!h)return;let L=[];try{L=rdKey()?rdRecList():[];}catch(e){}
