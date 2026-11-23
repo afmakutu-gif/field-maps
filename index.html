@@ -361,6 +361,8 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <p class="muted" style="margin:6px 0 8px">Downloads the public roads around this map from OpenStreetMap once, keeps them on this phone and joins them to the map's roads, so routes between farms follow real roads. Needs a signal once. &copy; OpenStreetMap contributors.</p>
   <label style="display:flex;align-items:center;gap:8px;margin:0 0 8px;color:#1d3b57"><input type="checkbox" id="rdOsmShow" checked style="width:20px;height:20px;margin:0"> Show these roads on the map (amber = public tar, grey = public gravel)</label>
   <div class="row"><button type="button" id="rdOsm" class="small">Download surrounding roads</button><button type="button" id="rdOsmClr" class="small secondary">Remove them</button></div>
+  <div class="row" style="margin-top:6px"><button type="button" id="rdOsmIn" class="small">Download farm tracks inside the map</button></div>
+  <p class="muted" style="margin:4px 0 0">Brown dashes = tracks and service roads inside the farms (minor roads). They fill gaps between your farm roads and the public roads.</p>
   <p id="rdOsmStat" class="status" role="status"></p></div>
   <button type="button" id="rdBuild" style="width:100%;margin-top:8px" disabled>Build road network</button>
   <button type="button" id="rdReport" class="secondary" style="width:100%;margin-top:8px">Road report here (share with Claude)</button>
@@ -597,7 +599,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-118<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-119<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5479,8 +5481,9 @@ function rdRecStore(l){try{localStorage.setItem("pscRoad|"+rdKey(),JSON.stringif
 /* ---- roads around the map from OpenStreetMap (they fill in outside the map's own roads) ---- */
 const OSM_CLS={motorway:0,trunk:0,primary:0,secondary:0,tertiary:0,motorway_link:0,trunk_link:0,primary_link:0,secondary_link:0,tertiary_link:0,unclassified:1,residential:1};
 async function rdOsmLoad(key){
- try{if(window.__osm&&window.__osm.key===key)return window.__osm;const b=key?(await idbGetMany("tiles",[key+"|osm"]))[0]:null;
-  window.__osm={key,ways:b?JSON.parse(await b.text()):[]};}catch(e){window.__osm={key,ways:[]};}
+ try{if(window.__osm&&window.__osm.key===key)return window.__osm;const bs=key?await idbGetMany("tiles",[key+"|osm",key+"|osmi"]):[null,null];let ws=[];
+  for(const b of bs){if(!b)continue;try{const a=JSON.parse(await b.text());if(Array.isArray(a))ws=ws.concat(a);}catch(e){}}
+  window.__osm={key,ways:ws};}catch(e){window.__osm={key,ways:[]};}
  return window.__osm;
 }
 function rdOsmNodes(nx,ny,n0,mpu){
@@ -5490,7 +5493,7 @@ function rdOsmNodes(nx,ny,n0,mpu){
  const near=(x,y)=>{const cx=Math.floor(x/cs),cy=Math.floor(y/cs),r2=cs*cs;for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const l=G.get(K(cx+a,cy+b));if(l)for(const i of l){const dx=nx[i]-x,dy=ny[i]-y;if(dx*dx+dy*dy<r2)return true;}}return false;};
  const ox=[],oy=[],oa=[],ob=[],ok=[],shared=new Map(),step=25/mpu;
  const node=(x,y,key)=>{if(key){const q=shared.get(key);if(q!==undefined)return q;}const id=ox.length;ox.push(x);oy.push(y);if(key)shared.set(key,id);return id;};
- for(const w of W){if(ox.length>200000)break;const cls=w[0],P=w[1];let prev=-1,px=null,py=null;
+ for(const w of W){if(ox.length>400000)break;const cls=w[0],P=w[1];let prev=-1,px=null,py=null;
   for(let i=0;i+1<P.length;i+=2){const q=src.geo.toWorld(P[i],P[i+1]),x=q[0],y=q[1],key=P[i]+","+P[i+1],pts=[];
    if(px!==null){const L=Math.hypot(x-px,y-py),n=Math.max(1,Math.ceil(L/step));for(let s=1;s<n;s++)pts.push([px+(x-px)*s/n,py+(y-py)*s/n,null]);}
    pts.push([x,y,key]);
@@ -5534,10 +5537,46 @@ async function rdOsmDownload(stat){
   await sl(500);
  }
  try{await idbPutMany("tiles",[[key+"|osm",new Blob([JSON.stringify(ways)],{type:"application/json"})],[key+"|osmp",new Blob(["{}"])]]);}catch(e){stat("Could not save the roads on this phone.");return false;}
- window.__osm={key,ways};RD=null;try{scheduleDraw();}catch(e){}
+ window.__osm=null;await rdOsmLoad(key);RD=null;try{scheduleDraw();}catch(e){}
  stat("Saved "+ways.length+" public roads around this map. © OpenStreetMap contributors.");return true;
 }
 window.__rdOsmDownload=rdOsmDownload;
+/* v119: farm tracks and service roads inside the map (OpenStreetMap), kept as minor roads */
+async function rdOsmFetchBox(mkQ,bx,errs,depth){
+ const EP=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter"],sl=ms=>new Promise(r=>setTimeout(r,ms)),q=mkQ(bx);
+ for(const ep of EP){const host=ep.split("/")[2];
+  try{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),45000);const r=await fetch(ep,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q),signal:ac.signal});clearTimeout(to);
+   if(r.ok)return await r.json();errs.push(host+": HTTP "+r.status);if(r.status===429)await sl(5000);
+  }catch(e){errs.push(host+": "+(e&&e.name==="AbortError"?"timed out":(e&&e.message)||"failed"));}}
+ if(depth>=2)return null;
+ const my=(bx[0]+bx[2])/2,mx=(bx[1]+bx[3])/2,out={elements:[]};
+ for(const sub of [[bx[0],bx[1],my,mx],[bx[0],mx,my,bx[3]],[my,bx[1],bx[2],mx],[my,mx,bx[2],bx[3]]]){const r=await rdOsmFetchBox(mkQ,sub,errs,depth+1);if(!r)return null;out.elements.push(...(r.elements||[]));await sl(500);}
+ return out;
+}
+async function rdOsmInside(stat){
+ const key=rdKey();if(!key||!src||!src.geo){stat("Open a map first.");return false;}
+ const g=src.geo,cs=[[0,0],[src.w,0],[0,src.h],[src.w,src.h]].map(p=>g.toLL(p[0],p[1]));
+ const s0=Math.min(...cs.map(c=>c.lat)),n0=Math.max(...cs.map(c=>c.lat)),w0=Math.min(...cs.map(c=>c.lon)),e0=Math.max(...cs.map(c=>c.lon));
+ const T=0.06,tiles=[];for(let a=s0;a<n0;a+=T)for(let b=w0;b<e0;b+=T)tiles.push([a,b,Math.min(a+T,n0),Math.min(b+T,e0)]);
+ const sig="i"+tiles.length+"|"+s0.toFixed(3)+"|"+w0.toFixed(3),errs=[],ways=[],idsSeen=new Set(),sl=ms=>new Promise(r=>setTimeout(r,ms));let doneIdx=new Set();
+ try{const pb=(await idbGetMany("tiles",[key+"|osmip"]))[0];if(pb){const pj=JSON.parse(await pb.text());if(pj&&pj.sig===sig){doneIdx=new Set(pj.done);for(const w of pj.ways){ways.push(w);if(w[2])idsSeen.add(w[2]);}}}}catch(e){}
+ const mkQ=bx=>'[out:json][timeout:40];way["highway"~"^(track|service)$"]["service"!~"^(driveway|parking_aisle|alley)$"]('+bx.map(v=>v.toFixed(5)).join(",")+');out geom qt;';
+ const addJs=js=>{for(const el of js.elements||[]){if(el.type!=="way"||idsSeen.has(el.id)||!el.geometry||el.geometry.length<2)continue;idsSeen.add(el.id);const P=[];for(const p of el.geometry)P.push(+p.lat.toFixed(5),+p.lon.toFixed(5));ways.push([3,P,el.id]);}};
+ for(let i=0;i<tiles.length;i++){
+  if(doneIdx.has(i))continue;
+  stat("Downloading farm tracks... "+(doneIdx.size+1)+" of "+tiles.length+" (keep the app open)");
+  const js=await rdOsmFetchBox(mkQ,tiles[i],errs,0);
+  if(!js){try{await idbPutMany("tiles",[[key+"|osmip",new Blob([JSON.stringify({sig,done:[...doneIdx],ways})],{type:"application/json"})]]);}catch(e){}
+   stat("Stopped at "+doneIdx.size+" of "+tiles.length+". Tap the button again to carry on. "+errs.slice(-3).join("; "));return false;}
+  addJs(js);doneIdx.add(i);
+  try{await idbPutMany("tiles",[[key+"|osmip",new Blob([JSON.stringify({sig,done:[...doneIdx],ways})],{type:"application/json"})]]);}catch(e){}
+  await sl(500);
+ }
+ try{await idbPutMany("tiles",[[key+"|osmi",new Blob([JSON.stringify(ways)],{type:"application/json"})],[key+"|osmip",new Blob(["{}"])]]);}catch(e){stat("Could not save the tracks on this phone.");return false;}
+ window.__osm=null;await rdOsmLoad(key);RD=null;try{scheduleDraw();}catch(e){}
+ stat("Saved "+ways.length+" farm tracks inside this map. Build or open the route again to use them. © OpenStreetMap contributors.");return true;
+}
+window.__rdOsmInside=rdOsmInside;
 function rdAugment(nx,ny,ea,eb,ec,el,ecl,mpu){
  const L=rdRecList(),n0=nx.length;let OS=null;try{OS=rdOsmNodes(nx,ny,n0,mpu);}catch(e){}
  if(!L.length&&!OS)return {nx,ny,ea,eb,ec,el,ecl,baseN:n0};
@@ -5989,10 +6028,11 @@ window.roadSvg=function(sp){
  try{ /* public roads downloaded from OpenStreetMap, drawn outside and between the maps */
   if(src&&src.geo&&window.__osm&&window.__osm.ways.length&&window.__osm.key===rdKey()&&localStorage.getItem("pscOsmShow")!=="0"){
    const O=window.__osm;if(!O.W||O.srcRef!==src){O.srcRef=src;O.W=O.ways.map(w=>{const P=w[1],a=new Float32Array(P.length);let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;for(let i=0;i+1<P.length;i+=2){const q=src.geo.toWorld(P[i],P[i+1]);a[i]=q[0];a[i+1]=q[1];if(q[0]<x0)x0=q[0];if(q[0]>x1)x1=q[0];if(q[1]<y0)y0=q[1];if(q[1]>y1)y1=q[1];}return {c:w[0],a,b:[x0,y0,x1,y1]};});}
-   const sz=vsize(),vx0=view.x,vy0=view.y,vx1=view.x+sz.w/view.zoom,vy1=view.y+sz.h/view.zoom,minD=3/view.zoom;let d0="",d1="";
+   const sz=vsize(),vx0=view.x,vy0=view.y,vx1=view.x+sz.w/view.zoom,vy1=view.y+sz.h/view.zoom,minD=3/view.zoom;let d0="",d1="",d3="";
    for(const w of O.W){const b=w.b;if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1)continue;let s2="",lx=null,ly=null;const a=w.a;
     for(let i=0;i+1<a.length;i+=2){const x=a[i],y=a[i+1];if(lx!==null&&i<a.length-2&&Math.abs(x-lx)<minD&&Math.abs(y-ly)<minD)continue;const q=sp({x,y});s2+=(s2?"L":"M")+q.x.toFixed(0)+" "+q.y.toFixed(0);lx=x;ly=y;}
-    if(w.c===0)d0+=s2;else d1+=s2;}
+    if(w.c===0)d0+=s2;else if(w.c===3)d3+=s2;else d1+=s2;}
+   if(d3)o+=`<path d="${d3}" fill="none" stroke="#fff" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" opacity=".7"/><path d="${d3}" fill="none" stroke="#b07a3c" stroke-width="1.6" stroke-dasharray="5 3" stroke-linejoin="round" stroke-linecap="round"/>`;
    if(d1)o+=`<path d="${d1}" fill="none" stroke="#fff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/><path d="${d1}" fill="none" stroke="#9aa5b1" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
    if(d0)o+=`<path d="${d0}" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><path d="${d0}" fill="none" stroke="#f2a900" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
   }
@@ -6083,7 +6123,8 @@ window.roadSvg=function(sp){
  try{g("rdFarmSel").value=rdFarm();g("rdFarmSel").onchange=()=>{try{localStorage.setItem("pscFarm",g("rdFarmSel").value);}catch(e){}};}catch(e){}
  try{g("rdOsmShow").checked=localStorage.getItem("pscOsmShow")!=="0";g("rdOsmShow").onchange=()=>{try{localStorage.setItem("pscOsmShow",g("rdOsmShow").checked?"1":"0");}catch(e){}try{scheduleDraw();}catch(e){}};}catch(e){}
  g("rdOsm").onclick=async()=>{const st=g("rdOsmStat"),b=g("rdOsm");b.disabled=true;try{await rdOsmDownload(t=>{st.textContent=t;});}catch(e){st.textContent="Could not download: "+e.message;}b.disabled=false;};
- g("rdOsmClr").onclick=async()=>{const k=rdKey();try{if(k)await idbPutMany("tiles",[[k+"|osm",new Blob(["[]"])]]);window.__osm={key:k,ways:[]};RD=null;g("rdOsmStat").textContent="Removed the downloaded roads.";}catch(e){g("rdOsmStat").textContent="Could not remove: "+e.message;}};
+ g("rdOsmIn").onclick=async()=>{const st=g("rdOsmStat"),b=g("rdOsmIn");b.disabled=true;try{await rdOsmInside(t=>{st.textContent=t;});}catch(e){st.textContent="Could not download: "+e.message;}b.disabled=false;};
+ g("rdOsmClr").onclick=async()=>{const k=rdKey();try{if(k)await idbPutMany("tiles",[[k+"|osm",new Blob(["[]"])],[k+"|osmi",new Blob(["[]"])],[k+"|osmip",new Blob(["{}"])]]);window.__osm={key:k,ways:[]};RD=null;g("rdOsmStat").textContent="Removed the downloaded roads.";}catch(e){g("rdOsmStat").textContent="Could not remove: "+e.message;}};
  g("rdGap").oninput=()=>{g("rdGapV").textContent=g("rdGap").value+" m";};
  g("rdShow").onclick=()=>{if(!RD)return;RD.show=!RD.show;g("rdShow").textContent=RD.show?"Hide separate pieces":"Show separate pieces on the map";if(RD.show)switchTab("measure");scheduleDraw();};
  window.__rdRender();
