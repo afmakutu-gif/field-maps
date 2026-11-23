@@ -363,6 +363,8 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <div class="row"><button type="button" id="rdOsm" class="small">Download surrounding roads</button><button type="button" id="rdOsmClr" class="small secondary">Remove them</button></div>
   <div class="row" style="margin-top:6px"><button type="button" id="rdOsmIn" class="small">Download farm tracks inside the map</button></div>
   <p class="muted" style="margin:4px 0 0">Brown dashes = tracks and service roads inside the farms (minor roads). They fill gaps between your farm roads and the public roads.</p>
+  <div class="row" style="margin-top:8px"><button type="button" id="rdPlDl" class="small">Download place names</button></div>
+  <label style="display:flex;align-items:center;gap:8px;margin:6px 0 0;color:#1d3b57"><input type="checkbox" id="rdPlShow" checked style="width:20px;height:20px;margin:0"> Show places on the map (blue = village or town, green = office or depot, brown = farm house)</label>
   <p id="rdOsmStat" class="status" role="status"></p></div>
   <button type="button" id="rdBuild" style="width:100%;margin-top:8px" disabled>Build road network</button>
   <button type="button" id="rdReport" class="secondary" style="width:100%;margin-top:8px">Road report here (share with Claude)</button>
@@ -471,6 +473,8 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <div class="nvStep">2. Where are you going?</div>
     <div class="row"><button class="small" id="rdBFind">Find compartment</button><button class="small" id="rdB">Tap on map</button><button class="small secondary" id="rdClr">Clear</button></div>
     <div class="row"><button class="small secondary" id="rdV">Via a road (optional)</button><button class="small secondary" id="rdVClr">Remove via</button></div>
+    <div class="row"><input id="rdPlQ" type="search" placeholder="Find a place by name" style="flex:1;min-width:0;padding:8px 10px;border:1px solid #cfd9e3;border-radius:10px;font-size:15px"><button class="small" id="rdPlFind">Find</button></div>
+    <div id="rdPlOut"></div>
     <div class="row"><button class="small secondary" id="rdNet">Show road network on the map</button></div>
     <div class="row"><button class="small secondary" id="rdGm">Directions to B in Google Maps</button></div>
     <div class="row"><button class="small secondary" id="rdBlk">Mark blocked road</button><button class="small secondary" id="rdBlkClr">Clear blocked</button></div>
@@ -599,7 +603,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-119<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-120<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -5577,6 +5581,37 @@ async function rdOsmInside(stat){
  stat("Saved "+ways.length+" farm tracks inside this map. Build or open the route again to use them. © OpenStreetMap contributors.");return true;
 }
 window.__rdOsmInside=rdOsmInside;
+/* v120: named places (villages, offices and depots, farm houses) from OpenStreetMap */
+async function rdPlacesLoad(key){
+ try{if(window.__places&&window.__places.key===key)return window.__places;const b=key?(await idbGetMany("tiles",[key+"|osmpl"]))[0]:null;let l=[];if(b){try{const a=JSON.parse(await b.text());if(Array.isArray(a))l=a;}catch(e){}}window.__places={key,list:l};}catch(e){window.__places={key,list:[]};}
+ return window.__places;
+}
+async function rdPlacesDownload(stat){
+ const key=rdKey();if(!key||!src||!src.geo){stat("Open a map first.");return false;}
+ const g=src.geo,cs=[[0,0],[src.w,0],[0,src.h],[src.w,src.h]].map(p=>g.toLL(p[0],p[1])),mg=0.05;
+ const s0=Math.min(...cs.map(c=>c.lat))-mg,n0=Math.max(...cs.map(c=>c.lat))+mg,w0=Math.min(...cs.map(c=>c.lon))-mg,e0=Math.max(...cs.map(c=>c.lon))+mg;
+ const T=0.3,tiles=[];for(let a=s0;a<n0;a+=T)for(let b=w0;b<e0;b+=T)tiles.push([a,b,Math.min(a+T,n0),Math.min(b+T,e0)]);
+ const errs=[],seen=new Set(),list=[],sl=ms=>new Promise(r=>setTimeout(r,ms));
+ const mkQ=bx=>{const B="("+bx.map(v=>v.toFixed(5)).join(",")+")";return '[out:json][timeout:40];(node["place"~"^(city|town|suburb|village|hamlet|isolated_dwelling|farm|locality)$"]["name"]'+B+';nwr["office"]["name"]'+B+';nwr["landuse"="farmyard"]["name"]'+B+';nwr["building"~"^(farm|farm_auxiliary|house|residential)$"]["name"]'+B+';nwr["industrial"]["name"]'+B+';nwr["man_made"="works"]["name"]'+B+';nwr["amenity"="depot"]["name"]'+B+';);out center tags;';};
+ for(let i=0;i<tiles.length;i++){
+  stat("Downloading place names... "+(i+1)+" of "+tiles.length+" (keep the app open)");
+  const js=await rdOsmFetchBox(mkQ,tiles[i],errs,0);
+  if(!js){stat("Stopped at "+i+" of "+tiles.length+". Tap the button again. "+errs.slice(-3).join("; "));return false;}
+  for(const el of js.elements||[]){const t=el.tags||{},nm=t.name;if(!nm)continue;const la=el.lat!==undefined?el.lat:(el.center&&el.center.lat),lo=el.lon!==undefined?el.lon:(el.center&&el.center.lon);if(la===undefined||lo===undefined)continue;
+   const k=el.type+el.id;if(seen.has(k))continue;seen.add(k);
+   let ty=2;if(t.place&&/^(city|town|suburb|village|hamlet)$/.test(t.place))ty=0;else if(t.office||t.industrial||t.man_made==="works"||t.amenity==="depot")ty=1;
+   list.push([ty,nm,+la.toFixed(5),+lo.toFixed(5)]);}
+  await sl(500);
+ }
+ try{await idbPutMany("tiles",[[key+"|osmpl",new Blob([JSON.stringify(list)],{type:"application/json"})]]);}catch(e){stat("Could not save the places on this phone.");return false;}
+ window.__places=null;await rdPlacesLoad(key);try{scheduleDraw();}catch(e){}
+ stat("Saved "+list.length+" named places. © OpenStreetMap contributors.");return true;
+}
+window.__rdPlacesDownload=rdPlacesDownload;
+function rdPlaceFind(q){
+ const P=window.__places&&window.__places.key===rdKey()?window.__places.list:[];q=(q||"").trim().toLowerCase();if(!q)return [];
+ return P.filter(p=>p[1].toLowerCase().includes(q)).sort((a,b)=>(a[1].toLowerCase().startsWith(q)?0:1)-(b[1].toLowerCase().startsWith(q)?0:1)||a[0]-b[0]).slice(0,6);
+}
 function rdAugment(nx,ny,ea,eb,ec,el,ecl,mpu){
  const L=rdRecList(),n0=nx.length;let OS=null;try{OS=rdOsmNodes(nx,ny,n0,mpu);}catch(e){}
  if(!L.length&&!OS)return {nx,ny,ea,eb,ec,el,ecl,baseN:n0};
@@ -6037,6 +6072,15 @@ window.roadSvg=function(sp){
    if(d0)o+=`<path d="${d0}" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><path d="${d0}" fill="none" stroke="#f2a900" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
   }
  }catch(e){}
+ try{ /* named places */
+  if(src&&src.geo&&window.__places&&window.__places.list.length&&window.__places.key===rdKey()&&localStorage.getItem("pscPlaceShow")!=="0"){
+   const PL=window.__places;if(!PL.W||PL.srcRef!==src){PL.srcRef=src;PL.W=PL.list.map(p=>{const q=src.geo.toWorld(p[2],p[3]);return {t:p[0],n:p[1],x:q[0],y:q[1]};});}
+   const sz=vsize(),vx0=view.x,vy0=view.y,vx1=view.x+sz.w/view.zoom,vy1=view.y+sz.h/view.zoom,close=(src.geo.mpu/view.zoom)<20;let cnt=0;
+   const col=["#1f7ae0","#2f9e66","#a67c52"];
+   for(const p of PL.W){if(p.x<vx0||p.x>vx1||p.y<vy0||p.y>vy1)continue;if(p.t>0&&!close)continue;if(++cnt>70)break;const q=sp({x:p.x,y:p.y});
+    o+=`<g><circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="${p.t===0?5.5:4.5}" fill="${col[p.t]}" stroke="#fff" stroke-width="2"/><text x="${(q.x+8).toFixed(1)}" y="${(q.y+4).toFixed(1)}" font-size="${p.t===0?13:11}" font-weight="${p.t===0?700:600}" fill="#1d3b57" stroke="#fff" stroke-width="3" paint-order="stroke">${String(p.n).replace(/[<&]/g,"")}</text></g>`;}
+  }
+ }catch(e){}
  try{ /* roads you drew or recorded stay visible on the map */
   if(src){const raw=localStorage.getItem("pscRoad|"+rdKey())||"[]";if(window.__recRaw!==raw){window.__recRaw=raw;try{window.__recL=JSON.parse(raw);}catch(e){window.__recL=[];}}
    let d="";(window.__recL||[]).forEach(r=>{const p=r.p||[];for(let i=0;i+1<p.length;i+=2){const q=sp({x:p[i],y:p[i+1]});d+=(i?"L":"M")+q.x.toFixed(1)+" "+q.y.toFixed(1);}});
@@ -6124,12 +6168,21 @@ window.roadSvg=function(sp){
  try{g("rdOsmShow").checked=localStorage.getItem("pscOsmShow")!=="0";g("rdOsmShow").onchange=()=>{try{localStorage.setItem("pscOsmShow",g("rdOsmShow").checked?"1":"0");}catch(e){}try{scheduleDraw();}catch(e){}};}catch(e){}
  g("rdOsm").onclick=async()=>{const st=g("rdOsmStat"),b=g("rdOsm");b.disabled=true;try{await rdOsmDownload(t=>{st.textContent=t;});}catch(e){st.textContent="Could not download: "+e.message;}b.disabled=false;};
  g("rdOsmIn").onclick=async()=>{const st=g("rdOsmStat"),b=g("rdOsmIn");b.disabled=true;try{await rdOsmInside(t=>{st.textContent=t;});}catch(e){st.textContent="Could not download: "+e.message;}b.disabled=false;};
- g("rdOsmClr").onclick=async()=>{const k=rdKey();try{if(k)await idbPutMany("tiles",[[k+"|osm",new Blob(["[]"])],[k+"|osmi",new Blob(["[]"])],[k+"|osmip",new Blob(["{}"])]]);window.__osm={key:k,ways:[]};RD=null;g("rdOsmStat").textContent="Removed the downloaded roads.";}catch(e){g("rdOsmStat").textContent="Could not remove: "+e.message;}};
+ try{g("rdPlShow").checked=localStorage.getItem("pscPlaceShow")!=="0";g("rdPlShow").onchange=()=>{try{localStorage.setItem("pscPlaceShow",g("rdPlShow").checked?"1":"0");}catch(e){}try{scheduleDraw();}catch(e){}};}catch(e){}
+ g("rdPlDl").onclick=async()=>{const st=g("rdOsmStat"),b=g("rdPlDl");b.disabled=true;try{await rdPlacesDownload(t=>{st.textContent=t;});}catch(e){st.textContent="Could not download: "+e.message;}b.disabled=false;};
+ g("rdOsmClr").onclick=async()=>{const k=rdKey();try{if(k)await idbPutMany("tiles",[[k+"|osm",new Blob(["[]"])],[k+"|osmi",new Blob(["[]"])],[k+"|osmip",new Blob(["{}"])],[k+"|osmpl",new Blob(["[]"])]]);window.__places={key:k,list:[]};window.__osm={key:k,ways:[]};RD=null;g("rdOsmStat").textContent="Removed the downloaded roads.";}catch(e){g("rdOsmStat").textContent="Could not remove: "+e.message;}};
  g("rdGap").oninput=()=>{g("rdGapV").textContent=g("rdGap").value+" m";};
  g("rdShow").onclick=()=>{if(!RD)return;RD.show=!RD.show;g("rdShow").textContent=RD.show?"Hide separate pieces":"Show separate pieces on the map";if(RD.show)switchTab("measure");scheduleDraw();};
  window.__rdRender();
  /* route box: A to B */
  const rm=id=>g(id);
+ rm("rdPlFind").onclick=async()=>{const out=g("rdPlOut");out.innerHTML="";await rdPlacesLoad(rdKey());const r=rdPlaceFind(g("rdPlQ").value);
+  if(!r.length){out.innerHTML='<p class="muted" style="margin:6px 0">No place found. Download place names under Maps, Road network, or try another spelling.</p>';return;}
+  const TY=["village or town","office or depot","farm house"];
+  r.forEach(p=>{const row=document.createElement("div");row.style.cssText="margin:6px 0;padding:6px 8px;border:1px solid #dbe6f0;border-radius:10px;background:#f6f9fc";
+   const t=document.createElement("div");t.style.cssText="font-weight:700;color:#1d3b57";t.textContent=p[1]+" ("+TY[p[0]]+")";row.appendChild(t);
+   const bw=document.createElement("div");bw.className="row";[["Start","A"],["Via","V"],["Destination","B"]].forEach(([lb,wh])=>{const b=document.createElement("button");b.className="small"+(wh==="V"?" secondary":"");b.textContent=lb;b.onclick=()=>{const w=src.geo.toWorld(p[2],p[3]);rdSet(wh,[w[0],w[1]]);try{focusOn&&0;}catch(e){}};bw.appendChild(b);});
+   row.appendChild(bw);out.appendChild(row);});};
  rm("rdA").onclick=()=>{RDP.pick="A";rdMsg("Tap the start on the map.");};
  rm("rdV").onclick=()=>{RDP.pick="V";rdMsg("Tap a point on the road you want the route to use, for example on the Hazyview to Sabie road. The route is forced through it.");};
  rm("rdVClr").onclick=()=>{RDP.V=null;RDP.pick=null;scheduleDraw();rdMsg("Via point removed.");if(RDP.A&&RDP.B)rdRun();};
