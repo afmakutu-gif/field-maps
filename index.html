@@ -608,7 +608,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-129<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-130<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -6271,7 +6271,7 @@ window.roadSvg=function(sp){
 <script>
 (function(){
 const LS="pscPlant|",$=id=>document.getElementById(id);
-const PL={key:null,name:"",poly:[],A:null,B:null,sr:3,st:3,pick:null,timer:0,log:[],sec:"c",cnt:null,show:true,lt:0};
+const PL={key:null,name:"",poly:[],A:null,B:null,sr:3,st:3,pick:null,timer:0,log:[],sec:"c",cnt:null,show:true,lt:0,goto:null};
 const f1=(n,d)=>Number.isFinite(n)?n.toFixed(d==null?1:d):"-";
 function keyNow(){try{return (typeof rdKey==="function"&&rdKey())||"x";}catch(e){return "x";}}
 function load(){const k=keyNow();PL.key=k;let o=null;try{o=JSON.parse(localStorage.getItem(LS+k)||"null");}catch(e){}o=o||{};
@@ -6292,7 +6292,13 @@ function recount(){PL.cnt=count();}
 function cnt(){if(!PL.cnt)recount();return PL.cnt;}
 function liveInfo(){if(!gpsPos||!src||!src.geo)return null;const f=frame();if(!f)return null;const w=src.geo.toWorld(gpsPos.lat,gpsPos.lon),m=src.geo.mpu,dx=w[0]-f.ax,dy=w[1]-f.ay,a=(dx*f.ux+dy*f.uy)*m,b=(dx*f.vx+dy*f.vy)*m;
  const i=Math.round(a/PL.sr),lat=a-i*PL.sr,rs=-f.vy*f.ux+f.vx*f.uy,right=lat*rs,ahead=(Math.floor(b/PL.st)+1)*PL.st-b;return {i,right,ahead,acc:gpsPos.acc||0,a,b};}
-function live(){const el=$("plLive");if(!el)return;const c=cnt(),L=liveInfo();if(!gpsPos){el.textContent="Waiting for GPS. Tap Locate on the map first.";return;}
+function rowGeom(N){const f=frame(),c=cnt();if(!f||!c||c.err||c.r0==null||!(N>=1))return null;const i=N+c.r0-1,m=src.geo.mpu,sR=PL.sr/m,sT=PL.st/m,sp2=spans(polyAB(f),i*sR);if(!sp2.length)return null;let tr=0,ln=0;sp2.forEach(q=>{const k=Math.floor(q[1]/sT)-Math.ceil(q[0]/sT)+1;if(k>0)tr+=k;ln+=(q[1]-q[0])*m;});return {i,a:i*PL.sr,spans:sp2,f,m,sR,sT,trees:tr,len:ln};}
+function rowInfo(){const el=$("plRowInfo");if(!el)return;if(!PL.goto){el.innerHTML="";return;}const c=cnt(),G=rowGeom(PL.goto);
+ if(!G){el.innerHTML="<b>Row "+PL.goto+"</b> is not in this block."+(c&&c.rows?" Rows run from 1 to "+c.rows+".":" Set the boundary and baseline first.");return;}
+ let t="<b>Row "+PL.goto+"</b> is "+f1(G.a,0)+" m from point A along the baseline. About "+f1(G.len,0)+" m long, "+G.trees+" trees.";
+ const L=liveInfo();if(L){const d=G.a-L.a;t+=Math.abs(d)<1.5?"<br>You are at this row.":"<br>You are "+f1(Math.abs(d),0)+" m from it. Walk "+f1(Math.abs(d),0)+" m along the baseline toward "+(d>0?"B":"A")+".";}
+ el.innerHTML=t;}
+function live(){const el=$("plLive");if(!el)return;rowInfo();const c=cnt(),L=liveInfo();if(!gpsPos){el.textContent="Waiting for GPS. Tap Locate on the map first.";return;}
  if(!L){el.textContent="Set the baseline first.";return;}
  const rn=(c&&c.r0!=null)?L.i-c.r0+1:L.i,side=Math.abs(L.right)<0.05?"on the row line":f1(Math.abs(L.right),1)+" m "+(L.right>0?"right":"left")+" of the row line, move "+(L.right>0?"left":"right");
  el.innerHTML="<b>Row "+rn+"</b>: "+side+".<br>Next tree "+f1(L.ahead,1)+" m ahead.<br><span style='color:#5d7385'>GPS about "+f1(L.acc,0)+" m"+(L.acc>3?". Too rough to place trees; use it to stay near the line and measure the spacing.":".")+"</span>";}
@@ -6309,7 +6315,7 @@ function ui(){const box=$("plBox");if(!box)return;box.classList.toggle("min",!!P
   h+='<div class="row"><label>Row spacing <input class="n" id="plSr" type="number" step="0.1" min="0.5" value="'+PL.sr+'"> m</label></div><div class="row"><label>Tree spacing <input class="n" id="plSt" type="number" step="0.1" min="0.5" value="'+PL.st+'"> m</label></div><div class="row"><button class="small secondary" data-p="3,3">3 x 3</button><button class="small secondary" data-p="2.5,2.5">2.5 x 2.5</button><button class="small secondary" data-p="4,3">4 x 3</button></div><div class="row"><button class="small secondary" id="plShow">'+(PL.show?'Hide grid':'Show grid')+'</button></div>';
   if(c&&c.err)h+='<div class="msg">'+c.err+'</div>';else if(c)h+='<div class="grid2"><div class="cell"><small>Trees in this shape</small><span class="big">'+c.n.toLocaleString()+'</span></div><div class="cell"><small>Rows</small><span class="big">'+c.rows+'</span></div><div class="cell"><small>Theoretical, area x density</small>'+Math.round(c.theo).toLocaleString()+'</div><div class="cell"><small>Density</small>'+Math.round(c.dens)+' per ha</div></div>';
   const e=Math.hypot(PL.sr,PL.st);h+='<div class="nvStep" style="font-weight:700;margin-top:8px">Squaring check</div><div class="msg">One square has a diagonal of '+f1(e,3)+' m. For a quick right angle, lay a 3-4-5 m triangle (3 m along the baseline, 4 m up the row, 5 m across).</div><div class="row">Measured diagonal <input class="n" id="plDiag" type="number" step="0.01"> m <button class="small secondary" id="plChk">Check</button></div><div class="msg" id="plChkOut"></div>';}
- if(PL.sec==="f"){h+='<div id="plLive" class="msg"></div><div class="msg">Use the tape only for spot checks. GPS keeps you near the right row; the 3 m pole sets the spacing.</div>';}
+ if(PL.sec==="f"){h+='<div class="row"><label>Go to row <input class="n" id="plRow" type="number" min="1" step="1" value="'+(PL.goto||"")+'" style="width:84px"></label><button class="small" id="plRowGo">Show row</button><button class="small secondary" id="plRowClr">Clear</button></div><div id="plRowInfo" class="msg"></div><div id="plLive" class="msg"></div><div class="msg">Use the tape only for spot checks. GPS keeps you near the right row; the 3 m pole sets the spacing.</div>';}
  if(PL.sec==="t"){const run=PL.timer>0,avg=PL.log.length?PL.log.reduce((a,b)=>a+b.pd,0)/PL.log.length:null;h+='<div class="row"><button class="small'+(run?' secondary':'')+'" id="plTim">'+(run?'Stop and save':'Start timer')+'</button><span class="msg" id="plTimV"></span></div><div class="row">People <input class="n" id="plPpl" type="number" min="1" value="'+(PL.ppl||3)+'"> Hectares <input class="n" id="plHa" type="number" step="0.01" min="0.01" value="'+(c&&!c.err?f1(c.ha,2):"1")+'"></div>'+(avg!=null?'<div class="cell"><small>Average, '+PL.log.length+' marked</small><span class="big">'+f1(avg,2)+' person-days per ha</span></div>':'<div class="msg">Time marking a block to get person-days per hectare (8 hour day).</div>')+(PL.log.length?'<div class="msg">'+PL.log.slice(-4).reverse().map(x=>x.d+": "+f1(x.ha,2)+" ha, "+x.ppl+" people, "+Math.round(x.min)+" min = "+f1(x.pd,2)+" pd/ha").join("<br>")+'</div>':'');}
  h+='<div class="row" style="margin-top:8px"><button class="small secondary" id="plCsv">Export stations (CSV)</button></div><div class="msg" id="plMsg"></div>';
  box.innerHTML=h;tick();if(PL.sec==="f")live();}
@@ -6329,6 +6335,8 @@ function build(){css();const box=document.createElement("div");box.id="plBox";co
   if(id==="plDraw"){PL.pick=PL.pick==="poly"?null:"poly";ui();return;}
   if(id==="plDone"){if(PL.pick==="poly"&&PL.poly.length>=3)PL.sec="b";PL.pick=null;ui();scheduleDraw();return;}
   if(id==="plGo"){if(PL.poly.length<3){PL.sec="c";PL.pick="poly";}else{PL.sec="b";PL.pick="A";}ui();return;}
+  if(id==="plRowGo"){const v=parseInt($("plRow").value);PL.goto=v>=1?v:null;ui();const G=PL.goto?rowGeom(PL.goto):null;if(G){const q=G.spans[0],b=(q[0]+q[1])/2,a=G.i*G.sR,f=G.f,x=f.ax+a*f.ux+b*f.vx,y=f.ay+a*f.uy+b*f.vy,sz=vsize();autoFit=false;view.x=x-sz.w/2/view.zoom;view.y=y-sz.h/2/view.zoom;clampView();changed();}scheduleDraw();return;}
+  if(id==="plRowClr"){PL.goto=null;ui();scheduleDraw();return;}
   if(id==="plClrB"){PL.A=null;PL.B=null;PL.pick=null;save();recount();ui();scheduleDraw();return;}
   if(id==="plUndo"){PL.poly.pop();save();recount();ui();scheduleDraw();return;}
   if(id==="plClr"){PL.poly=[];PL.pick=null;save();recount();ui();scheduleDraw();return;}
@@ -6364,7 +6372,12 @@ window.plantSvg=function(sp){
     if(trPx>=7&&rowPx>=5){for(let j=Math.ceil(b0/sT);j<=Math.floor(b1/sT)&&nd<5000;j++){const t=P(a,j*sT);dd+=`M${t.x.toFixed(1)} ${t.y.toFixed(1)}h.01`;nd++;}}}}
   if(dl)o+=`<path d="${dl}" fill="none" stroke="#fff" stroke-width="2.4" opacity=".6"/><path d="${dl}" fill="none" stroke="#2f9e66" stroke-width="1" opacity=".9"/>`;
   if(dd)o+=`<path d="${dd}" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>`;
-  const L=liveInfo();if(L&&Math.abs(L.right)<PL.sr*3){const a=L.i*sR;let hl="";for(const s of spans(ab,a)){const p=P(a,s[0]),q=P(a,s[1]);hl+=`M${p.x.toFixed(1)} ${p.y.toFixed(1)}L${q.x.toFixed(1)} ${q.y.toFixed(1)}`;}if(hl)o+=`<path d="${hl}" fill="none" stroke="#2563b8" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>`;}}
+  const L=liveInfo();if(L&&Math.abs(L.right)<PL.sr*3){const a=L.i*sR;let hl="";for(const s of spans(ab,a)){const p=P(a,s[0]),q=P(a,s[1]);hl+=`M${p.x.toFixed(1)} ${p.y.toFixed(1)}L${q.x.toFixed(1)} ${q.y.toFixed(1)}`;}if(hl)o+=`<path d="${hl}" fill="none" stroke="#2563b8" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>`;}
+  const pill=(x,y,txt,bg)=>`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><g transform="rotate(${(-rotA*180/Math.PI).toFixed(1)})"><rect x="${(-(txt.length*4.6+9)).toFixed(1)}" y="-13" width="${(txt.length*9.2+18).toFixed(1)}" height="26" rx="13" fill="${bg}" stroke="#fff" stroke-width="2.5"/><text text-anchor="middle" y="5.5" font-size="15" font-weight="800" fill="#fff" font-family="sans-serif">${txt}</text></g></g>`;
+  if(PL.goto){const G=rowGeom(PL.goto);if(G){let tl="",first=null;for(const q of G.spans){const p=P(G.i*sR,q[0]),r=P(G.i*sR,q[1]);if(!first)first=p;tl+=`M${p.x.toFixed(1)} ${p.y.toFixed(1)}L${r.x.toFixed(1)} ${r.y.toFixed(1)}`;}
+    o+=`<path d="${tl}" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/><path d="${tl}" fill="none" stroke="#e67e22" stroke-width="5" stroke-linecap="round"/>`;if(first)o+=pill(first.x,first.y-20,"Row "+PL.goto,"#e67e22");}}
+  const Lp=liveInfo(),cc=cnt();
+  if(Lp&&cc&&cc.r0!=null&&gpsPos){const bw=Lp.b/m;if(spans(ab,Lp.i*sR).some(q=>bw>=q[0]-sT&&bw<=q[1]+sT)){const wp=src.geo.toWorld(gpsPos.lat,gpsPos.lon),s2=sp({x:wp[0],y:wp[1]}),on=Math.abs(Lp.right)<=0.3,rn=Lp.i-cc.r0+1;o+=pill(s2.x,s2.y-34,"Row "+rn+(on?" \u2713":""),on?"#23784d":"#2563b8");}}}
  if(f){const p=sp({x:f.ax,y:f.ay}),q=sp({x:PL.B[0],y:PL.B[1]});o+=`<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${q.x.toFixed(1)}" y2="${q.y.toFixed(1)}" stroke="#fff" stroke-width="7" stroke-linecap="round"/><line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${q.x.toFixed(1)}" y2="${q.y.toFixed(1)}" stroke="#2563b8" stroke-width="4" stroke-linecap="round"/>`;
   [[p,"A"],[q,"B"]].forEach(t=>{o+=`<circle cx="${t[0].x.toFixed(1)}" cy="${t[0].y.toFixed(1)}" r="7" fill="#2563b8" stroke="#fff" stroke-width="2"/><text x="${(t[0].x+10).toFixed(1)}" y="${(t[0].y-10).toFixed(1)}" font-size="15" font-weight="700" fill="#2563b8" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="sans-serif">${t[1]}</text>`;});}
  else if(PL.A){const p=sp({x:PL.A[0],y:PL.A[1]});o+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="7" fill="#2563b8" stroke="#fff" stroke-width="2"/>`;}
