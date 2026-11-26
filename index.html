@@ -406,7 +406,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
     <div class="vt" data-g="locate" data-t="Locate" data-i="cross" data-c="cg"><button class="vbtn" id="locateBtn">◎ Me</button><button class="vbtn" id="findBtn">Find</button><button class="vbtn" id="gmBtn">GPS tools</button></div>
     <div class="vt" data-g="travel" data-t="Travel" data-i="nav" data-c="cb"><button class="vbtn" id="navBtn">Navigate</button><button class="vbtn" id="routeBtn">Route</button><button class="vbtn" id="trkBtn">Track</button></div>
     <div class="vt" data-g="places" data-t="Places" data-i="pin" data-c="ct"><button class="vbtn" id="spotBtn">Spots</button><button class="vbtn" id="pinBtn">Pins</button></div>
-    <div class="vt" data-g="tools" data-t="Tools" data-i="ruler" data-c="cs"><button class="vbtn" id="measureBtn">Measure</button><button class="vbtn" id="drawBtn">Draw</button></div>
+    <div class="vt" data-g="tools" data-t="Tools" data-i="ruler" data-c="cs"><button class="vbtn" id="measureBtn">Measure</button><button class="vbtn" id="drawBtn">Draw</button><button class="vbtn" id="plantBtn">Plant</button></div>
     <div class="vt" data-g="view" data-t="View" data-i="max" data-c="cg"><button class="vbtn" id="zoomIn" data-keep="1">Zoom in</button><button class="vbtn" id="zoomOut" data-keep="1">Zoom out</button><button class="vbtn" id="zoomFit">Fit</button><button class="vbtn" id="bgBtn">Online map</button><button class="vbtn" id="fullBtn">⛶ Full</button></div>
     <div class="vt" data-g="orient" data-t="Orient" data-i="rotate" data-c="ct"><span id="rotSlot"><button class="vbtn" id="rotBtn" data-keep="1">⟳ Rotate</button><button class="vbtn" id="lockBtn" data-keep="1">Lock</button></span></div>
     <div class="vt" data-g="exit" data-t="Exit" data-i="exit" data-c="cr"><button class="vbtn" id="backBtn">Back</button><button class="vbtn" id="exitBtn">Exit</button></div>
@@ -607,7 +607,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-122<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-123<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -1111,7 +1111,7 @@ function drawOverlay(){
  overlay.setAttribute("viewBox",`0 0 ${w} ${h}`);overlay.setAttribute("width",w);overlay.setAttribute("height",h);
  if(!src){overlay.innerHTML="";return;}
  const z=view.zoom,sp=p=>({x:(p.x-view.x)*z,y:(p.y-view.y)*z});
- let o=inkSvg(sp);try{if(typeof scanSvg==="function")o+=scanSvg(sp);}catch(e){}try{if(typeof routeSvg==="function")o+=routeSvg(sp);}catch(e){}try{if(typeof roadSvg==="function")o+=roadSvg(sp);}catch(e){}try{if(typeof spotSvg==="function")o+=spotSvg(sp);}catch(e){}try{if(typeof pinSvg==="function")o+=pinSvg(sp);}catch(e){}
+ let o=inkSvg(sp);try{if(typeof scanSvg==="function")o+=scanSvg(sp);}catch(e){}try{if(typeof routeSvg==="function")o+=routeSvg(sp);}catch(e){}try{if(typeof roadSvg==="function")o+=roadSvg(sp);}catch(e){}try{if(typeof plantSvg==="function")o+=plantSvg(sp);}catch(e){}try{if(typeof spotSvg==="function")o+=spotSvg(sp);}catch(e){}try{if(typeof pinSvg==="function")o+=pinSvg(sp);}catch(e){}
  if(hit){const h=sp({x:hit.x,y:hit.y}),r=Math.max(16,hit.r*z*0.9);o+=`<circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="${r.toFixed(1)}" fill="rgba(37,99,184,.12)" stroke="#fff" stroke-width="6"/><circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="${r.toFixed(1)}" fill="none" stroke="#2563b8" stroke-width="3"><animate attributeName="r" values="${(r*0.8).toFixed(1)};${(r*1.25).toFixed(1)};${(r*0.8).toFixed(1)}" dur="1.4s" repeatCount="indefinite"/></circle>`;}
  const pts=measurePoints.map(sp);
  if(pts.length){
@@ -4602,7 +4602,7 @@ details.fold[open]>summary{margin-bottom:8px}
   Object.defineProperty(b,"textContent",{configurable:true,get(){return lb.textContent;},set(v){const t=String(v).replace(/^[^A-Za-z]+/,"");lb.textContent=t;if(flip){const n=flip(t);b.querySelector("svg").outerHTML=ico(n);}}});
  }
  mk("locateBtn","cross","Me");mk("findBtn","search","Find");mk("measureBtn","ruler","Measure");mk("pinBtn","pin","Pins");mk("spotBtn","alert","Spots");mk("trkBtn","rec","Track");
- mk("navBtn","nav","Navigate");mk("routeBtn","route","Route");mk("drawBtn","pencil","Draw");mk("rotBtn","rotate","Rotate");mk("lockBtn","lock","Lock",t=>/locked/i.test(t)?"lock":"lock");
+ mk("navBtn","nav","Navigate");mk("routeBtn","route","Route");mk("drawBtn","pencil","Draw");mk("plantBtn","grid","Plant");mk("rotBtn","rotate","Rotate");mk("lockBtn","lock","Lock",t=>/locked/i.test(t)?"lock":"lock");
  mk("gmBtn","sliders","GPS tools");mk("fullBtn","max","Full",t=>/exit/i.test(t)?"min":"max");
  mk("bgBtn","map","Online map");$$("bgBtn").onclick=()=>setBg(!bgOn);$$("bgBtn").classList.toggle("on",bgOn);mk("zoomIn","plus","Zoom in");mk("zoomOut","minus","Zoom out");mk("zoomFit","fit","Fit",t=>/previous/i.test(t)?"undo":"fit");mk("backBtn","back","Back");mk("exitBtn","exit","Exit");
  /* grouped map menu: seven big 3D buttons, each opens a small tray of its tools */
@@ -6256,6 +6256,101 @@ window.roadSvg=function(sp){
   if(id==="rdUse"||id==="rdUse2"){const pts=rdPoints(R);if(window.__routeApi&&pts.length>1){try{window.__navClose();}catch(x){}window.__routeApi.setPlan(pts,rdTitle(R));RDR=null;RDR2=null;rdMsg("Loaded into the planner. You can edit, save or follow it.");}}
   if(id==="rdNav"||id==="rdNav2"){const pts=rdPoints(R);if(window.__routeApi&&pts.length>1){const t=rdTitle(R);RDR=null;RDR2=null;try{window.__navClose();}catch(x){}window.__routeApi.follow(pts,t);}}
  });
+})();
+</script>
+<script>
+(function(){
+const LS="pscPlant|",$=id=>document.getElementById(id);
+const PL={key:null,name:"",poly:[],A:null,B:null,sr:3,st:3,pick:null,timer:0,log:[],sec:"c",cnt:null,show:true,lt:0};
+const f1=(n,d)=>Number.isFinite(n)?n.toFixed(d==null?1:d):"-";
+function keyNow(){try{return (typeof rdKey==="function"&&rdKey())||"x";}catch(e){return "x";}}
+function load(){const k=keyNow();PL.key=k;let o=null;try{o=JSON.parse(localStorage.getItem(LS+k)||"null");}catch(e){}o=o||{};
+ PL.name=o.name||"";PL.poly=o.poly||[];PL.A=o.A||null;PL.B=o.B||null;PL.sr=o.sr||3;PL.st=o.st||3;PL.timer=o.timer||0;PL.log=o.log||[];PL.cnt=null;PL.pick=null;if(PL.built)ui();}
+function save(){try{localStorage.setItem(LS+PL.key,JSON.stringify({name:PL.name,poly:PL.poly,A:PL.A,B:PL.B,sr:PL.sr,st:PL.st,timer:PL.timer,log:PL.log}));}catch(e){}}
+function frame(){if(!PL.A||!PL.B)return null;const dx=PL.B[0]-PL.A[0],dy=PL.B[1]-PL.A[1],L=Math.hypot(dx,dy);if(L<1e-9)return null;const ux=dx/L,uy=dy/L;let vx=-uy,vy=ux;
+ if(PL.poly.length>=3){let cx=0,cy=0;PL.poly.forEach(p=>{cx+=p[0];cy+=p[1];});cx/=PL.poly.length;cy/=PL.poly.length;if((cx-PL.A[0])*vx+(cy-PL.A[1])*vy<0){vx=-vx;vy=-vy;}}
+ return {ax:PL.A[0],ay:PL.A[1],ux,uy,vx,vy,L};}
+function polyAB(f){return PL.poly.map(p=>{const dx=p[0]-f.ax,dy=p[1]-f.ay;return [dx*f.ux+dy*f.uy,dx*f.vx+dy*f.vy];});}
+function areaM2(){const P=PL.poly;if(P.length<3)return 0;let s=0;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length];s+=p[0]*q[1]-q[0]*p[1];}const m=src.geo.mpu;return Math.abs(s)/2*m*m;}
+function spans(ab,a){const xs=[];for(let i=0;i<ab.length;i++){const p=ab[i],q=ab[(i+1)%ab.length];if((p[0]<=a&&q[0]>a)||(q[0]<=a&&p[0]>a))xs.push(p[1]+(a-p[0])*(q[1]-p[1])/(q[0]-p[0]));}
+ xs.sort((x,y)=>x-y);const r=[];for(let i=0;i+1<xs.length;i+=2)r.push([xs[i],xs[i+1]]);return r;}
+function count(){const f=frame();if(!f||PL.poly.length<3||!src||!src.geo)return null;const m=src.geo.mpu,sR=PL.sr/m,sT=PL.st/m,ab=polyAB(f);let a0=1e18,a1=-1e18;ab.forEach(p=>{a0=Math.min(a0,p[0]);a1=Math.max(a1,p[0]);});
+ const i0=Math.ceil(a0/sR),i1=Math.floor(a1/sR);if(i1-i0>200000)return {err:"Spacing is too small for this area."};
+ let n=0,rows=0,r0=null;for(let i=i0;i<=i1;i++){let c=0;for(const s of spans(ab,i*sR)){const k=Math.floor(s[1]/sT)-Math.ceil(s[0]/sT)+1;if(k>0)c+=k;}if(c){n+=c;rows++;if(r0===null)r0=i;}}
+ const ha=areaM2()/1e4,dens=10000/(PL.sr*PL.st);return {n,rows,r0,ha,dens,theo:dens*ha};}
+function recount(){PL.cnt=count();}
+function cnt(){if(!PL.cnt)recount();return PL.cnt;}
+function liveInfo(){if(!gpsPos||!src||!src.geo)return null;const f=frame();if(!f)return null;const w=src.geo.toWorld(gpsPos.lat,gpsPos.lon),m=src.geo.mpu,dx=w[0]-f.ax,dy=w[1]-f.ay,a=(dx*f.ux+dy*f.uy)*m,b=(dx*f.vx+dy*f.vy)*m;
+ const i=Math.round(a/PL.sr),lat=a-i*PL.sr,rs=-f.vy*f.ux+f.vx*f.uy,right=lat*rs,ahead=(Math.floor(b/PL.st)+1)*PL.st-b;return {i,right,ahead,acc:gpsPos.acc||0,a,b};}
+function live(){const el=$("plLive");if(!el)return;const c=cnt(),L=liveInfo();if(!gpsPos){el.textContent="Waiting for GPS. Tap Locate on the map first.";return;}
+ if(!L){el.textContent="Set the baseline first.";return;}
+ const rn=(c&&c.r0!=null)?L.i-c.r0+1:L.i,side=Math.abs(L.right)<0.05?"on the row line":f1(Math.abs(L.right),1)+" m "+(L.right>0?"right":"left")+" of the row line, move "+(L.right>0?"left":"right");
+ el.innerHTML="<b>Row "+rn+"</b>: "+side+".<br>Next tree "+f1(L.ahead,1)+" m ahead.<br><span style='color:#5d7385'>GPS about "+f1(L.acc,0)+" m"+(L.acc>3?". Too rough to place trees; use it to stay near the line and measure the spacing.":".")+"</span>";}
+function css(){const s=document.createElement("style");s.textContent="#plBox{display:none;position:absolute;left:8px;right:8px;bottom:8px;max-height:60%;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 12px;z-index:31;box-shadow:0 8px 24px rgba(37,99,184,.18)}#plBox.open{display:block}#viewerBox.full #plBox{bottom:calc(8px + env(safe-area-inset-bottom))}#plBox .rbTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#plBox .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}#plBox .small{padding:7px 10px;font-size:12.5px;border-radius:10px;white-space:nowrap}#plBox input{padding:7px 9px;font-size:15px;margin:0}#plBox input.n{width:72px}#plBox .secs{display:flex;gap:4px;margin:4px 0 6px}#plBox .secs button{flex:1;padding:6px 2px;font-size:12px;border-radius:9px}#plBox .secs button.on{background:var(--greenSoft);border-color:var(--green)}#plBox .msg{color:var(--muted);font-size:13px;margin:4px 0}#plBox .big{font-size:20px;font-weight:700;color:var(--ink)}#plBox .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}#plBox .cell{background:var(--panel);border-radius:10px;padding:8px}#plBox .cell small{display:block;color:var(--muted)}";document.head.appendChild(s);}
+function ui(){const box=$("plBox");if(!box)return;const c=cnt(),secs=[["c","Area"],["b","Baseline"],["g","Grid"],["f","Field"],["t","Time"]];
+ let h='<div class="rbTop"><b>Planting grid</b><span><button class="small secondary" id="plClose">Close</button></span></div><div class="secs">'+secs.map(s=>'<button type="button" class="secondary'+(PL.sec===s[0]?' on':'')+'" data-s="'+s[0]+'">'+s[1]+'</button>').join("")+'</div>';
+ if(PL.sec==="c"){h+='<div class="row"><input id="plName" type="text" placeholder="Compartment ID, e.g. F023A" value="'+(PL.name||"").replace(/"/g,"")+'" style="flex:1;min-width:140px"></div><div class="row"><button class="small'+(PL.pick==="poly"?'':' secondary')+'" id="plDraw">'+(PL.pick==="poly"?'Tap the corners...':'Draw boundary')+'</button><button class="small secondary" id="plUndo">Undo</button><button class="small secondary" id="plClr">Clear</button></div><div class="msg">Tap each corner of the compartment on the map, in order. '+PL.poly.length+' corner'+(PL.poly.length===1?'':'s')+' set.</div>'+(c&&!c.err?'<div class="grid2"><div class="cell"><small>Area</small><span class="big">'+f1(c.ha,2)+' ha</span></div><div class="cell"><small>Horizontal, from the map</small>Planting area</div></div>':'');}
+ if(PL.sec==="b"){h+='<div class="row"><button class="small'+(PL.pick==="A"?'':' secondary')+'" id="plA">'+(PL.A?'Move point A':'Set point A')+'</button><button class="small'+(PL.pick==="B"?'':' secondary')+'" id="plB">'+(PL.B?'Move point B':'Set point B')+'</button></div><div class="msg">Put the baseline along something you can find on the ground, such as a road edge or boundary. Rows run at 90 degrees from it, into the compartment.'+(frame()?' Length '+f1(frame().L*src.geo.mpu,0)+' m.':'')+'</div>';}
+ if(PL.sec==="g"){h+='<div class="row">Row spacing <input class="n" id="plSr" type="number" step="0.1" min="0.5" value="'+PL.sr+'"> m &nbsp; Tree spacing <input class="n" id="plSt" type="number" step="0.1" min="0.5" value="'+PL.st+'"> m</div><div class="row"><button class="small secondary" data-p="3,3">3 x 3</button><button class="small secondary" data-p="2.5,2.5">2.5 x 2.5</button><button class="small secondary" data-p="4,3">4 x 3</button></div><div class="row"><button class="small secondary" id="plShow">'+(PL.show?'Hide grid':'Show grid')+'</button></div>';
+  if(c&&c.err)h+='<div class="msg">'+c.err+'</div>';else if(c)h+='<div class="grid2"><div class="cell"><small>Trees in this shape</small><span class="big">'+c.n.toLocaleString()+'</span></div><div class="cell"><small>Rows</small><span class="big">'+c.rows+'</span></div><div class="cell"><small>Theoretical, area x density</small>'+Math.round(c.theo).toLocaleString()+'</div><div class="cell"><small>Density</small>'+Math.round(c.dens)+' per ha</div></div>';else h+='<div class="msg">Draw the boundary and set the baseline to see the tree count.</div>';
+  const e=Math.hypot(PL.sr,PL.st);h+='<div class="nvStep" style="font-weight:700;margin-top:8px">Squaring check</div><div class="msg">One square has a diagonal of '+f1(e,3)+' m. For a quick right angle, lay a 3-4-5 m triangle (3 m along the baseline, 4 m up the row, 5 m across).</div><div class="row">Measured diagonal <input class="n" id="plDiag" type="number" step="0.01"> m <button class="small secondary" id="plChk">Check</button></div><div class="msg" id="plChkOut"></div>';}
+ if(PL.sec==="f"){h+='<div id="plLive" class="msg"></div><div class="msg">Use the tape only for spot checks. GPS keeps you near the right row; the 3 m pole sets the spacing.</div>';}
+ if(PL.sec==="t"){const run=PL.timer>0,avg=PL.log.length?PL.log.reduce((a,b)=>a+b.pd,0)/PL.log.length:null;h+='<div class="row"><button class="small'+(run?' secondary':'')+'" id="plTim">'+(run?'Stop and save':'Start timer')+'</button><span class="msg" id="plTimV"></span></div><div class="row">People <input class="n" id="plPpl" type="number" min="1" value="'+(PL.ppl||3)+'"> Hectares <input class="n" id="plHa" type="number" step="0.01" min="0.01" value="'+(c&&!c.err?f1(c.ha,2):"1")+'"></div>'+(avg!=null?'<div class="cell"><small>Average, '+PL.log.length+' marked</small><span class="big">'+f1(avg,2)+' person-days per ha</span></div>':'<div class="msg">Time marking a block to get person-days per hectare (8 hour day).</div>')+(PL.log.length?'<div class="msg">'+PL.log.slice(-4).reverse().map(x=>x.d+": "+f1(x.ha,2)+" ha, "+x.ppl+" people, "+Math.round(x.min)+" min = "+f1(x.pd,2)+" pd/ha").join("<br>")+'</div>':'');}
+ h+='<div class="row" style="margin-top:8px"><button class="small secondary" id="plCsv">Export stations (CSV)</button></div><div class="msg" id="plMsg"></div>';
+ box.innerHTML=h;tick();if(PL.sec==="f")live();}
+function tick(){const v=$("plTimV");if(v&&PL.timer>0){const m=(Date.now()-PL.timer)/60000;v.textContent=Math.floor(m/60)+" h "+Math.round(m%60)+" min";}}
+function pickOff(){PL.pick=null;}
+function msg(t){const m=$("plMsg");if(m)m.textContent=t;}
+async function csv(){const f=frame(),c=cnt();if(!f||!c||c.err){msg("Draw the boundary and set the baseline first.");return;}
+ const m=src.geo.mpu,sR=PL.sr/m,sT=PL.st/m,ab=polyAB(f);let a0=1e18,a1=-1e18;ab.forEach(p=>{a0=Math.min(a0,p[0]);a1=Math.max(a1,p[0]);});
+ const nm=(PL.name||"COMP").replace(/[^A-Za-z0-9_-]/g,"");let t="compartment,row,tree,id,lat,lon\n",rn=0;
+ for(let i=Math.ceil(a0/sR);i<=Math.floor(a1/sR);i++){const a=i*sR;let tn=0,any=false;for(const s of spans(ab,a)){for(let j=Math.ceil(s[0]/sT);j<=Math.floor(s[1]/sT);j++){if(!any){rn++;any=true;}tn++;const b=j*sT,ll=src.geo.toLL(f.ax+a*f.ux+b*f.vx,f.ay+a*f.uy+b*f.vy);t+=nm+","+rn+","+tn+","+nm+"-R"+String(rn).padStart(3,"0")+"-T"+String(tn).padStart(3,"0")+","+ll.lat.toFixed(7)+","+ll.lon.toFixed(7)+"\n";}}}
+ try{msg(await shareText("planting-stations-"+nm+".csv",t,"text/csv","Planting stations"));}catch(e){msg("Could not export: "+e.message);}}
+function build(){css();const box=document.createElement("div");box.id="plBox";const vb=$("viewerBox");if(!vb)return;vb.appendChild(box);PL.built=true;
+ box.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;const id=t.id;
+  if(t.dataset.s){PL.sec=t.dataset.s;pickOff();ui();return;}
+  if(t.dataset.p){const p=t.dataset.p.split(",");PL.sr=+p[0];PL.st=+p[1];save();recount();ui();scheduleDraw();return;}
+  if(id==="plClose"){box.classList.remove("open");pickOff();$("plantBtn").classList.remove("on");scheduleDraw();return;}
+  if(id==="plDraw"){PL.pick=PL.pick==="poly"?null:"poly";ui();return;}
+  if(id==="plUndo"){PL.poly.pop();save();recount();ui();scheduleDraw();return;}
+  if(id==="plClr"){PL.poly=[];PL.pick=null;save();recount();ui();scheduleDraw();return;}
+  if(id==="plA"||id==="plB"){PL.pick=PL.pick===id.slice(2)?null:id.slice(2);ui();return;}
+  if(id==="plShow"){PL.show=!PL.show;ui();scheduleDraw();return;}
+  if(id==="plChk"){const d=parseFloat($("plDiag").value),e2=Math.hypot(PL.sr,PL.st),o=$("plChkOut");if(!(d>0)){o.textContent="Enter the measured diagonal.";return;}
+   const cs=(PL.sr*PL.sr+PL.st*PL.st-d*d)/(2*PL.sr*PL.st),ang=Math.acos(Math.max(-1,Math.min(1,cs)))*180/Math.PI,err=ang-90;
+   o.textContent="Expected "+f1(e2,3)+" m. Measured "+f1(d,2)+" m ("+(d>=e2?"+":"")+f1((d-e2)*100,0)+" cm). The corner is about "+f1(Math.abs(err),1)+" degrees "+(Math.abs(err)<0.5?"off: good.":(err>0?"too open":"too tight")+(Math.abs(err)>1.5?". Adjust and measure again.":"."));return;}
+  if(id==="plTim"){if(PL.timer>0){const min=(Date.now()-PL.timer)/60000,ppl=Math.max(1,parseInt($("plPpl").value)||3),ha=Math.max(0.01,parseFloat($("plHa").value)||1);PL.ppl=ppl;PL.log.push({d:new Date().toISOString().slice(0,10),min,ppl,ha,pd:min*ppl/480/ha});PL.timer=0;}else PL.timer=Date.now();save();ui();return;}
+  if(id==="plCsv"){csv();return;}});
+ box.addEventListener("input",e=>{const t=e.target;if(t.id==="plName"){PL.name=t.value;save();}
+  if(t.id==="plSr"||t.id==="plSt"){const v=parseFloat(t.value);if(v>=0.5){if(t.id==="plSr")PL.sr=v;else PL.st=v;save();recount();scheduleDraw();const c=cnt();}}});
+ box.addEventListener("change",e=>{if(e.target.id==="plSr"||e.target.id==="plSt")ui();});
+ const prev=window.__rdTap;window.__rdTap=function(cx,cy){if(PL.pick&&src&&src.geo){const m=localXY(cx,cy),z=view.zoom,w=[view.x+m.x/z,view.y+m.y/z];
+   if(PL.pick==="poly"){PL.poly.push(w);}else if(PL.pick==="A"){PL.A=w;PL.pick=null;}else if(PL.pick==="B"){PL.B=w;PL.pick=null;}
+   save();recount();ui();scheduleDraw();return true;}return prev?prev(cx,cy):false;};
+ $("plantBtn").onclick=()=>{if(!src||!src.geo){const h=$("measureHint");if(h)h.textContent="Open a georeferenced map first.";return;}load();const on=!box.classList.contains("open");box.classList.toggle("open",on);$("plantBtn").classList.toggle("on",on);if(!on)pickOff();ui();scheduleDraw();};
+ setInterval(()=>{if(box.classList.contains("open")){tick();if(PL.sec==="f")live();}},1000);}
+window.plantSvg=function(sp){
+ if(!src||!src.geo||!PL.built)return "";if(PL.key!==keyNow())load();
+ const open=$("plBox").classList.contains("open");if(!open&&!PL.show)return "";if(!open&&!PL.poly.length&&!PL.A)return "";
+ let o="";const z=view.zoom;
+ if(PL.poly.length){const pts=PL.poly.map(p=>sp({x:p[0],y:p[1]})),l=pts.map(p=>p.x.toFixed(1)+","+p.y.toFixed(1)).join(" ");
+  o+=PL.poly.length>=3?`<polygon points="${l}" fill="rgba(47,158,102,.1)" stroke="#fff" stroke-width="6" stroke-linejoin="round"/><polygon points="${l}" fill="none" stroke="#23784d" stroke-width="3" stroke-linejoin="round"/>`:`<polyline points="${l}" fill="none" stroke="#23784d" stroke-width="3"/>`;
+  if(open)pts.forEach((p,i)=>{o+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="#23784d" stroke="#fff" stroke-width="2"/>`;});}
+ const f=frame();
+ if(f&&PL.show&&PL.poly.length>=3){const m=src.geo.mpu,sR=PL.sr/m,sT=PL.st/m,ab=polyAB(f),sz=vsize();
+  const cs=[[view.x,view.y],[view.x+sz.w/z,view.y],[view.x,view.y+sz.h/z],[view.x+sz.w/z,view.y+sz.h/z]].map(p=>{const dx=p[0]-f.ax,dy=p[1]-f.ay;return [dx*f.ux+dy*f.uy,dx*f.vx+dy*f.vy];});
+  const va0=Math.min(...cs.map(c=>c[0])),va1=Math.max(...cs.map(c=>c[0])),vb0=Math.min(...cs.map(c=>c[1])),vb1=Math.max(...cs.map(c=>c[1])),rowPx=sR*z,trPx=sT*z,kRow=rowPx<5?Math.ceil(5/rowPx):1;
+  const P=(a,b)=>sp({x:f.ax+a*f.ux+b*f.vx,y:f.ay+a*f.uy+b*f.vy});let dl="",dd="",nd=0,nr=0;
+  for(let i=Math.ceil(Math.ceil(va0/sR)/kRow)*kRow;i<=Math.floor(va1/sR)&&nr<700;i+=kRow){const a=i*sR;nr++;for(const s of spans(ab,a)){const b0=Math.max(s[0],vb0),b1=Math.min(s[1],vb1);if(b1<=b0)continue;const p=P(a,b0),q=P(a,b1);dl+=`M${p.x.toFixed(1)} ${p.y.toFixed(1)}L${q.x.toFixed(1)} ${q.y.toFixed(1)}`;
+    if(trPx>=7&&rowPx>=5){for(let j=Math.ceil(b0/sT);j<=Math.floor(b1/sT)&&nd<5000;j++){const t=P(a,j*sT);dd+=`M${t.x.toFixed(1)} ${t.y.toFixed(1)}h.01`;nd++;}}}}
+  if(dl)o+=`<path d="${dl}" fill="none" stroke="#fff" stroke-width="2.4" opacity=".6"/><path d="${dl}" fill="none" stroke="#2f9e66" stroke-width="1" opacity=".9"/>`;
+  if(dd)o+=`<path d="${dd}" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>`;
+  const L=liveInfo();if(L&&Math.abs(L.right)<PL.sr*3){const a=L.i*sR;let hl="";for(const s of spans(ab,a)){const p=P(a,s[0]),q=P(a,s[1]);hl+=`M${p.x.toFixed(1)} ${p.y.toFixed(1)}L${q.x.toFixed(1)} ${q.y.toFixed(1)}`;}if(hl)o+=`<path d="${hl}" fill="none" stroke="#2563b8" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>`;}}
+ if(f){const p=sp({x:f.ax,y:f.ay}),q=sp({x:PL.B[0],y:PL.B[1]});o+=`<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${q.x.toFixed(1)}" y2="${q.y.toFixed(1)}" stroke="#fff" stroke-width="7" stroke-linecap="round"/><line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${q.x.toFixed(1)}" y2="${q.y.toFixed(1)}" stroke="#2563b8" stroke-width="4" stroke-linecap="round"/>`;
+  [[p,"A"],[q,"B"]].forEach(t=>{o+=`<circle cx="${t[0].x.toFixed(1)}" cy="${t[0].y.toFixed(1)}" r="7" fill="#2563b8" stroke="#fff" stroke-width="2"/><text x="${(t[0].x+10).toFixed(1)}" y="${(t[0].y-10).toFixed(1)}" font-size="15" font-weight="700" fill="#2563b8" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="sans-serif">${t[1]}</text>`;});}
+ else if(PL.A){const p=sp({x:PL.A[0],y:PL.A[1]});o+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="7" fill="#2563b8" stroke="#fff" stroke-width="2"/>`;}
+ return o;};
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",build);else build();
 })();
 </script>
 <script>
