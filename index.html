@@ -336,6 +336,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
   <div class="secLbl">Options</div>
   <label class="opt"><span class="oi" data-ic="archive"></span><span class="ot"><b>Tidy up after preparing</b><small>Remove the PDF from this list once prepared</small></span><input type="checkbox" id="autoDrop"><i class="sw"></i></label>
   <label class="opt"><span class="oi" data-ic="star"></span><span class="ot"><b>Extra-sharp when zooming</b><small>Keeps a copy of the PDF; uses more memory</small></span><input type="checkbox" id="liveOn"><i class="sw"></i></label>
+  <div id="sharpTime" style="font-size:12px;color:#5b6b7a;margin-top:8px">Last sharpen: not yet</div>
   <button type="button" id="sharpReset" class="secondary" style="width:100%;margin-top:8px">Restore full sharpness</button>
   <label class="opt"><span class="oi" data-ic="sliders"></span><span class="ot"><b>Keep screen on</b><small>While a map is open</small></span><input type="checkbox" id="awakeOn"><i class="sw"></i></label>
  </div>
@@ -607,7 +608,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-128<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-129<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -1172,6 +1173,7 @@ async function renderNow(){
   applyBaseTransform();
   $("renderChip").style.display="none";
   try{sessionStorage.removeItem("pscRender");}catch(e){}
+  if(src.warm&&!src.needLive(s)&&src.vecS&&s>src.vecS*0.4){setTimeout(()=>{try{src.warm();}catch(e){}},400);}
   if(src.renderLive&&src.needLive&&src.needLive(s)){
    $("renderChip").textContent="Sharpening...";$("renderChip").style.display="block";
    try{sessionStorage.setItem("pscLiveRender","1");}catch(e){}
@@ -2297,7 +2299,7 @@ async function openLightDoc(file){
  tr.requestDataRange=(b,e)=>{file.slice(b,e).arrayBuffer().then(buf=>{try{tr.onDataRange(b,new Uint8Array(buf));}catch(x){}}).catch(()=>{});};
  return pdfjsLib.getDocument({range:tr,length:len,disableAutoFetch:true,disableStream:true,rangeChunkSize:1<<20,isEvalSupported:false,useWorkerFetch:false,maxImageSize:100000});
 }
-function tileSrcProps(meta){const r=makeTileRender(meta);return {render:r,renderLive:r.live,needLive:r.need,dispose:r.dispose};}
+function tileSrcProps(meta){const r=makeTileRender(meta);return {render:r,renderLive:r.live,needLive:r.need,dispose:r.dispose,warm:r.warm,vecS:meta.vec?meta.vec.S:0};}
 function makeTileRender(meta){
  const cache=new Map();
  let live=null,liveFail=false;
@@ -2354,12 +2356,17 @@ function makeTileRender(meta){
   }
   ctx.setTransform(1,0,0,1,0,0);
   if(livePage){
+   const t0=performance.now();
    rt=livePage.render({canvasContext:ctx,canvas:ctx.canvas,viewport:livePage.getViewport({scale:1}),transform:[s,0,0,s,-x*s,-y*s],background:"rgba(255,255,255,0)"});
    await rt.promise;
+   try{const ms=Math.round(performance.now()-t0);window.__sharpMs=ms;const d=$("pdfDiagnostics");if(d&&ms>0)d.dataset.sharp=ms;const hh=$("sharpTime");if(hh)hh.textContent="Last sharpen: "+(ms/1000).toFixed(1)+" s";}catch(e){}
   }
   return true;
  };
+ let warmed=false;
+ const warm=async()=>{if(warmed||live&&live.ops)return;warmed=true;try{const pg=await ensureLive();if(pg&&live&&!live.ops){live.ops=1;await pg.getOperatorList();}}catch(e){}};
  const render=(ctx,s,x,y,W,H,setTask)=>draw(ctx,s,x,y,W,H,setTask,false);
+ render.warm=warm;
  render.live=(ctx,s,x,y,W,H,setTask)=>draw(ctx,s,x,y,W,H,setTask,true);
  render.need=s=>!!meta.live&&liveEnabled()&&!liveFail&&(!meta.vec||s>meta.vec.S*0.8);
  render.dispose=()=>{if(live){try{live.task.destroy();}catch(e){}live=null;}};
