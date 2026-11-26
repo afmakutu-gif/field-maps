@@ -607,7 +607,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-127<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-128<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -1444,9 +1444,11 @@ async function runFind(){
 }
 function goToText(it){
  if(window.__rdWantB){const f=window.__rdWantB;window.__rdWantB=null;try{f(it);}catch(e){}}
- const sz=vsize(),fz=Math.min(sz.w/src.w,sz.h/src.h);
- let z=sz.w*0.1/Math.max(it[3],6);z=clamp(Math.min(Math.max(z,fz*2.5),fz*6),minZoom,maxZoom);autoFit=false;
- view.zoom=z;view.x=it[1]-sz.w/2/z;view.y=it[2]-sz.h/2/z;clampView();changed();
+ const sz=vsize(),fz=Math.min(sz.w/src.w,sz.h/src.h);let z,cx=it[1],cy=it[2];
+ const pb=(()=>{try{return window.__plFit&&window.__plFit(normKey(it[0]));}catch(e){return null;}})();
+ if(pb){const bw=Math.max(pb.x1-pb.x0,1)*1.3,bh=Math.max(pb.y1-pb.y0,1)*1.3;z=clamp(Math.min(sz.w/bw,sz.h/bh),minZoom,maxZoom);cx=(pb.x0+pb.x1)/2;cy=(pb.y0+pb.y1)/2;}
+ else{z=src.geo?Math.min(sz.w,sz.h)*(src.geo.mpu||1)/450:sz.w*0.1/Math.max(it[3],6);z=clamp(Math.max(z,fz*2.5),minZoom,maxZoom);}
+ autoFit=false;view.zoom=z;view.x=cx-sz.w/2/z;view.y=cy-sz.h/2/z;clampView();changed();
  hit={x:it[1],y:it[2],r:Math.max(it[3]*0.8,10)};clearTimeout(hitTimer);hitTimer=setTimeout(()=>{hit=null;scheduleDraw();},12000);
  $("findBox").style.display="none";try{$("findInput").blur();}catch(e){}
  $("measureHint").textContent="Found: "+it[0];scheduleDraw();
@@ -1514,6 +1516,7 @@ function slightZoom(targetM){
  const tz=clamp(v.w*mpu/targetM,fz*2.5,fz*10);
  if(view.zoom<tz*0.98){view.zoom=Math.min(tz,maxZoom);autoFit=false;}
 }
+function gpsZoom(targetM){if(!src||!src.geo)return;const v=vsize(),mpu=src.geo.mpu||1,fz=Math.min(v.w/src.w,v.h/src.h),tz=clamp(Math.min(v.w,v.h)*mpu/targetM,fz*2.5,maxZoom);if(view.zoom<tz*0.98){view.zoom=tz;autoFit=false;}}
 function hudPad(){try{const f=$("followHud");return (f&&f.style.display==="block")?f.offsetHeight+54:0;}catch(e){return 0;}}
 function centerOnMe(){
  if(!src||!src.geo||!gpsPos)return;autoFit=false;
@@ -1566,7 +1569,7 @@ function gpsFix(pt){
  if(src&&src.geo){
   const w=src.geo.toWorld(pt.lat,pt.lon),inside=w[0]>=0&&w[1]>=0&&w[0]<=src.w&&w[1]<=src.h;
   $("geoStatus").textContent=inside?`My position: ${pt.lat.toFixed(6)}, ${pt.lon.toFixed(6)} (±${Math.round(pt.acc)} m)${getFix()?" · fix applied":""}${src.geo.fitError>3?" · map fit ±"+Math.round(src.geo.fitError)+" m":""}${pt.acc>60?" · weak signal, move to open sky":""}`:"You are outside the area of this map.";
-  if(followFirst){followFirst=false;if(inside){slightZoom(700);centerOnMe();}}
+  if(followFirst){followFirst=false;if(inside){gpsZoom(300);centerOnMe();}}
   else if(meLock&&inside&&!fixing)centerOnMe();
  }
  scheduleDraw();recFabUI();window.__lastFix=Date.now();
@@ -1590,7 +1593,7 @@ $("locateBtn").onclick=()=>{
   followFirst=true;meLock=true;$("locateBtn").classList.add("on");$("stopLoc").style.display="inline-flex";
   $("geoStatus").textContent="Finding your position...";
   locWatch=navigator.geolocation.watchPosition(p=>gpsFix(toPos(p)),err=>{if(manualPos){$("geoStatus").textContent="Phone location is blocked here. Showing the position you typed.";gpsFix(manualPos);centerOnMe();}else{$("geoStatus").textContent=gpsError(err)+" You can type your position on the GPS tab.";stopLocate();}},{enableHighAccuracy:true,maximumAge:2000,timeout:30000});
- }else{meLock=true;lockUI();slightZoom(700);centerOnMe();}
+ }else{meLock=true;lockUI();gpsZoom(300);centerOnMe();}
 };
 $("stopLoc").onclick=stopLocate;
 
@@ -6337,6 +6340,7 @@ function build(){css();const box=document.createElement("div");box.id="plBox";co
    save();recount();ui();scheduleDraw();return true;}return prev?prev(cx,cy):false;};
  $("plantBtn").onclick=()=>{if(!src||!src.geo){const h=$("measureHint");if(h)h.textContent="Open a georeferenced map first.";return;}load();const on=!box.classList.contains("open");box.classList.toggle("open",on);$("plantBtn").classList.toggle("on",on);if(!on)pickOff();ui();scheduleDraw();};
  setInterval(()=>{if(box.classList.contains("open")){tick();if(PL.sec==="f")live();}},1000);}
+window.__plFit=function(k){if(!PL.built||!src||!src.geo)return null;if(PL.key!==keyNow())load();if(PL.poly.length<3||!PL.name)return null;try{if(typeof normKey==="function"&&normKey(PL.name)!==k)return null;}catch(e){return null;}let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;PL.poly.forEach(q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);});return {x0,y0,x1,y1};};
 window.plantSvg=function(sp){
  if(!src||!src.geo||!PL.built)return "";if(PL.key!==keyNow())load();
  const open=$("plBox").classList.contains("open");if(!open&&!PL.show)return "";if(!open&&!PL.poly.length&&!PL.A)return "";
