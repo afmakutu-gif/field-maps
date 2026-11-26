@@ -607,7 +607,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-121<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-122<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -3233,6 +3233,7 @@ openDB().catch(()=>{db=null;$("recordStatus").textContent="Browser storage unava
 
 $("sharpReset").onclick=()=>{try{["pscCap","pscCapT","pscNoLive","pscNoLiveT","pscRender","pscLiveRender"].forEach(k=>sessionStorage.removeItem(k));localStorage.setItem("pscLive","1");localStorage.removeItem("pscNoLive");}catch(e){}pxCap=3600000;try{$("liveOn").checked=true;}catch(e){}try{rendered=null;if(src)scheduleRender(50);}catch(e){}try{$("pdfDiagnostics").textContent="Full sharpness restored. Open the map to redraw it.";}catch(e){}};
 try{const lo=$("liveOn");lo.checked=liveEnabled();lo.onchange=()=>{try{localStorage.setItem("pscLive",lo.checked?"1":"0");if(lo.checked){localStorage.removeItem("pscNoLive");sessionStorage.removeItem("pscNoLive");}}catch(e){}};}catch(e){}
+try{const hv=JSON.parse(sessionStorage.getItem("pscHeavy")||"null");if(hv){sessionStorage.removeItem("pscHeavy");if(Date.now()-hv.t<120000){const m="The browser crashed right after a heavy road drawing (zoom "+hv.z+", "+hv.ways+" road pieces, "+hv.chars+" characters of drawing). Please share this line with Claude.";setTimeout(()=>{try{$("pdfDiagnostics").textContent=m;}catch(e){}},700);}}}catch(e){}
 try{if(sessionStorage.getItem("pscLiveRender")==="1"){sessionStorage.removeItem("pscLiveRender");sessionStorage.setItem("pscNoLive","1");sessionStorage.setItem("pscNoLiveT",String(Date.now()));setTimeout(()=>{try{$("pdfDiagnostics").textContent="Extra-sharp mode ran out of memory and was paused until you reopen the app. Close other apps for best results.";}catch(e){}},500);}}catch(e){}
 (async()=>{
  await renderPrepared();
@@ -6097,9 +6098,17 @@ window.roadSvg=function(sp){
   if(src&&src.geo&&window.__osm&&window.__osm.ways.length&&window.__osm.key===rdKey()&&localStorage.getItem("pscOsmShow")!=="0"){
    const O=window.__osm;if(!O.W||O.srcRef!==src){O.srcRef=src;O.W=O.ways.map(w=>{const P=w[1],a=new Float32Array(P.length);let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;for(let i=0;i+1<P.length;i+=2){const q=src.geo.toWorld(P[i],P[i+1]);a[i]=q[0];a[i+1]=q[1];if(q[0]<x0)x0=q[0];if(q[0]>x1)x1=q[0];if(q[1]<y0)y0=q[1];if(q[1]>y1)y1=q[1];}return {c:w[0],a,b:[x0,y0,x1,y1]};});}
    const sz=vsize(),vx0=view.x,vy0=view.y,vx1=view.x+sz.w/view.zoom,vy1=view.y+sz.h/view.zoom,minD=3/view.zoom;let d0="",d1="",d3="";
-   for(const w of O.W){const b=w.b;if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1)continue;let s2="",lx=null,ly=null;const a=w.a;
-    for(let i=0;i+1<a.length;i+=2){const x=a[i],y=a[i+1];if(lx!==null&&i<a.length-2&&Math.abs(x-lx)<minD&&Math.abs(y-ly)<minD)continue;const q=sp({x,y});s2+=(s2?"L":"M")+q.x.toFixed(0)+" "+q.y.toFixed(0);lx=x;ly=y;}
-    if(w.c===0)d0+=s2;else if(w.c===3)d3+=s2;else d1+=s2;}
+   const MG=300,xa=-MG,xb=sz.w+MG,ya=-MG,yb=sz.h+MG;
+   const clip=(x0,y0,x1,y1)=>{let t0=0,t1=1;const dx=x1-x0,dy=y1-y0,P=[-dx,dx,-dy,dy],Q=[x0-xa,xb-x0,y0-ya,yb-y0];
+    for(let k=0;k<4;k++){if(P[k]===0){if(Q[k]<0)return null;}else{const r=Q[k]/P[k];if(P[k]<0){if(r>t1)return null;if(r>t0)t0=r;}else{if(r<t0)return null;if(r<t1)t1=r;}}}
+    return [x0+t0*dx,y0+t0*dy,x0+t1*dx,y0+t1*dy];};
+   let tot=0;
+   for(const w of O.W){const b=w.b;if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1)continue;if(tot>500000)break;let s2="",lx=null,ly=null,px=null,py=null,ex=null,ey=null;const a=w.a;
+    for(let i=0;i+1<a.length;i+=2){const x=a[i],y=a[i+1];if(lx!==null&&i<a.length-2&&Math.abs(x-lx)<minD&&Math.abs(y-ly)<minD)continue;const q=sp({x,y});lx=x;ly=y;
+     if(px!==null){const c=clip(px,py,q.x,q.y);if(c){const sx=Math.round(c[0]),sy=Math.round(c[1]),tx=Math.round(c[2]),ty=Math.round(c[3]);if(sx!==ex||sy!==ey)s2+="M"+sx+" "+sy;s2+="L"+tx+" "+ty;ex=tx;ey=ty;}}
+     px=q.x;py=q.y;}
+    tot+=s2.length;if(w.c===0)d0+=s2;else if(w.c===3)d3+=s2;else d1+=s2;}
+   if(tot>150000){try{sessionStorage.setItem("pscHeavy",JSON.stringify({z:+view.zoom.toFixed(3),ways:O.W.length,chars:tot,t:Date.now()}));}catch(e){}}
    if(d3)o+=`<path d="${d3}" fill="none" stroke="#fff" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" opacity=".7"/><path d="${d3}" fill="none" stroke="#b07a3c" stroke-width="1.6" stroke-dasharray="5 3" stroke-linejoin="round" stroke-linecap="round"/>`;
    if(d1)o+=`<path d="${d1}" fill="none" stroke="#fff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/><path d="${d1}" fill="none" stroke="#9aa5b1" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
    if(d0)o+=`<path d="${d0}" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><path d="${d0}" fill="none" stroke="#f2a900" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
