@@ -608,7 +608,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-132<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-133<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -6271,7 +6271,8 @@ window.roadSvg=function(sp){
 <script>
 (function(){
 const LS="pscPlant|",$=id=>document.getElementById(id);
-const PL={key:null,name:"",poly:[],A:null,B:null,sr:3,st:3,pick:null,timer:0,log:[],sec:"c",cnt:null,show:true,lt:0,goto:null,col:"",dim:true,msg:""};
+const PL={key:null,name:"",poly:[],A:null,B:null,sr:3,st:3,pick:null,timer:0,log:[],sec:"c",cnt:null,show:true,lt:0,goto:null,col:"",dim:true,msg:"",sel:null,cmp:false,hd:null,decl:-18};
+try{const dv=parseFloat(localStorage.getItem("pscDecl"));if(Number.isFinite(dv))PL.decl=dv;}catch(e){}
 const f1=(n,d)=>Number.isFinite(n)?n.toFixed(d==null?1:d):"-";
 function keyNow(){try{return (typeof rdKey==="function"&&rdKey())||"x";}catch(e){return "x";}}
 function load(){const k=keyNow();PL.key=k;let o=null;try{o=JSON.parse(localStorage.getItem(LS+k)||"null");}catch(e){}o=o||{};
@@ -6296,12 +6297,33 @@ function rowGeom(N){const f=frame(),c=cnt();if(!f||!c||c.err||c.r0==null||!(N>=1
 function nearBlock(L){const f=frame(),c=cnt();if(!L||!f||!c||c.err||c.r0==null)return null;const m=src.geo.mpu,sR=PL.sr/m,ab=polyAB(f),bw=L.b/m;let best=1e18;
  for(let ii=c.r0;ii<=c.r0+c.rows-1;ii++){for(const q of spans(ab,ii*sR)){const nb=Math.min(Math.max(bw,q[0]),q[1]),d=Math.hypot(L.a-ii*PL.sr,(bw-nb)*m);if(d<best)best=d;}}
  if(best>=1e17)return null;return {dist:best,inside:best<=Math.max(PL.sr,PL.st)};}
+const D2R=Math.PI/180;
+function brg(la1,lo1,la2,lo2){const y=Math.sin((lo2-lo1)*D2R)*Math.cos(la2*D2R),x=Math.cos(la1*D2R)*Math.sin(la2*D2R)-Math.sin(la1*D2R)*Math.cos(la2*D2R)*Math.cos((lo2-lo1)*D2R);return (Math.atan2(y,x)/D2R+360)%360;}
+function dst(la1,lo1,la2,lo2){const R=6371000,dl=(la2-la1)*D2R,dg=(lo2-lo1)*D2R,a=Math.sin(dl/2)**2+Math.cos(la1*D2R)*Math.cos(la2*D2R)*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(a));}
+function d3(n){return String(Math.round(((n%360)+360)%360)%360).padStart(3,"0")+"\u00B0";}
+function stPos(i,j){const f=frame();if(!f)return null;const m=src.geo.mpu,a=i*PL.sr/m,b=j*PL.st/m,x=f.ax+a*f.ux+b*f.vx,y=f.ay+a*f.uy+b*f.vy,ll=src.geo.toLL(x,y);return {x,y,lat:ll.lat,lon:ll.lon};}
+function stNum(i,j){const f=frame(),c=cnt();if(!f||!c||c.r0==null)return null;const m=src.geo.mpu,sT=PL.st/m,ab=polyAB(f);let tn=0;for(const q of spans(ab,i*PL.sr/m)){const a0=Math.ceil(q[0]/sT),a1=Math.floor(q[1]/sT);if(j>=a0&&j<=a1)return {row:i-c.r0+1,tree:tn+(j-a0)+1};if(a1>=a0)tn+=a1-a0+1;}return null;}
+function rowBearings(){const f=frame();if(!f)return null;const a=src.geo.toLL(f.ax,f.ay),r=src.geo.toLL(f.ax+f.vx*100,f.ay+f.vy*100),u=src.geo.toLL(f.ax+f.ux*100,f.ay+f.uy*100);return {row:brg(a.lat,a.lon,r.lat,r.lon),base:brg(a.lat,a.lon,u.lat,u.lon)};}
+function selInfo(){const el=$("plSelInfo");if(!el)return;if(!PL.sel){el.innerHTML="Tap a red dot on the map to see its exact coordinate.";return;}
+ const n=stNum(PL.sel.i,PL.sel.j),P=stPos(PL.sel.i,PL.sel.j);if(!n||!P){el.innerHTML="That spot is no longer in the grid.";return;}
+ let t="<b>Row "+n.row+", tree "+n.tree+"</b><br>"+P.lat.toFixed(7)+", "+P.lon.toFixed(7);
+ if(gpsPos){t+="<br>From you: "+f1(dst(gpsPos.lat,gpsPos.lon,P.lat,P.lon),0)+" m, bearing "+d3(brg(gpsPos.lat,gpsPos.lon,P.lat,P.lon));}
+ el.innerHTML=t;}
+function cmpOn(e){let h=null;if(typeof e.webkitCompassHeading==="number")h=e.webkitCompassHeading;else if(e.alpha!=null&&e.beta!=null&&e.gamma!=null){const x=e.beta*D2R,y=e.gamma*D2R,z=e.alpha*D2R,cY=Math.cos(y),cZ=Math.cos(z),sX=Math.sin(x),sY=Math.sin(y),sZ=Math.sin(z),Vx=-cZ*sY-sZ*sX*cY,Vy=-sZ*sY+cZ*sX*cY;h=(Math.atan2(Vx,Vy)/D2R+360)%360;}
+ if(h==null)return;if(PL.hd==null)PL.hd=h;else{let d=((h-PL.hd+540)%360)-180;PL.hd=(PL.hd+d*0.25+360)%360;}}
+async function cmpStart(){PL.cmp=true;PL.hd=null;try{if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==="function"){const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted"){PL.cmp=false;}}}catch(e){}
+ if(PL.cmp){window.addEventListener("deviceorientationabsolute",cmpOn,true);window.addEventListener("deviceorientation",cmpOn,true);}ui();}
+function cmpStop(){PL.cmp=false;PL.hd=null;window.removeEventListener("deviceorientationabsolute",cmpOn,true);window.removeEventListener("deviceorientation",cmpOn,true);ui();}
+function cmpInfo(){const el=$("plCmpInfo");if(!el)return;if(!PL.cmp){el.innerHTML="";return;}if(PL.hd==null){el.innerHTML="Waiting for the compass. Hold the phone flat or upright and move it in a figure of eight.";return;}
+ const hd=(PL.hd+PL.decl+360)%360,rb=rowBearings();let t="Facing <b>"+d3(hd)+"</b> (true north)";
+ if(rb){let d=((rb.row-hd+540)%360)-180;if(Math.abs(d)>90)d=((d+360+180)%360)-180;const rr=(hd+d+360)%360;t+="<br>Rows run "+d3(rb.row)+" / "+d3(rb.row+180)+". Baseline A to B "+d3(rb.base)+".<br>"+(Math.abs(d)<2?"<b>You are facing along the row.</b>":"Turn <b>"+f1(Math.abs(d),0)+"\u00B0 "+(d>0?"right":"left")+"</b> to face along the row ("+d3(rr)+").");}
+ el.innerHTML=t;}
 function rowInfo(){const el=$("plRowInfo");if(!el)return;if(!PL.goto){el.innerHTML="";return;}const c=cnt(),G=rowGeom(PL.goto);
  if(!G){el.innerHTML="<b>Row "+PL.goto+"</b> is not in this block."+(c&&c.rows?" Rows run from 1 to "+c.rows+".":" Set the boundary and baseline first.");return;}
  let t="<b>Row "+PL.goto+"</b> is "+f1(G.a,0)+" m from point A along the baseline. About "+f1(G.len,0)+" m long, "+G.trees+" trees.";
  const L=liveInfo();if(L){const d=G.a-L.a;t+=Math.abs(d)<1.5?"<br>You are at this row.":"<br>You are "+f1(Math.abs(d),0)+" m from it. Walk "+f1(Math.abs(d),0)+" m along the baseline toward "+(d>0?"B":"A")+".";}
  el.innerHTML=t;}
-function live(){const el=$("plLive");if(!el)return;rowInfo();const c=cnt(),L=liveInfo();if(!gpsPos){el.textContent="Waiting for GPS. Tap Locate on the map first.";return;}
+function live(){const el=$("plLive");if(!el)return;rowInfo();selInfo();cmpInfo();const c=cnt(),L=liveInfo();if(!gpsPos){el.textContent="Waiting for GPS. Tap Locate on the map first.";return;}
  if(!L){el.textContent="Set the baseline first.";return;}
  const rn=(c&&c.r0!=null)?L.i-c.r0+1:L.i,side=Math.abs(L.right)<0.05?"on the row line":f1(Math.abs(L.right),1)+" m "+(L.right>0?"right":"left")+" of the row line, move "+(L.right>0?"left":"right");
  const nbk=nearBlock(L);if(nbk&&!nbk.inside){el.innerHTML="<b>Outside the block</b>: about "+f1(nbk.dist,0)+" m from the nearest row. Walk into the block, square to the baseline.";return;}
@@ -6319,7 +6341,7 @@ function ui(){const box=$("plBox");if(!box)return;box.classList.toggle("min",!!P
   h+='<div class="row"><label>Row spacing <input class="n" id="plSr" type="number" step="0.1" min="0.5" value="'+PL.sr+'"> m</label></div><div class="row"><label>Tree spacing <input class="n" id="plSt" type="number" step="0.1" min="0.5" value="'+PL.st+'"> m</label></div><div class="row"><button class="small secondary" data-p="3,3">3 x 3</button><button class="small secondary" data-p="2.5,2.5">2.5 x 2.5</button><button class="small secondary" data-p="4,3">4 x 3</button></div><div class="row"><button class="small secondary" id="plShow">'+(PL.show?'Hide grid':'Show grid')+'</button></div>';
   if(c&&c.err)h+='<div class="msg">'+c.err+'</div>';else if(c)h+='<div class="grid2"><div class="cell"><small>Trees in this shape</small><span class="big">'+c.n.toLocaleString()+'</span></div><div class="cell"><small>Rows</small><span class="big">'+c.rows+'</span></div><div class="cell"><small>Theoretical, area x density</small>'+Math.round(c.theo).toLocaleString()+'</div><div class="cell"><small>Density</small>'+Math.round(c.dens)+' per ha</div></div>';
   const e=Math.hypot(PL.sr,PL.st);h+='<div class="nvStep" style="font-weight:700;margin-top:8px">Squaring check</div><div class="msg">One square has a diagonal of '+f1(e,3)+' m. For a quick right angle, lay a 3-4-5 m triangle (3 m along the baseline, 4 m up the row, 5 m across).</div><div class="row">Measured diagonal <input class="n" id="plDiag" type="number" step="0.01"> m <button class="small secondary" id="plChk">Check</button></div><div class="msg" id="plChkOut"></div>';}
- if(PL.sec==="f"){h+='<div class="row"><label>Go to row <input class="n" id="plRow" type="number" min="1" step="1" value="'+(PL.goto||"")+'" style="width:84px"></label><button class="small" id="plRowGo">Show row</button><button class="small secondary" id="plRowClr">Clear</button></div><div id="plRowInfo" class="msg"></div><div id="plLive" class="msg"></div><div class="msg">Use the tape only for spot checks. GPS keeps you near the right row; the 3 m pole sets the spacing.</div>';}
+ if(PL.sec==="f"){h+='<div class="row"><label>Go to row <input class="n" id="plRow" type="number" min="1" step="1" value="'+(PL.goto||"")+'" style="width:84px"></label><button class="small" id="plRowGo">Show row</button><button class="small secondary" id="plRowClr">Clear</button></div><div id="plRowInfo" class="msg"></div><div id="plSelInfo" class="msg"></div><div class="row"><button class="small secondary" id="plCopy">Copy coordinate</button><button class="small secondary" id="plSelClr">Clear point</button></div><div class="row"><button class="small'+(PL.cmp?'':' secondary')+'" id="plCmp">Compass: '+(PL.cmp?'on':'off')+'</button><label>Declination <input class="n" id="plDecl" type="number" step="0.5" value="'+PL.decl+'" style="width:76px"> \u00B0</label></div><div id="plCmpInfo" class="msg"></div><div id="plLive" class="msg"></div><div class="msg">Use the tape only for spot checks. GPS keeps you near the right row; the 3 m pole sets the spacing.</div>';}
  if(PL.sec==="t"){const run=PL.timer>0,avg=PL.log.length?PL.log.reduce((a,b)=>a+b.pd,0)/PL.log.length:null;h+='<div class="row"><button class="small'+(run?' secondary':'')+'" id="plTim">'+(run?'Stop and save':'Start timer')+'</button><span class="msg" id="plTimV"></span></div><div class="row">People <input class="n" id="plPpl" type="number" min="1" value="'+(PL.ppl||3)+'"> Hectares <input class="n" id="plHa" type="number" step="0.01" min="0.01" value="'+(c&&!c.err?f1(c.ha,2):"1")+'"></div>'+(avg!=null?'<div class="cell"><small>Average, '+PL.log.length+' marked</small><span class="big">'+f1(avg,2)+' person-days per ha</span></div>':'<div class="msg">Time marking a block to get person-days per hectare (8 hour day).</div>')+(PL.log.length?'<div class="msg">'+PL.log.slice(-4).reverse().map(x=>x.d+": "+f1(x.ha,2)+" ha, "+x.ppl+" people, "+Math.round(x.min)+" min = "+f1(x.pd,2)+" pd/ha").join("<br>")+'</div>':'');}
  h+='<div class="row" style="margin-top:8px"><button class="small secondary" id="plCsv">Export stations (CSV)</button></div><div class="msg" id="plMsg"></div>';
  box.innerHTML=h;tick();if(PL.sec==="f")live();}
@@ -6351,6 +6373,9 @@ function build(){css();const box=document.createElement("div");box.id="plBox";co
   if(id==="plDraw"){PL.pick=PL.pick==="poly"?null:"poly";ui();return;}
   if(id==="plDone"){if(PL.pick==="poly"&&PL.poly.length>=3)PL.sec="b";PL.pick=null;ui();scheduleDraw();return;}
   if(id==="plGo"){if(PL.poly.length<3){PL.sec="c";PL.pick="poly";}else{PL.sec="b";PL.pick="A";}ui();return;}
+  if(id==="plCmp"){if(PL.cmp)cmpStop();else cmpStart();return;}
+  if(id==="plSelClr"){PL.sel=null;ui();scheduleDraw();return;}
+  if(id==="plCopy"){if(PL.sel){const P=stPos(PL.sel.i,PL.sel.j),n=stNum(PL.sel.i,PL.sel.j);if(P){const tx=P.lat.toFixed(7)+", "+P.lon.toFixed(7);try{navigator.clipboard.writeText(tx);const el=$("plSelInfo");if(el)el.innerHTML+="<br><i>Copied "+(n?"row "+n.row+", tree "+n.tree:"")+"</i>";}catch(e){}}}return;}
   if(id==="plRowGo"){const v=parseInt($("plRow").value);PL.goto=v>=1?v:null;ui();const G=PL.goto?rowGeom(PL.goto):null;if(G){const q=G.spans[0],b=(q[0]+q[1])/2,a=G.i*G.sR,f=G.f,x=f.ax+a*f.ux+b*f.vx,y=f.ay+a*f.uy+b*f.vy,sz=vsize();autoFit=false;view.x=x-sz.w/2/view.zoom;view.y=y-sz.h/2/view.zoom;clampView();changed();}scheduleDraw();return;}
   if(id==="plRowClr"){PL.goto=null;ui();scheduleDraw();return;}
   if(id==="plClrB"){PL.A=null;PL.B=null;PL.pick=null;save();recount();ui();scheduleDraw();return;}
@@ -6364,12 +6389,16 @@ function build(){css();const box=document.createElement("div");box.id="plBox";co
   if(id==="plTim"){if(PL.timer>0){const min=(Date.now()-PL.timer)/60000,ppl=Math.max(1,parseInt($("plPpl").value)||3),ha=Math.max(0.01,parseFloat($("plHa").value)||1);PL.ppl=ppl;PL.log.push({d:new Date().toISOString().slice(0,10),min,ppl,ha,pd:min*ppl/480/ha});PL.timer=0;}else PL.timer=Date.now();save();ui();return;}
   if(id==="plCsv"){csv();return;}});
  box.addEventListener("input",e=>{const t=e.target;if(t.id==="plName"){PL.name=t.value;save();}
+  if(t.id==="plDecl"){const v=parseFloat(t.value);if(Number.isFinite(v)){PL.decl=v;try{localStorage.setItem("pscDecl",String(v));}catch(e){}}}
   if(t.id==="plSr"||t.id==="plSt"){const v=parseFloat(t.value);if(v>=0.5){if(t.id==="plSr")PL.sr=v;else PL.st=v;save();recount();scheduleDraw();const c=cnt();}}});
  box.addEventListener("change",e=>{if(e.target.id==="plSr"||e.target.id==="plSt")ui();});
  const prev=window.__rdTap;window.__rdTap=function(cx,cy){if(PL.pick&&src&&src.geo){const m=localXY(cx,cy),z=view.zoom,w=[view.x+m.x/z,view.y+m.y/z];
    if(PL.pick==="id"){PL.pick=null;pickId(w,m);ui();return true;}
    if(PL.pick==="poly"){PL.poly.push(w);}else if(PL.pick==="A"){PL.A=w;PL.pick=PL.B?null:"B";}else if(PL.pick==="B"){PL.B=w;PL.pick=null;PL.sec="g";}
-   save();recount();ui();scheduleDraw();return true;}return prev?prev(cx,cy):false;};
+   save();recount();ui();scheduleDraw();return true;}
+  if(box.classList.contains("open")&&!PL.pick&&PL.show&&src&&src.geo){const f=frame();if(f&&PL.poly.length>=3){const m2=localXY(cx,cy),z2=view.zoom,wx=view.x+m2.x/z2,wy=view.y+m2.y/z2,mp=src.geo.mpu,dx=wx-f.ax,dy=wy-f.ay,a=dx*f.ux+dy*f.uy,b=dx*f.vx+dy*f.vy,i=Math.round(a/(PL.sr/mp)),j=Math.round(b/(PL.st/mp)),P=stPos(i,j);
+    if(P&&Math.hypot(P.x-wx,P.y-wy)*z2<26&&stNum(i,j)){PL.sel={i,j};PL.sec="f";ui();scheduleDraw();return true;}}}
+  return prev?prev(cx,cy):false;};
  $("plantBtn").onclick=()=>{if(!src||!src.geo){const h=$("measureHint");if(h)h.textContent="Open a georeferenced map first.";return;}load();widen();const on=!box.classList.contains("open");box.classList.toggle("open",on);$("plantBtn").classList.toggle("on",on);if(!on)pickOff();ui();scheduleDraw();};
  setInterval(()=>{if(box.classList.contains("open")){widen();tick();if(PL.sec==="f")live();}},1000);}
 window.__plFit=function(k){if(!PL.built||!src||!src.geo)return null;if(PL.key!==keyNow())load();if(PL.poly.length<3||!PL.name)return null;try{if(typeof normKey==="function"&&normKey(PL.name)!==k)return null;}catch(e){return null;}let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;PL.poly.forEach(q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);});return {x0,y0,x1,y1};};
@@ -6394,6 +6423,7 @@ window.plantSvg=function(sp){
   if(dd)o+=`<path d="${dd}" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="${dd}" fill="none" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>`;
   const L=liveInfo();if(L&&Math.abs(L.right)<PL.sr*3){const a=L.i*sR;let hl="";for(const s of spans(ab,a)){const p=P(a,s[0]),q=P(a,s[1]);hl+=`M${p.x.toFixed(1)} ${p.y.toFixed(1)}L${q.x.toFixed(1)} ${q.y.toFixed(1)}`;}if(hl)o+=`<path d="${hl}" fill="none" stroke="#2563b8" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>`;}
   const pill=(x,y,txt,bg)=>`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><g transform="rotate(${(-rotA*180/Math.PI).toFixed(1)})"><rect x="${(-(txt.length*4.6+9)).toFixed(1)}" y="-13" width="${(txt.length*9.2+18).toFixed(1)}" height="26" rx="13" fill="${bg}" stroke="#fff" stroke-width="2.5"/><text text-anchor="middle" y="5.5" font-size="15" font-weight="800" fill="#fff" font-family="sans-serif">${txt}</text></g></g>`;
+  if(PL.sel){const n=stNum(PL.sel.i,PL.sel.j),P2=stPos(PL.sel.i,PL.sel.j);if(n&&P2){const q=sp({x:P2.x,y:P2.y});o+=`<circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="13" fill="none" stroke="#fff" stroke-width="6"/><circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="13" fill="none" stroke="#7b2cbf" stroke-width="3.5"/>`+pill(q.x,q.y-30,"R"+n.row+" T"+n.tree,"#7b2cbf");}}
   if(PL.goto){const G=rowGeom(PL.goto);if(G){let tl="",first=null;for(const q of G.spans){const p=P(G.i*sR,q[0]),r=P(G.i*sR,q[1]);if(!first)first=p;tl+=`M${p.x.toFixed(1)} ${p.y.toFixed(1)}L${r.x.toFixed(1)} ${r.y.toFixed(1)}`;}
     o+=`<path d="${tl}" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/><path d="${tl}" fill="none" stroke="#e67e22" stroke-width="5" stroke-linecap="round"/>`;if(first)o+=pill(first.x,first.y-20,"Row "+PL.goto,"#e67e22");}}
   const Lp=liveInfo(),cc=cnt();
