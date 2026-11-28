@@ -608,7 +608,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-135<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-136<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -6271,7 +6271,7 @@ window.roadSvg=function(sp){
 <script>
 (function(){
 const LS="pscPlant|",$=id=>document.getElementById(id);
-const PL={key:null,name:"",poly:[],A:null,B:null,sr:3,st:3,pick:null,timer:0,log:[],sec:"c",cnt:null,show:true,lt:0,goto:null,col:"",dim:true,msg:"",sel:null,cmp:false,hd:null,decl:-18,R:null,off:null,offT:0,offM:0,offB:0,refS:null,rope:120,pegMode:"all",pegN:5,showPegs:true,rpc:null};
+const PL={key:null,name:"",poly:[],A:null,B:null,sr:3,st:3,pick:null,timer:0,log:[],sec:"c",cnt:null,show:true,lt:0,goto:null,col:"",dim:true,msg:"",sel:null,cmp:false,hd:null,decl:-18,R:null,off:null,offT:0,offM:0,offB:0,refS:null,rope:120,pegMode:"all",pegN:5,showPegs:true,rpc:null,min:false};
 try{const dv=parseFloat(localStorage.getItem("pscDecl"));if(Number.isFinite(dv))PL.decl=dv;}catch(e){}
 const f1=(n,d)=>Number.isFinite(n)?n.toFixed(d==null?1:d):"-";
 function keyNow(){try{return (typeof rdKey==="function"&&rdKey())||"x";}catch(e){return "x";}}
@@ -6355,11 +6355,16 @@ function live(){const el=$("plLive");if(!el)return;rowInfo();selInfo();cmpInfo()
  const nbk=nearBlock(L);if(nbk&&!nbk.inside){el.innerHTML="<b>Outside the block</b>: about "+f1(nbk.dist,0)+" m from the nearest row. Walk into the block, square to the baseline.";return;}
  el.innerHTML="<b>Row "+rn+"</b>: "+side+".<br>Next tree "+f1(L.ahead,1)+" m ahead.<br><span style='color:#5d7385'>GPS about "+f1(L.acc,0)+" m"+(L.acc>3?". Too rough to place trees; use it to stay near the line and measure the spacing.":".")+"</span>";}
 function css(){const s=document.createElement("style");s.textContent="#plBox{display:none;position:absolute;left:8px;right:8px;bottom:8px;max-height:60%;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 12px;z-index:31;box-shadow:0 8px 24px rgba(37,99,184,.18)}#plBox.open{display:block}#viewerBox.full #plBox{bottom:calc(8px + env(safe-area-inset-bottom))}#plBox .rbTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#plBox .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}#plBox .small{padding:7px 10px;font-size:12.5px;border-radius:10px;white-space:nowrap}#plBox input{padding:7px 9px;font-size:15px;margin:0}#plBox input.n{width:84px!important;flex:none}#plBox .secs{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 6px}#plBox .secs button{flex:1 1 22%;padding:6px 2px;font-size:12px;border-radius:9px}#plBox .secs button.on{background:#23784d!important;color:#fff!important;border-color:#23784d!important}#plBox.min{max-height:none}#plBox label{display:flex;align-items:center;gap:6px;margin:0}#plBox .msg{color:var(--muted);font-size:13px;margin:4px 0}#plBox .big{font-size:20px;font-weight:700;color:var(--ink)}#plBox .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}#plBox .cell{background:var(--panel);border-radius:10px;padding:8px}#plBox .cell small{display:block;color:var(--muted)}";document.head.appendChild(s);}
-function ui(){const box=$("plBox");if(!box)return;box.classList.toggle("min",!!PL.pick);
+function miniInfo(){const el=$("plMini");if(!el)return;let t="";const L=liveInfo();
+ if(!gpsPos)t="Waiting for GPS.";else if(!L)t="Set the baseline first.";else{const nb=nearBlock(L),c=cnt();if(nb&&!nb.inside)t="Outside block, "+f1(nb.dist,0)+" m";else if(c&&c.r0!=null){const rn=L.i-c.r0+1;t="Row "+rn+(Math.abs(L.right)<=0.3?" \u2713":" ("+f1(Math.abs(L.right),1)+" m "+(L.right>0?"right, move left":"left, move right")+")");}}
+ if(PL.goto){const G=rowGeom(PL.goto);if(G&&L){const d=G.a-L.a;t+=" | Row "+PL.goto+": "+(Math.abs(d)<1.5?"here":f1(Math.abs(d),0)+" m toward "+(d>0?"B":"A"));}else if(!G)t+=" | Row "+PL.goto+" not in block";}
+ el.textContent=t;}
+function ui(){const box=$("plBox");if(!box)return;box.classList.toggle("min",!!PL.pick||PL.min);
  if(PL.pick){const t=PL.pick==="poly"?"Tap each corner of the compartment ("+PL.poly.length+" set)":PL.pick==="id"?"Tap the compartment number on the map":PL.pick==="ref"?"Tap the reference point on the map":"Tap point "+PL.pick+" on the map";
   box.innerHTML='<div class="rbTop"><b>'+t+'</b></div><div class="row">'+(PL.pick==="poly"?'<button class="small secondary" id="plUndo">Undo</button>':'')+'<button class="small" id="plDone">'+(PL.pick==="poly"?'Done':'Cancel')+'</button></div>';return;}
+ if(PL.min){box.innerHTML='<div class="rbTop"><b>Marking grid</b><span><button class="small" id="plMax">Open</button> <button class="small secondary" id="plClose">Close</button></span></div><div id="plMini" class="msg" style="margin:2px 0;font-weight:600"></div>';miniInfo();return;}
  const c=cnt(),secs=[["c","Area"],["b","Baseline"],["g","Grid"],["f","Field"],["t","Time"],["r","Rope"],["s","Steps"]];
- let h='<div class="rbTop"><b>Marking grid</b><span><button class="small secondary" id="plClose">Close</button></span></div><div class="secs">'+secs.map(s=>'<button type="button" class="secondary'+(PL.sec===s[0]?' on':'')+'" data-s="'+s[0]+'">'+s[1]+'</button>').join("")+'</div>';
+ let h='<div class="rbTop"><b>Marking grid</b><span><button class="small secondary" id="plMin">Minimise</button> <button class="small secondary" id="plClose">Close</button></span></div><div class="secs">'+secs.map(s=>'<button type="button" class="secondary'+(PL.sec===s[0]?' on':'')+'" data-s="'+s[0]+'">'+s[1]+'</button>').join("")+'</div>';
  if(PL.sec==="c"){h+='<div class="row"><input id="plName" type="text" placeholder="Compartment ID, e.g. F023A" value="'+(PL.name||"").replace(/"/g,"")+'" style="flex:1;min-width:140px"></div><div class="row"><button class="small" id="plId">Pick compartment from map</button>'+(PL.col?'<span style="display:inline-flex;align-items:center;gap:6px;font-weight:700"><i style="width:22px;height:22px;border-radius:6px;border:2px solid #fff;box-shadow:0 0 0 1px #8aa;background:'+PL.col+'"></i>'+(PL.name||"").replace(/</g,"")+'</span>':'')+'<button class="small'+(PL.dim?'':' secondary')+'" id="plDim">Dim outside: '+(PL.dim?'on':'off')+'</button></div>'+(PL.msg?'<div class="msg">'+PL.msg+'</div>':'')+'<div class="row"><button class="small'+(PL.pick==="poly"?'':' secondary')+'" id="plDraw">'+(PL.pick==="poly"?'Tap the corners...':'Draw boundary')+'</button><button class="small secondary" id="plUndo">Undo</button><button class="small secondary" id="plClr">Clear</button></div><div class="msg">Tap each corner of the compartment on the map, in order. '+PL.poly.length+' corner'+(PL.poly.length===1?'':'s')+' set.</div>'+(c&&!c.err?'<div class="grid2"><div class="cell"><small>Area</small><span class="big">'+f1(c.ha,2)+' ha</span></div><div class="cell"><small>Horizontal, from the map</small>Planting area</div></div>':'');}
  if(PL.sec==="b"){h+='<div class="row"><button class="small'+(PL.pick==="A"?'':' secondary')+'" id="plA">'+(PL.A?'Move point A':'Set point A')+'</button><button class="small'+(PL.pick==="B"?'':' secondary')+'" id="plB">'+(PL.B?'Move point B':'Set point B')+'</button><button class="small secondary" id="plClrB">Clear baseline</button></div><div class="msg">Put the baseline along something you can find on the ground, such as a road edge or boundary. Rows run at 90 degrees from it, into the compartment.'+(frame()?' Length '+f1(frame().L*src.geo.mpu,0)+' m.':'')+'</div>';}
  if(PL.sec==="g"){const need=[];if(PL.poly.length<3)need.push("the boundary ("+PL.poly.length+" of 3 corners)");if(!(PL.A&&PL.B))need.push("the baseline");
@@ -6395,12 +6400,14 @@ function build(){css();const box=document.createElement("div");box.id="plBox";co
  box.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;const id=t.id;
   if(t.dataset.s){PL.sec=t.dataset.s;pickOff();ui();return;}
   if(t.dataset.p){const p=t.dataset.p.split(",");PL.sr=+p[0];PL.st=+p[1];save();recount();ui();scheduleDraw();return;}
-  if(id==="plClose"){box.classList.remove("open");pickOff();$("plantBtn").classList.remove("on");scheduleDraw();return;}
+  if(id==="plClose"){PL.min=false;box.classList.remove("open");pickOff();$("plantBtn").classList.remove("on");scheduleDraw();return;}
   if(id==="plId"){PL.pick=PL.pick==="id"?null:"id";PL.msg="";ui();return;}
   if(id==="plDim"){PL.dim=!PL.dim;save();ui();scheduleDraw();return;}
   if(id==="plDraw"){PL.pick=PL.pick==="poly"?null:"poly";ui();return;}
   if(id==="plDone"){if(PL.pick==="poly"&&PL.poly.length>=3)PL.sec="b";PL.pick=null;ui();scheduleDraw();return;}
   if(id==="plGo"){if(PL.poly.length<3){PL.sec="c";PL.pick="poly";}else{PL.sec="b";PL.pick="A";}ui();return;}
+  if(id==="plMin"){PL.min=true;ui();return;}
+  if(id==="plMax"){PL.min=false;ui();return;}
   if(id==="plPegAll"){PL.pegMode="all";save();ui();scheduleDraw();return;}
   if(id==="plPegNth"){PL.pegMode="nth";save();ui();scheduleDraw();return;}
   if(id==="plPegShow"){PL.showPegs=!PL.showPegs;ui();scheduleDraw();return;}
@@ -6439,7 +6446,7 @@ function build(){css();const box=document.createElement("div");box.id="plBox";co
     if(P&&Math.hypot(P.x-wx,P.y-wy)*z2<26&&stNum(i,j)){PL.sel={i,j};PL.sec="f";ui();scheduleDraw();return true;}}}
   return prev?prev(cx,cy):false;};
  $("plantBtn").onclick=()=>{if(!src||!src.geo){const h=$("measureHint");if(h)h.textContent="Open a georeferenced map first.";return;}load();widen();const on=!box.classList.contains("open");box.classList.toggle("open",on);$("plantBtn").classList.toggle("on",on);if(!on)pickOff();ui();scheduleDraw();};
- setInterval(()=>{if(box.classList.contains("open")){widen();tick();if(PL.sec==="f")live();}},1000);}
+ setInterval(()=>{if(box.classList.contains("open")){widen();if(PL.min)miniInfo();tick();if(PL.sec==="f")live();}},1000);}
 window.__plFit=function(k){if(!PL.built||!src||!src.geo)return null;if(PL.key!==keyNow())load();if(PL.poly.length<3||!PL.name)return null;try{if(typeof normKey==="function"&&normKey(PL.name)!==k)return null;}catch(e){return null;}let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;PL.poly.forEach(q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);});return {x0,y0,x1,y1};};
 window.plantSvg=function(sp){
  if(!src||!src.geo||!PL.built)return "";if(PL.key!==keyNow())load();
