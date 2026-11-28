@@ -608,7 +608,7 @@ footer{text-align:center;color:var(--muted);padding:22px 12px;font-size:11px}
 </section>
 </main>
 <div id="ovMap" style="display:none"><canvas id="ovCv"></canvas><div id="ovTop"><b>My maps on OpenStreetMap</b><button type="button" id="ovClose">Close</button></div><div id="ovZ"><button type="button" id="ovIn">+</button><button type="button" id="ovOut">&minus;</button></div><div id="ovAttr">&copy; OpenStreetMap contributors &middot; tap a map to open it</div></div>
-<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-131<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
+<footer>PSC FIELD MAPS · ARNOLD MAKUTU · v2026.11.20-132<br><button type="button" id="updNow" class="secondary small" style="margin-top:8px">Update app now</button></footer>
 
 <div id="psv"><button id="psvClose" class="secondary">Close</button><button id="psvPrev" class="secondary" aria-label="Previous">&#8249;</button><img id="psvImg" alt=""><div id="psvCap"></div><div id="psvBtns"></div><button id="psvNext" class="secondary" aria-label="Next">&#8250;</button></div>
 <div id="mp"><div class="mpTop"><button id="mpCancel" class="secondary">Cancel</button><button id="mpDraw" class="secondary">Draw on it</button><button id="mpUse">Use this picture</button></div><div id="mpStage"><canvas id="mpCv"></canvas><div id="mpMsg"></div></div><div class="mpRow"><button id="mpA32" class="small secondary on">Wide</button><button id="mpA11" class="small secondary">Square</button><button id="mpA23" class="small secondary">Tall</button><label class="sl" style="flex:1;min-width:150px">Area across: <b id="mpW">500 m</b><input id="mpR" type="range" min="50" max="3000" step="50" value="500"></label></div><p class="muted" style="margin:2px 2px 0">Drag the map to move the area. Slide to make the area bigger or smaller.</p></div>
@@ -6271,12 +6271,12 @@ window.roadSvg=function(sp){
 <script>
 (function(){
 const LS="pscPlant|",$=id=>document.getElementById(id);
-const PL={key:null,name:"",poly:[],A:null,B:null,sr:3,st:3,pick:null,timer:0,log:[],sec:"c",cnt:null,show:true,lt:0,goto:null};
+const PL={key:null,name:"",poly:[],A:null,B:null,sr:3,st:3,pick:null,timer:0,log:[],sec:"c",cnt:null,show:true,lt:0,goto:null,col:"",dim:true,msg:""};
 const f1=(n,d)=>Number.isFinite(n)?n.toFixed(d==null?1:d):"-";
 function keyNow(){try{return (typeof rdKey==="function"&&rdKey())||"x";}catch(e){return "x";}}
 function load(){const k=keyNow();PL.key=k;let o=null;try{o=JSON.parse(localStorage.getItem(LS+k)||"null");}catch(e){}o=o||{};
- PL.name=o.name||"";PL.poly=o.poly||[];PL.A=o.A||null;PL.B=o.B||null;PL.sr=o.sr||3;PL.st=o.st||3;PL.timer=o.timer||0;PL.log=o.log||[];PL.cnt=null;PL.pick=null;PL.show=true;if(PL.built)ui();}
-function save(){try{localStorage.setItem(LS+PL.key,JSON.stringify({name:PL.name,poly:PL.poly,A:PL.A,B:PL.B,sr:PL.sr,st:PL.st,timer:PL.timer,log:PL.log}));}catch(e){}}
+ PL.name=o.name||"";PL.poly=o.poly||[];PL.A=o.A||null;PL.B=o.B||null;PL.sr=o.sr||3;PL.st=o.st||3;PL.timer=o.timer||0;PL.log=o.log||[];PL.col=o.col||"";PL.dim=o.dim!==false;PL.cnt=null;PL.pick=null;PL.show=true;if(PL.built)ui();}
+function save(){try{localStorage.setItem(LS+PL.key,JSON.stringify({name:PL.name,poly:PL.poly,A:PL.A,B:PL.B,sr:PL.sr,st:PL.st,timer:PL.timer,log:PL.log,col:PL.col,dim:PL.dim}));}catch(e){}}
 function frame(){if(!PL.A||!PL.B)return null;const dx=PL.B[0]-PL.A[0],dy=PL.B[1]-PL.A[1],L=Math.hypot(dx,dy);if(L<1e-9)return null;const ux=dx/L,uy=dy/L;let vx=-uy,vy=ux;
  if(PL.poly.length>=3){let cx=0,cy=0;PL.poly.forEach(p=>{cx+=p[0];cy+=p[1];});cx/=PL.poly.length;cy/=PL.poly.length;if((cx-PL.A[0])*vx+(cy-PL.A[1])*vy<0){vx=-vx;vy=-vy;}}
  return {ax:PL.A[0],ay:PL.A[1],ux,uy,vx,vy,L};}
@@ -6308,11 +6308,11 @@ function live(){const el=$("plLive");if(!el)return;rowInfo();const c=cnt(),L=liv
  el.innerHTML="<b>Row "+rn+"</b>: "+side+".<br>Next tree "+f1(L.ahead,1)+" m ahead.<br><span style='color:#5d7385'>GPS about "+f1(L.acc,0)+" m"+(L.acc>3?". Too rough to place trees; use it to stay near the line and measure the spacing.":".")+"</span>";}
 function css(){const s=document.createElement("style");s.textContent="#plBox{display:none;position:absolute;left:8px;right:8px;bottom:8px;max-height:60%;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 12px;z-index:31;box-shadow:0 8px 24px rgba(37,99,184,.18)}#plBox.open{display:block}#viewerBox.full #plBox{bottom:calc(8px + env(safe-area-inset-bottom))}#plBox .rbTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#plBox .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}#plBox .small{padding:7px 10px;font-size:12.5px;border-radius:10px;white-space:nowrap}#plBox input{padding:7px 9px;font-size:15px;margin:0}#plBox input.n{width:84px!important;flex:none}#plBox .secs{display:flex;gap:4px;margin:4px 0 6px}#plBox .secs button{flex:1;padding:6px 2px;font-size:12px;border-radius:9px}#plBox .secs button.on{background:#23784d!important;color:#fff!important;border-color:#23784d!important}#plBox.min{max-height:none}#plBox label{display:flex;align-items:center;gap:6px;margin:0}#plBox .msg{color:var(--muted);font-size:13px;margin:4px 0}#plBox .big{font-size:20px;font-weight:700;color:var(--ink)}#plBox .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}#plBox .cell{background:var(--panel);border-radius:10px;padding:8px}#plBox .cell small{display:block;color:var(--muted)}";document.head.appendChild(s);}
 function ui(){const box=$("plBox");if(!box)return;box.classList.toggle("min",!!PL.pick);
- if(PL.pick){const t=PL.pick==="poly"?"Tap each corner of the compartment ("+PL.poly.length+" set)":"Tap point "+PL.pick+" on the map";
+ if(PL.pick){const t=PL.pick==="poly"?"Tap each corner of the compartment ("+PL.poly.length+" set)":PL.pick==="id"?"Tap the compartment number on the map":"Tap point "+PL.pick+" on the map";
   box.innerHTML='<div class="rbTop"><b>'+t+'</b></div><div class="row">'+(PL.pick==="poly"?'<button class="small secondary" id="plUndo">Undo</button>':'')+'<button class="small" id="plDone">'+(PL.pick==="poly"?'Done':'Cancel')+'</button></div>';return;}
  const c=cnt(),secs=[["c","Area"],["b","Baseline"],["g","Grid"],["f","Field"],["t","Time"]];
  let h='<div class="rbTop"><b>Marking grid</b><span><button class="small secondary" id="plClose">Close</button></span></div><div class="secs">'+secs.map(s=>'<button type="button" class="secondary'+(PL.sec===s[0]?' on':'')+'" data-s="'+s[0]+'">'+s[1]+'</button>').join("")+'</div>';
- if(PL.sec==="c"){h+='<div class="row"><input id="plName" type="text" placeholder="Compartment ID, e.g. F023A" value="'+(PL.name||"").replace(/"/g,"")+'" style="flex:1;min-width:140px"></div><div class="row"><button class="small'+(PL.pick==="poly"?'':' secondary')+'" id="plDraw">'+(PL.pick==="poly"?'Tap the corners...':'Draw boundary')+'</button><button class="small secondary" id="plUndo">Undo</button><button class="small secondary" id="plClr">Clear</button></div><div class="msg">Tap each corner of the compartment on the map, in order. '+PL.poly.length+' corner'+(PL.poly.length===1?'':'s')+' set.</div>'+(c&&!c.err?'<div class="grid2"><div class="cell"><small>Area</small><span class="big">'+f1(c.ha,2)+' ha</span></div><div class="cell"><small>Horizontal, from the map</small>Planting area</div></div>':'');}
+ if(PL.sec==="c"){h+='<div class="row"><input id="plName" type="text" placeholder="Compartment ID, e.g. F023A" value="'+(PL.name||"").replace(/"/g,"")+'" style="flex:1;min-width:140px"></div><div class="row"><button class="small" id="plId">Pick compartment from map</button>'+(PL.col?'<span style="display:inline-flex;align-items:center;gap:6px;font-weight:700"><i style="width:22px;height:22px;border-radius:6px;border:2px solid #fff;box-shadow:0 0 0 1px #8aa;background:'+PL.col+'"></i>'+(PL.name||"").replace(/</g,"")+'</span>':'')+'<button class="small'+(PL.dim?'':' secondary')+'" id="plDim">Dim outside: '+(PL.dim?'on':'off')+'</button></div>'+(PL.msg?'<div class="msg">'+PL.msg+'</div>':'')+'<div class="row"><button class="small'+(PL.pick==="poly"?'':' secondary')+'" id="plDraw">'+(PL.pick==="poly"?'Tap the corners...':'Draw boundary')+'</button><button class="small secondary" id="plUndo">Undo</button><button class="small secondary" id="plClr">Clear</button></div><div class="msg">Tap each corner of the compartment on the map, in order. '+PL.poly.length+' corner'+(PL.poly.length===1?'':'s')+' set.</div>'+(c&&!c.err?'<div class="grid2"><div class="cell"><small>Area</small><span class="big">'+f1(c.ha,2)+' ha</span></div><div class="cell"><small>Horizontal, from the map</small>Planting area</div></div>':'');}
  if(PL.sec==="b"){h+='<div class="row"><button class="small'+(PL.pick==="A"?'':' secondary')+'" id="plA">'+(PL.A?'Move point A':'Set point A')+'</button><button class="small'+(PL.pick==="B"?'':' secondary')+'" id="plB">'+(PL.B?'Move point B':'Set point B')+'</button><button class="small secondary" id="plClrB">Clear baseline</button></div><div class="msg">Put the baseline along something you can find on the ground, such as a road edge or boundary. Rows run at 90 degrees from it, into the compartment.'+(frame()?' Length '+f1(frame().L*src.geo.mpu,0)+' m.':'')+'</div>';}
  if(PL.sec==="g"){const need=[];if(PL.poly.length<3)need.push("the boundary ("+PL.poly.length+" of 3 corners)");if(!(PL.A&&PL.B))need.push("the baseline");
   if(need.length)h+='<div class="msg" style="color:#a33"><b>The grid is not drawn yet.</b> Still needed: '+need.join(" and ")+'.</div><div class="row"><button class="small" id="plGo">'+(PL.poly.length<3?'Draw boundary':'Set baseline')+'</button></div>';
@@ -6324,7 +6324,17 @@ function ui(){const box=$("plBox");if(!box)return;box.classList.toggle("min",!!P
  h+='<div class="row" style="margin-top:8px"><button class="small secondary" id="plCsv">Export stations (CSV)</button></div><div class="msg" id="plMsg"></div>';
  box.innerHTML=h;tick();if(PL.sec==="f")live();}
 function tick(){const v=$("plTimV");if(v&&PL.timer>0){const m=(Date.now()-PL.timer)/60000;v.textContent=Math.floor(m/60)+" h "+Math.round(m%60)+" min";}}
+function widen(){try{const sz0=vsize(),want=Math.min(sz0.w,sz0.h)*src.geo.mpu/12;if(want>maxZoom)maxZoom=want;}catch(e){}}
 function pickOff(){PL.pick=null;}
+function sampleCol(w){try{if(!rendered||!baseC||!baseC.width)return "";const k=baseC.width/rendered.vw,cx=Math.round((w[0]-rendered.x)*rendered.zoom*k),cy=Math.round((w[1]-rendered.y)*rendered.zoom*k),R=6;const x0=Math.max(0,cx-R),y0=Math.max(0,cy-R),ww=Math.min(baseC.width,cx+R+1)-x0,hh=Math.min(baseC.height,cy+R+1)-y0;if(ww<=0||hh<=0)return "";
+ const d=bctx.getImageData(x0,y0,ww,hh).data,bk={};let best="",bn=0;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2],sm=r+g+b;if(d[i+3]<200||sm<120||sm>740)continue;const key=(r>>4)+","+(g>>4)+","+(b>>4);const e=bk[key]||(bk[key]={n:0,r:0,g:0,b:0});e.n++;e.r+=r;e.g+=g;e.b+=b;if(e.n>bn){bn=e.n;best=key;}}
+ if(!best)return "";const e=bk[best],h=v=>("0"+Math.round(v/e.n).toString(16)).slice(-2);return "#"+h(e.r)+h(e.g)+h(e.b);}catch(e){return "";}}
+async function pickId(w,m){PL.msg="";let idx=null;try{idx=await ensureTextIdx();}catch(e){}
+ if(!idx){PL.msg="This map has no searchable text, so the number cannot be read. Type it instead.";ui();return;}
+ const z=view.zoom,lim=90/z;let best=null,bd=1e18;
+ for(const it of idx){const t=String(it[0]).trim();if(!/^[A-Za-z]{0,3}[ -]?\d{1,4}[A-Za-z]{0,2}$/.test(t))continue;const d=Math.hypot(it[1]-w[0],it[2]-w[1]);if(d<bd){bd=d;best=t;}}
+ if(!best||bd>lim){PL.msg="No compartment number found there. Tap closer to the number, or zoom in a little.";ui();return;}
+ PL.name=best;PL.col=sampleCol(w);save();PL.msg="Selected "+best+".";ui();scheduleDraw();}
 function msg(t){const m=$("plMsg");if(m)m.textContent=t;}
 async function csv(){const f=frame(),c=cnt();if(!f||!c||c.err){msg("Draw the boundary and set the baseline first.");return;}
  const m=src.geo.mpu,sR=PL.sr/m,sT=PL.st/m,ab=polyAB(f);let a0=1e18,a1=-1e18;ab.forEach(p=>{a0=Math.min(a0,p[0]);a1=Math.max(a1,p[0]);});
@@ -6336,6 +6346,8 @@ function build(){css();const box=document.createElement("div");box.id="plBox";co
   if(t.dataset.s){PL.sec=t.dataset.s;pickOff();ui();return;}
   if(t.dataset.p){const p=t.dataset.p.split(",");PL.sr=+p[0];PL.st=+p[1];save();recount();ui();scheduleDraw();return;}
   if(id==="plClose"){box.classList.remove("open");pickOff();$("plantBtn").classList.remove("on");scheduleDraw();return;}
+  if(id==="plId"){PL.pick=PL.pick==="id"?null:"id";PL.msg="";ui();return;}
+  if(id==="plDim"){PL.dim=!PL.dim;save();ui();scheduleDraw();return;}
   if(id==="plDraw"){PL.pick=PL.pick==="poly"?null:"poly";ui();return;}
   if(id==="plDone"){if(PL.pick==="poly"&&PL.poly.length>=3)PL.sec="b";PL.pick=null;ui();scheduleDraw();return;}
   if(id==="plGo"){if(PL.poly.length<3){PL.sec="c";PL.pick="poly";}else{PL.sec="b";PL.pick="A";}ui();return;}
@@ -6355,17 +6367,21 @@ function build(){css();const box=document.createElement("div");box.id="plBox";co
   if(t.id==="plSr"||t.id==="plSt"){const v=parseFloat(t.value);if(v>=0.5){if(t.id==="plSr")PL.sr=v;else PL.st=v;save();recount();scheduleDraw();const c=cnt();}}});
  box.addEventListener("change",e=>{if(e.target.id==="plSr"||e.target.id==="plSt")ui();});
  const prev=window.__rdTap;window.__rdTap=function(cx,cy){if(PL.pick&&src&&src.geo){const m=localXY(cx,cy),z=view.zoom,w=[view.x+m.x/z,view.y+m.y/z];
+   if(PL.pick==="id"){PL.pick=null;pickId(w,m);ui();return true;}
    if(PL.pick==="poly"){PL.poly.push(w);}else if(PL.pick==="A"){PL.A=w;PL.pick=PL.B?null:"B";}else if(PL.pick==="B"){PL.B=w;PL.pick=null;PL.sec="g";}
    save();recount();ui();scheduleDraw();return true;}return prev?prev(cx,cy):false;};
- $("plantBtn").onclick=()=>{if(!src||!src.geo){const h=$("measureHint");if(h)h.textContent="Open a georeferenced map first.";return;}load();const on=!box.classList.contains("open");box.classList.toggle("open",on);$("plantBtn").classList.toggle("on",on);if(!on)pickOff();ui();scheduleDraw();};
- setInterval(()=>{if(box.classList.contains("open")){tick();if(PL.sec==="f")live();}},1000);}
+ $("plantBtn").onclick=()=>{if(!src||!src.geo){const h=$("measureHint");if(h)h.textContent="Open a georeferenced map first.";return;}load();widen();const on=!box.classList.contains("open");box.classList.toggle("open",on);$("plantBtn").classList.toggle("on",on);if(!on)pickOff();ui();scheduleDraw();};
+ setInterval(()=>{if(box.classList.contains("open")){widen();tick();if(PL.sec==="f")live();}},1000);}
 window.__plFit=function(k){if(!PL.built||!src||!src.geo)return null;if(PL.key!==keyNow())load();if(PL.poly.length<3||!PL.name)return null;try{if(typeof normKey==="function"&&normKey(PL.name)!==k)return null;}catch(e){return null;}let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;PL.poly.forEach(q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);});return {x0,y0,x1,y1};};
 window.plantSvg=function(sp){
  if(!src||!src.geo||!PL.built)return "";if(PL.key!==keyNow())load();
  const open=$("plBox").classList.contains("open");if(!open&&!PL.show)return "";if(!open&&!PL.poly.length&&!PL.A)return "";
  let o="";const z=view.zoom;
+ if(PL.dim&&PL.poly.length>=3){const sz=vsize(),pp=PL.poly.map(p=>sp({x:p[0],y:p[1]})),d2=pp.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)).join("")+"Z";o+=`<path d="M-200 -200H${sz.w+200}V${sz.h+200}H-200Z${d2}" fill="rgba(20,30,40,.5)" fill-rule="evenodd"/>`;}
  if(PL.poly.length){const pts=PL.poly.map(p=>sp({x:p[0],y:p[1]})),l=pts.map(p=>p.x.toFixed(1)+","+p.y.toFixed(1)).join(" ");
   o+=PL.poly.length>=3?`<polygon points="${l}" fill="rgba(47,158,102,.1)" stroke="#fff" stroke-width="6" stroke-linejoin="round"/><polygon points="${l}" fill="none" stroke="#23784d" stroke-width="3" stroke-linejoin="round"/>`:`<polyline points="${l}" fill="none" stroke="#23784d" stroke-width="3"/>`;
+  if(PL.poly.length>=3&&PL.name){let cx=0,cy=0;pts.forEach(p=>{cx+=p.x;cy+=p.y;});cx/=pts.length;cy/=pts.length;const bg=PL.col||"#23784d",rgb=bg.length===7?[1,3,5].map(i=>parseInt(bg.substr(i,2),16)):[35,120,77],tc=(rgb[0]*.3+rgb[1]*.59+rgb[2]*.11)>150?"#10202c":"#fff",w2=PL.name.length*10+24;
+   o+=`<g transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)})"><g transform="rotate(${(-rotA*180/Math.PI).toFixed(1)})"><rect x="${(-w2/2).toFixed(1)}" y="-15" width="${w2}" height="30" rx="15" fill="${bg}" stroke="#fff" stroke-width="3"/><text text-anchor="middle" y="6" font-size="17" font-weight="800" fill="${tc}" font-family="sans-serif">${PL.name.replace(/</g,"")}</text></g></g>`;}
   if(open)pts.forEach((p,i)=>{o+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="#23784d" stroke="#fff" stroke-width="2"/>`;});}
  const f=frame();
  if(f&&PL.show&&PL.poly.length>=3){const m=src.geo.mpu,sR=PL.sr/m,sT=PL.st/m,ab=polyAB(f),sz=vsize();
